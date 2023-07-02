@@ -1,0 +1,15 @@
+{
+    "Author": "Infi",
+    "Name": "Tracky Track",
+    "Punchline": "Simple and Easy\n+ Tracks data around Desynthesis\n+ Tracks data around Venture Coffers\n+ Support for multiple characters",
+    "Description": "",
+    "InternalName": "TrackyTrack",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "Desynthesis",
+        "Venture Coffer",
+        "Tracker",
+        "Tracking",
+        "Data"
+    ]
+}
