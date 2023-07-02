@@ -8,7 +8,7 @@ public partial class MainWindow
     private int SelectedCharacter;
     private int SelectedHistory;
 
-    private uint SearchResult = 35809;
+    private uint SearchResult;
 
     private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> ItemPopupOptions = new()
     {

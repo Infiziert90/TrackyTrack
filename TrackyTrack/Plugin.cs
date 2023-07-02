@@ -115,14 +115,14 @@ namespace TrackyTrack
             }
         }
 
-        [Command("/dtracker")]
+        [Command("/ttracker")]
         [HelpMessage("Opens the tracker")]
         private void OnCommand(string command, string args)
         {
             MainWindow.IsOpen ^= true;
         }
 
-        [Command("/dconf")]
+        [Command("/tconf")]
         [HelpMessage("Opens the config")]
         private void OnConfigCommand(string command, string args)
         {

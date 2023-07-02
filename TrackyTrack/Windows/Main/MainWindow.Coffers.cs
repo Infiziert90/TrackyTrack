@@ -51,11 +51,12 @@ public partial class MainWindow
 
         var opened = characterCoffers.Select(c => c.Coffer.Opened).Sum();
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        if (ImGui.BeginTable($"##HistoryTable", 3))
+        if (ImGui.BeginTable($"##HistoryTable", 4))
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.2f);
+            ImGui.TableSetupColumn("##icon", 0, 0.17f);
             ImGui.TableSetupColumn("##item");
             ImGui.TableSetupColumn("##amount", 0, 0.2f);
+            ImGui.TableSetupColumn("##percentage", 0, 0.25f);
 
             ImGui.Indent(10.0f);
             foreach (var (itemId, count) in dict.Where(pair => pair.Value > 0))
@@ -73,6 +74,9 @@ public partial class MainWindow
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"x{count}");
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{((itemId != 8841 ? count / 2.0 : count) / opened * 100.0):F2}%");
                 ImGui.TableNextRow();
             }
 
