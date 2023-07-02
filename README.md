@@ -9,8 +9,8 @@ Simple and Easy
 + Support for multiple characters
 
 ### Desynthesis Tracker
-[desynthesis](TrackyTrack/images/desynthesis.png)
+![desynthesis](TrackyTrack/images/desynthesis.png)
 
 ### Venture Coffer Tracker
-[coffer](TrackyTrack/images/venturecoffer.png)
+![coffer](TrackyTrack/images/venturecoffer.png)
 
