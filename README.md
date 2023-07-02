@@ -4,9 +4,9 @@ Because tracking stuff is fun~
 
 ### Functions
 Simple and Easy  
-+ Tracks data around Desynthesis
-+ Tracks data around Venture Coffers
-+ Support for multiple characters
++ Tracks data for Desynthesis
++ Tracks data for Venture Coffers
++ Supports multiple characters
 
 ### Desynthesis Tracker
 ![desynthesis](TrackyTrack/images/desynthesis.png)
