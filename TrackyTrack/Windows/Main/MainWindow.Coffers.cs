@@ -23,11 +23,18 @@ public partial class MainWindow
         if (!ImGui.BeginTabItem("Venture"))
             return;
 
+        if (!Plugin.AllaganToolsConsumer.IsAvailable)
+        {
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"AllaganTools not available");
+            ImGui.EndTabItem();
+            return;
+        }
+
         var characters = Plugin.CharacterStorage.Values.ToArray();
 
         if (!characters.Any())
         {
-            Helper.NoDesynthesisData();
+            Helper.NoVentureCofferData();
             ImGui.EndTabItem();
             return;
         }
@@ -35,7 +42,7 @@ public partial class MainWindow
         var characterCoffers = characters.Where(c => c.Coffer.Opened > 0).ToList();
         if (!characterCoffers.Any())
         {
-            Helper.NoDesynthesisData();
+            Helper.NoVentureCofferData();
             ImGui.EndTabItem();
             return;
         }

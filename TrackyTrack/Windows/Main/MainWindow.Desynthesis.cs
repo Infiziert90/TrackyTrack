@@ -129,6 +129,7 @@ public partial class MainWindow
             return;
         }
 
+        var totalNumber = characters.Sum(c => c.Storage.Total.Count);
         var dict = new Dictionary<uint, uint>();
         foreach (var pair in characters.SelectMany(c => c.Storage.Total))
         {
@@ -136,7 +137,7 @@ public partial class MainWindow
                 dict[pair.Key] += pair.Value;
         }
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Desynthesis: {dict.Count(pair => pair.Key is > 0 and < 1000000)}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Desynthesized {totalNumber:N0} time{(totalNumber > 1 ? "s" : "")}");
         if (ImGui.BeginTable($"##HistoryTable", 3))
         {
             ImGui.TableSetupColumn("##icon", 0, 0.2f);

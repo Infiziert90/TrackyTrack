@@ -31,6 +31,7 @@ public class AllaganToolsConsumer
             }
             catch
             {
+                Subscribed = false;
                 Available = false;
             }
 
