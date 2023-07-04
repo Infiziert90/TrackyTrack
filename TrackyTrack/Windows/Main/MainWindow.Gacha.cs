@@ -58,33 +58,40 @@ public partial class MainWindow
             dict[pair.Key] += pair.Value;
 
         var opened = characterGacha.Select(c => c.GachaThreeZero.Opened).Sum();
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        if (ImGui.BeginTable($"##GachaThreeZeroTable", 4))
+        var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.17f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("##percentage", 0, 0.25f);
+            var item = ItemSheet.GetRow(pair.Key)!;
+            var count = pair.Value;
+            var percentage = (double) count / opened * 100.0;
+            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+        });
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        if (ImGui.BeginTable($"##GachaThreeZeroTable", 4, ImGuiTableFlags.Sortable))
+        {
+            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
+            ImGui.TableSetupColumn("Item##item");
+            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
+            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
+
+            ImGui.TableHeadersRow();
 
             ImGui.Indent(10.0f);
-            foreach (var (itemId, count) in dict.Where(pair => pair.Value > 0))
+            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
             {
-                var item = ItemSheet.GetRow(itemId)!;
-
                 ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
+                DrawIcon(sortedEntry.Icon);
                 ImGui.TableNextColumn();
 
-                var name = Utils.ToStr(item.Name);
-                ImGui.TextUnformatted(name);
+                ImGui.TextUnformatted(sortedEntry.Name);
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(Utils.ToStr(item.Name));
+                    ImGui.SetTooltip(sortedEntry.Name);
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{count}");
+                ImGui.TextUnformatted($"x{sortedEntry.Count}");
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{((double) count / opened * 100.0):F2}%");
+                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
                 ImGui.TableNextRow();
             }
 
@@ -132,33 +139,40 @@ public partial class MainWindow
             dict[pair.Key] += pair.Value;
 
         var opened = characterGacha.Select(c => c.GachaFourZero.Opened).Sum();
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        if (ImGui.BeginTable($"##GachaFourZeroTable", 4))
+        var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.17f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("##percentage", 0, 0.25f);
+            var item = ItemSheet.GetRow(pair.Key)!;
+            var count = pair.Value;
+            var percentage = (double) count / opened * 100.0;
+            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+        });
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        if (ImGui.BeginTable($"##GachaFourZeroTable", 4, ImGuiTableFlags.Sortable))
+        {
+            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
+            ImGui.TableSetupColumn("Item##item");
+            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
+            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
+
+            ImGui.TableHeadersRow();
 
             ImGui.Indent(10.0f);
-            foreach (var (itemId, count) in dict.Where(pair => pair.Value > 0))
+            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
             {
-                var item = ItemSheet.GetRow(itemId)!;
-
                 ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
+                DrawIcon(sortedEntry.Icon);
                 ImGui.TableNextColumn();
 
-                var name = Utils.ToStr(item.Name);
-                ImGui.TextUnformatted(name);
+                ImGui.TextUnformatted(sortedEntry.Name);
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(Utils.ToStr(item.Name));
+                    ImGui.SetTooltip(sortedEntry.Name);
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{count}");
+                ImGui.TextUnformatted($"x{sortedEntry.Count}");
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{((double) count / opened * 100.0):F2}%");
+                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
                 ImGui.TableNextRow();
             }
 
