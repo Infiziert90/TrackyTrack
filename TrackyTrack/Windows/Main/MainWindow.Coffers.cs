@@ -11,9 +11,9 @@ public partial class MainWindow
             if (ImGui.BeginTabBar("##CofferTabBar"))
             {
                 Coffers();
-            }
-            ImGui.EndTabBar();
 
+                ImGui.EndTabBar();
+            }
             ImGui.EndTabItem();
         }
     }
@@ -88,9 +88,8 @@ public partial class MainWindow
             }
 
             ImGui.Unindent(10.0f);
+            ImGui.EndTable();
         }
-
-        ImGui.EndTable();
         ImGui.EndTabItem();
     }
 }

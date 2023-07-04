@@ -16,6 +16,12 @@ public static class Helper
         WrappedError("No data found for this character\nPlease open a venture coffer.");
     }
 
+    public static void NoGachaData()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("No data found for this character\nPlease open a gacha coffer (from GC).");
+    }
+
     public static void WrappedError(string text)
     {
         ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudOrange);

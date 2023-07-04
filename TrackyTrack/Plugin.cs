@@ -144,7 +144,7 @@ namespace TrackyTrack
             if (!local.IsCasting)
                 return;
 
-            if (local is { CastActionId: 32161, CastActionType: 2 })
+            if (local is { CastActionId: 32161, CastActionType: 2 } or { CastActionId: 36635, CastActionType: 2 } or { CastActionId: 36636, CastActionType: 2 })
             {
                 CastTimer.Stop();
                 CastTimer.Start();
@@ -166,6 +166,30 @@ namespace TrackyTrack
                 character.Coffer.Opened += 1;
                 if (!character.Coffer.Obtained.TryAdd(item.ItemId, item.Quantity))
                     character.Coffer.Obtained[item.ItemId] += item.Quantity;
+
+                OpeningCoffer = false;
+                SaveCharacter();
+            }
+            else if (GachaContent.ThreeZero.Contains(item.ItemId))
+            {
+                CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+                var character = CharacterStorage[ClientState.LocalContentId];
+
+                character.GachaThreeZero.Opened += 1;
+                if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, item.Quantity))
+                    character.GachaThreeZero.Obtained[item.ItemId] += item.Quantity;
+
+                OpeningCoffer = false;
+                SaveCharacter();
+            }
+            else if (GachaContent.FourZero.Contains(item.ItemId))
+            {
+                CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+                var character = CharacterStorage[ClientState.LocalContentId];
+
+                character.GachaFourZero.Opened += 1;
+                if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, item.Quantity))
+                    character.GachaFourZero.Obtained[item.ItemId] += item.Quantity;
 
                 OpeningCoffer = false;
                 SaveCharacter();

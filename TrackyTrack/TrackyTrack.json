@@ -1,8 +1,8 @@
 {
     "Author": "Infi",
     "Name": "Tracky Track",
-    "Punchline": "Simple and Easy\n+ Tracks data for Desynthesis\n+ Tracks data for Venture Coffers\n+ Supports multiple characters",
-    "Description": "",
+    "Punchline": "Tracking data is fun",
+    "Description": "Simple and Easy\n+ Tracks data for Desynthesis\n+ Tracks data for Venture Coffers (requires AllaganTools)\n+ Tracks data for Gacha Coffers (requires AllaganTools)\n+ Supports multiple characters",
     "InternalName": "TrackyTrack",
     "ApplicableVersion": "any",
     "Tags": [

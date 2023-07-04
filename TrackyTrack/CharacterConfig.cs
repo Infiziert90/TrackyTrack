@@ -20,6 +20,8 @@ public class CharacterConfiguration
     public string World = "Unknown";
     public Desynth Storage = new();
     public VentureCoffer Coffer = new();
+    public GachaThreeZero GachaThreeZero = new();
+    public GachaFourZero GachaFourZero = new();
 
     public CharacterConfiguration() { }
 

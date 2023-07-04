@@ -38,8 +38,11 @@ public partial class MainWindow : Window, IDisposable
                 DesynthesisTab();
 
                 CofferTab();
+
+                GachaTab();
+
+                ImGui.EndTabBar();
             }
-            ImGui.EndTabBar();
         }
         ImGui.EndChild();
 

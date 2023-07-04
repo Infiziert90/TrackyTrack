@@ -29,9 +29,9 @@ public partial class MainWindow
                 Source();
 
                 Search();
-            }
-            ImGui.EndTabBar();
 
+                ImGui.EndTabBar();
+            }
             ImGui.EndTabItem();
         }
     }
@@ -109,9 +109,8 @@ public partial class MainWindow
             }
 
             ImGui.Unindent(10.0f);
+            ImGui.EndTable();
         }
-
-        ImGui.EndTable();
         ImGui.EndTabItem();
     }
 
@@ -129,7 +128,7 @@ public partial class MainWindow
             return;
         }
 
-        var totalNumber = characters.Sum(c => c.Storage.Total.Count);
+        var totalNumber = characters.Sum(c => c.Storage.History.Count);
         var dict = new Dictionary<uint, uint>();
         foreach (var pair in characters.SelectMany(c => c.Storage.Total))
         {
@@ -164,9 +163,8 @@ public partial class MainWindow
             }
 
             ImGui.Unindent(10.0f);
+            ImGui.EndTable();
         }
-
-        ImGui.EndTable();
         ImGui.EndTabItem();
     }
 
