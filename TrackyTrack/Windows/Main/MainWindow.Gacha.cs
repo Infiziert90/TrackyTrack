@@ -67,6 +67,7 @@ public partial class MainWindow
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {GachaContent.ThreeZero.Count}");
         if (ImGui.BeginTable($"##GachaThreeZeroTable", 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
@@ -148,6 +149,7 @@ public partial class MainWindow
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {GachaContent.FourZero.Count}");
         if (ImGui.BeginTable($"##GachaFourZeroTable", 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);

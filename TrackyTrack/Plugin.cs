@@ -1,4 +1,3 @@
-using System.IO;
 using System.Reflection;
 using System.Timers;
 using Dalamud.Game.Command;
@@ -7,6 +6,7 @@ using Dalamud.Plugin;
 using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
+using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using TrackyTrack.Attributes;
@@ -26,6 +26,7 @@ namespace TrackyTrack
         [PluginService] public static CommandManager Commands { get; private set; } = null!;
         [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
         [PluginService] public static ClientState ClientState { get; private set; } = null!;
+        [PluginService] public static ChatGui ChatGui { get; private set; } = null!;
 
         public string Name => "Tracky Track";
 
@@ -40,6 +41,7 @@ namespace TrackyTrack
 
         private readonly PluginCommandManager<Plugin> CommandManager;
 
+        public ConfigurationBase ConfigurationBase;
         public Dictionary<ulong, CharacterConfiguration> CharacterStorage = new();
 
         private LastSeen Last = new();
@@ -56,6 +58,8 @@ namespace TrackyTrack
 
         public Plugin()
         {
+            ConfigurationBase = new ConfigurationBase(this);
+
             Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Configuration.Initialize(PluginInterface);
 
@@ -74,7 +78,7 @@ namespace TrackyTrack
             PluginInterface.UiBuilder.Draw += DrawUI;
             PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 
-            LoadCharacters();
+            ConfigurationBase.Load();
 
             LastDesynth.AutoReset = false;
             LastDesynth.Elapsed +=
@@ -168,7 +172,7 @@ namespace TrackyTrack
                     character.Coffer.Obtained[item.ItemId] += item.Quantity;
 
                 OpeningCoffer = false;
-                SaveCharacter();
+                ConfigurationBase.SaveCharacterConfig();
             }
             else if (GachaContent.ThreeZero.Contains(item.ItemId))
             {
@@ -180,7 +184,7 @@ namespace TrackyTrack
                     character.GachaThreeZero.Obtained[item.ItemId] += item.Quantity;
 
                 OpeningCoffer = false;
-                SaveCharacter();
+                ConfigurationBase.SaveCharacterConfig();
             }
             else if (GachaContent.FourZero.Contains(item.ItemId))
             {
@@ -192,8 +196,11 @@ namespace TrackyTrack
                     character.GachaFourZero.Obtained[item.ItemId] += item.Quantity;
 
                 OpeningCoffer = false;
-                SaveCharacter();
+                ConfigurationBase.SaveCharacterConfig();
             }
+
+            if (OpeningCoffer)
+                ChatGui.Print($"Found an item that is possible from chest {item.ItemId} but in no list");
         }
 
         public unsafe void DesynthesisTracker(Framework _)
@@ -250,7 +257,7 @@ namespace TrackyTrack
                 Last = current;
                 Last.Done();
 
-                SaveCharacter();
+                ConfigurationBase.SaveCharacterConfig();
                 return;
             }
 
@@ -288,7 +295,7 @@ namespace TrackyTrack
                     }
 
                     current.Done();
-                    SaveCharacter();
+                    ConfigurationBase.SaveCharacterConfig();
                 }
 
                 Last = current;
@@ -320,7 +327,7 @@ namespace TrackyTrack
             LastDesynth.Start();
 
             Last.Done();
-            SaveCharacter();
+            ConfigurationBase.SaveCharacterConfig();
         }
 
         public struct LastSeen
@@ -382,36 +389,6 @@ namespace TrackyTrack
         }
 
         #region Character Handler
-        public void LoadCharacters()
-        {
-            foreach (var file in PluginInterface.ConfigDirectory.EnumerateFiles())
-            {
-                ulong id;
-                try
-                {
-                    id = Convert.ToUInt64(Path.GetFileNameWithoutExtension(file.Name));
-                }
-                catch (Exception e)
-                {
-                    PluginLog.Error($"Found file that isn't convertable. Filename: {file.Name}");
-                    PluginLog.Error(e.Message);
-                    continue;
-                }
-
-                var config = CharacterConfiguration.Load(id);
-
-                if (!CharacterStorage.TryAdd(id, config))
-                    CharacterStorage[id] = config;
-            }
-        }
-
-        public void SaveCharacter()
-        {
-            if (!CharacterStorage.TryGetValue(ClientState.LocalContentId, out var savedConfig))
-                return;
-            savedConfig.Save();
-        }
-
         public void DeleteCharacter(ulong id)
         {
             if (!CharacterStorage.ContainsKey(id))

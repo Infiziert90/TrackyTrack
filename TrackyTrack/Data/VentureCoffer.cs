@@ -8,7 +8,7 @@ public class VentureCoffer
 
 public static class Coffer
 {
-    public static List<uint> Items = new()
+    public static readonly List<uint> Items = new()
     {
         13114, // Pure White
         13115, // Jet Black

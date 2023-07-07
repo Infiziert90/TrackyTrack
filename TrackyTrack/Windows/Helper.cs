@@ -35,10 +35,10 @@ public static class Helper
         ImGui.SameLine(avail - (60.0f * ImGuiHelpers.GlobalScale));
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Sync))
-            plugin.LoadCharacters();
+            plugin.ConfigurationBase.Load();
 
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Reload all saved data from your disk");
+            ImGui.SetTooltip("Reloads all data from disk");
 
         ImGui.SameLine(avail - (33.0f * ImGuiHelpers.GlobalScale));
 

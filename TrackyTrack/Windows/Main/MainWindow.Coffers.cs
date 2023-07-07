@@ -66,6 +66,7 @@ public partial class MainWindow
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Coffer.Items.Count}");
         if (ImGui.BeginTable($"##HistoryTable", 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
