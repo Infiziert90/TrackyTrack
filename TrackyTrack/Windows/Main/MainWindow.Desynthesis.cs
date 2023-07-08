@@ -1,4 +1,5 @@
-﻿using TrackyTrack.Data;
+﻿using Dalamud.Logging;
+using TrackyTrack.Data;
 using Lumina.Excel.GeneratedSheets;
 
 namespace TrackyTrack.Windows.Main;
@@ -10,10 +11,16 @@ public partial class MainWindow
 
     private uint SearchResult;
 
-    private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> ItemPopupOptions = new()
+    private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> SourceOptions = new()
     {
         FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
         FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => Utils.ToStr(i.Name) != "").Where(i => i.Desynth > 0)
+    };
+
+    private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> ItemOptions = new()
+    {
+        FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
+        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => Utils.ToStr(i.Name) != "")
     };
 
     private void DesynthesisTab()
@@ -28,7 +35,9 @@ public partial class MainWindow
 
                 Source();
 
-                Search();
+                SourceSearch();
+
+                ItemSearch();
 
                 ImGui.EndTabBar();
             }
@@ -168,9 +177,63 @@ public partial class MainWindow
         ImGui.EndTabItem();
     }
 
-    private void Search()
+    private void Source()
     {
-        if (!ImGui.BeginTabItem("Search"))
+        if (!ImGui.BeginTabItem("Sources"))
+            return;
+
+        var characters = Plugin.CharacterStorage.Values.ToArray();
+
+        if (!characters.Any())
+        {
+            Helper.NoDesynthesisData();
+            ImGui.EndTabItem();
+            return;
+        }
+
+        var numberOfDesynthesis = new Dictionary<uint, uint>();
+        foreach (var pair in characters.SelectMany(c => c.Storage.History))
+        {
+            if (!numberOfDesynthesis.TryAdd(pair.Value.Source, 1))
+                numberOfDesynthesis[pair.Value.Source] += 1;
+        }
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, $"Number of Desynthesis:");
+        ImGui.Indent(10.0f);
+        if (ImGui.BeginTable($"##DesynthesisSourceTable", 3))
+        {
+            ImGui.TableSetupColumn("##icon", 0, 0.2f);
+            ImGui.TableSetupColumn("##item");
+            ImGui.TableSetupColumn("##amount", 0, 0.2f);
+
+            foreach (var (source, count) in numberOfDesynthesis.OrderByDescending(pair => pair.Value))
+            {
+                var item = ItemSheet.GetRow(source)!;
+
+                ImGui.TableNextColumn();
+                DrawIcon(item.Icon);
+                ImGui.TableNextColumn();
+
+                var name = Utils.ToStr(item.Name);
+                ImGui.TextUnformatted(name);
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(Utils.ToStr(item.Name));
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{count:N0}");
+                ImGui.TableNextRow();
+            }
+
+            ImGui.EndTable();
+        }
+        ImGui.Unindent(10.0f);
+
+        ImGui.EndTabItem();
+    }
+
+    private void SourceSearch()
+    {
+        if (!ImGui.BeginTabItem("Search Source"))
             return;
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
@@ -189,17 +252,23 @@ public partial class MainWindow
                 historyDict[pair.Value.Source].Add(pair.Value);
         }
 
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for an item");
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis source");
         var buttonWidth = ImGui.GetContentRegionAvail().X / 2;
         ImGui.PushFont(UiBuilder.IconFont);
         ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(buttonWidth, 0));
         ImGui.PopFont();
 
-        if (ExcelSheetSelector.ExcelSheetPopup("ItemAddPopup", out var row, ItemPopupOptions))
+        if (ExcelSheetSelector.ExcelSheetPopup("ItemAddPopup", out var row, SourceOptions))
             SearchResult = row;
 
         if (SearchResult == 0)
+        {
+
+            ImGui.EndTabItem();
             return;
+        }
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.Separator();
@@ -231,7 +300,7 @@ public partial class MainWindow
 
         var desynthesized = history.Count;
         ImGui.TextColored(ImGuiColors.HealerGreen, $"Desynthesized {desynthesized:N0} time{(desynthesized > 1 ? "s" : "")}");
-        if (ImGui.BeginTable($"##HistoryStats", 4, 0, new Vector2(250, 0)))
+        if (ImGui.BeginTable($"##HistoryStats", 4, 0, new Vector2(300, 0)))
         {
             ImGui.TableSetupColumn("##statItemName", 0, 0.6f);
             ImGui.TableSetupColumn("##statMin", 0, 0.1f);
@@ -240,9 +309,10 @@ public partial class MainWindow
 
             foreach (var statPair in statDict.OrderByDescending(pair => pair.Key))
             {
-                var item = ItemSheet.GetRow(statPair.Key)!;
+                var name = Utils.ToStr(ItemSheet.GetRow(statPair.Key)!.Name);
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
+                if (ImGui.Selectable($"{name}"))
+                    ImGui.SetClipboardText(name);
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{statPair.Value.Min}");
@@ -303,9 +373,9 @@ public partial class MainWindow
         ImGui.EndTabItem();
     }
 
-    private void Source()
+    private void ItemSearch()
     {
-        if (!ImGui.BeginTabItem("Sources"))
+        if (!ImGui.BeginTabItem("Search Item"))
             return;
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
@@ -317,42 +387,99 @@ public partial class MainWindow
             return;
         }
 
-        var numberOfDesynthesis = new Dictionary<uint, uint>();
+        var historyItemDict = new Dictionary<uint, Dictionary<uint, List<DesynthResult>>>();
         foreach (var pair in characters.SelectMany(c => c.Storage.History))
         {
-            if (!numberOfDesynthesis.TryAdd(pair.Value.Source, 1))
-                numberOfDesynthesis[pair.Value.Source] += 1;
+            if (!pair.Value.Received.Any())
+            {
+                PluginLog.Error($"Found error entry: {pair.Key}");
+                continue;
+            }
+
+            if (!historyItemDict.TryAdd(pair.Value.Received.First().Item, new Dictionary<uint, List<DesynthResult>> { {pair.Value.Source, new List<DesynthResult> {pair.Value}} }))
+                if (!historyItemDict[pair.Value.Received.First().Item].TryAdd(pair.Value.Source, new List<DesynthResult> { pair.Value }))
+                    historyItemDict[pair.Value.Received.First().Item][pair.Value.Source].Add(pair.Value);
         }
 
-        ImGui.TextColored(ImGuiColors.HealerGreen, $"Number of Desynthesis:");
-        ImGui.Indent(10.0f);
-        if (ImGui.BeginTable($"##DesynthesisSourceTable", 3))
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis reward");
+        var buttonWidth = ImGui.GetContentRegionAvail().X / 2;
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(buttonWidth, 0));
+        ImGui.PopFont();
+
+        if (ExcelSheetSelector.ExcelSheetPopup("ItemAddPopup", out var row, ItemOptions))
+            SearchResult = row;
+
+        if (SearchResult == 0)
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.2f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
+            ImGui.EndTabItem();
+            return;
+        }
 
-            foreach (var (source, count) in numberOfDesynthesis.OrderByDescending(pair => pair.Value))
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.Separator();
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        var sourceItem = ItemSheet.GetRow(SearchResult)!;
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Searched for {Utils.ToStr(sourceItem.Name)}");
+        if (!historyItemDict.TryGetValue(SearchResult, out var history))
+        {
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this item ...");
+
+            ImGui.EndTabItem();
+            return;
+        }
+
+        var statDict = new Dictionary<uint, (uint Min, uint Max)>();
+        foreach (var (source, result) in history.Where(pair => pair.Key > 0))
+        {
+            foreach (var desynthResult in result)
             {
-                var item = ItemSheet.GetRow(source)!;
+                var count = desynthResult.Received.First().Count;
+                if (!statDict.TryAdd(source, (count, count)))
+                {
+                    var stat = statDict[source];
+                    if (stat.Min > count)
+                        statDict[source] = (count, stat.Max);
+
+                    if (stat.Max < count)
+                        statDict[source] = (stat.Min, count);
+                }
+            }
+        }
+
+        var desynthesized = history.Values.Sum(list => list.Count);
+        ImGui.TextColored(ImGuiColors.HealerGreen, $"Seen as reward {desynthesized:N0} time{(desynthesized > 1 ? "s" : "")}");
+        if (ImGui.BeginTable($"##HistoryStats", 4, 0, new Vector2(300, 0)))
+        {
+            ImGui.TableSetupColumn("##statItemName", 0, 0.6f);
+            ImGui.TableSetupColumn("##statMin", 0, 0.1f);
+            ImGui.TableSetupColumn("##statSymbol", 0, 0.05f);
+            ImGui.TableSetupColumn("##statMax", 0, 0.1f);
+
+            foreach (var statPair in statDict.OrderByDescending(pair => pair.Key))
+            {
+                var name = Utils.ToStr(ItemSheet.GetRow(statPair.Key)!.Name);
+                ImGui.TableNextColumn();
+                if (ImGui.Selectable($"{name}"))
+                    ImGui.SetClipboardText(name);
 
                 ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
-                ImGui.TableNextColumn();
-
-                var name = Utils.ToStr(item.Name);
-                ImGui.TextUnformatted(name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(Utils.ToStr(item.Name));
+                ImGui.TextUnformatted($"{statPair.Value.Min}");
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{count:N0}");
+                ImGui.TextUnformatted("-");
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{statPair.Value.Max}");
+
                 ImGui.TableNextRow();
             }
 
             ImGui.EndTable();
         }
-        ImGui.Unindent(10.0f);
 
         ImGui.EndTabItem();
     }

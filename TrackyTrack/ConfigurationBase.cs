@@ -103,7 +103,7 @@ public class ConfigurationBase : IDisposable
 
         try
         {
-            File.Copy(filePath, $"{filePath}.bak.{DateTime.Now:yyyyMMddHHmmss}", overwrite: true);
+            File.Copy(filePath, $"{filePath}.bak.{DateTime.Now:yyyyMMddHH}", overwrite: true);
         }
         catch
         {
@@ -114,17 +114,44 @@ public class ConfigurationBase : IDisposable
         LastWriteTimes[contentId] = new FileInfo(filePath).LastWriteTimeUtc;
     }
 
+    public void DeleteCharacter(ulong id)
+    {
+        if (!Plugin.CharacterStorage.ContainsKey(id))
+            return;
+
+        Plugin.CharacterStorage.Remove(id);
+        var file = Plugin.PluginInterface.ConfigDirectory.EnumerateFiles().FirstOrDefault(f => f.Name == $"{id}.json");
+        if (file == null)
+            return;
+
+        try
+        {
+            file.Delete();
+        }
+        catch (Exception e)
+        {
+            PluginLog.Error("Error while deleting character save file.");
+            PluginLog.Error(e.Message);
+        }
+    }
+
     private async Task CheckForConfigChanges()
     {
         while (!CancellationToken.IsCancellationRequested)
         {
             await Task.Delay(TimeSpan.FromSeconds(5), CancellationToken.Token);
 
-            foreach (var (contentId, savedWriteTime) in LastWriteTimes)
+            foreach (var (contentId, savedWriteTime) in LastWriteTimes.ToArray())
             {
                 var lastWriteTime = GetConfigLastWriteTime(contentId);
                 if (lastWriteTime != savedWriteTime)
-                    Plugin.CharacterStorage[contentId] = LoadConfig(contentId);
+                {
+                    LastWriteTimes[contentId] = lastWriteTime;
+
+                    // No need to override current character as we already have up to date config
+                    if (contentId != Plugin.ClientState.LocalContentId)
+                        Plugin.CharacterStorage[contentId] = LoadConfig(contentId);
+                }
             }
         }
     }
