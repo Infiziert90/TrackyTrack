@@ -9,7 +9,8 @@ public partial class MainWindow
     private int SelectedCharacter;
     private int SelectedHistory;
 
-    private uint SearchResult;
+    private uint SourceSearchResult;
+    private uint ItemSearchResult;
 
     private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> SourceOptions = new()
     {
@@ -27,22 +28,109 @@ public partial class MainWindow
     {
         if (ImGui.BeginTabItem("Desynthesis"))
         {
+            var characters = Plugin.CharacterStorage.Values.ToArray();
+            if (!characters.Any())
+            {
+                Helper.NoDesynthesisData();
+
+                ImGui.EndTabItem();
+                return;
+            }
+
             if (ImGui.BeginTabBar("##DesynthTabBar"))
             {
+                Stats(characters);
+
                 History();
 
-                Rewards();
+                Rewards(characters);
 
-                Source();
+                Source(characters);
 
-                SourceSearch();
+                SourceSearch(characters);
 
-                ItemSearch();
+                ItemSearch(characters);
 
                 ImGui.EndTabBar();
             }
             ImGui.EndTabItem();
         }
+    }
+
+    private void Stats(CharacterConfiguration[] characters)
+    {
+        if (!ImGui.BeginTabItem("Stats"))
+            return;
+
+        var totalNumber = characters.Sum(c => c.Storage.History.Count);
+        var dict = new Dictionary<uint, uint>();
+        foreach (var pair in characters.SelectMany(c => c.Storage.Total))
+        {
+            if (!dict.TryAdd(pair.Key, pair.Value))
+                dict[pair.Key] += pair.Value;
+        }
+
+        var numberOfDesynthesis = new Dictionary<uint, uint>();
+        foreach (var pair in characters.SelectMany(c => c.Storage.History))
+        {
+            if (!numberOfDesynthesis.TryAdd(pair.Value.Source, 1))
+                numberOfDesynthesis[pair.Value.Source] += 1;
+        }
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        if (ImGui.BeginTable($"##TotalStatsTable", 3))
+        {
+            ImGui.TableSetupColumn("##stat", 0, 0.55f);
+            ImGui.TableSetupColumn("##name");
+            ImGui.TableSetupColumn("##amount");
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Desynthesis");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{totalNumber:N0} time{(totalNumber > 1 ? "s" : "")}");
+            ImGui.TableNextRow();
+
+            var destroyed = numberOfDesynthesis.MaxBy(pair => pair.Value);
+            var item = ItemSheet.GetRow(destroyed.Key)!;
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Most Often");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{destroyed.Value}");
+
+            var bestItem = dict.Where(pair => pair.Key is > 20 and < 1000000).MaxBy(pair => pair.Value);
+            item = ItemSheet.GetRow(bestItem.Key)!;
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Best Reward");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{bestItem.Value}");
+
+            var bestCrystal = dict.Where(pair => pair.Key is > 0 and < 20).MaxBy(pair => pair.Value);
+            item = ItemSheet.GetRow(bestCrystal.Key)!;
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Best Crystal");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{bestCrystal.Value}");
+
+            var sum = 0UL;
+            foreach (var pair in dict.Where(pair => Items.Worth.ContainsKey(pair.Key)))
+                sum += Items.Worth[pair.Key] * pair.Value;
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Pure Gil Made");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{sum:N0}");
+            ImGui.TableNextRow();
+
+            ImGui.EndTable();
+        }
+        ImGui.EndTabItem();
     }
 
     private void History()
@@ -53,13 +141,6 @@ public partial class MainWindow
         var existingCharacters = Plugin.CharacterStorage.Values
                                        .Select(character => $"{character.CharacterName}@{character.World}")
                                        .ToArray();
-
-        if (!existingCharacters.Any())
-        {
-            Helper.NoDesynthesisData();
-            ImGui.EndTabItem();
-            return;
-        }
 
         var selectedCharacter = SelectedCharacter;
         ImGui.Combo("##existingCharacters", ref selectedCharacter, existingCharacters, existingCharacters.Length);
@@ -123,21 +204,11 @@ public partial class MainWindow
         ImGui.EndTabItem();
     }
 
-    private void Rewards()
+    private static void Rewards(IEnumerable<CharacterConfiguration> characters)
     {
         if (!ImGui.BeginTabItem("Rewards"))
             return;
 
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-
-        if (!characters.Any())
-        {
-            Helper.NoDesynthesisData();
-            ImGui.EndTabItem();
-            return;
-        }
-
-        var totalNumber = characters.Sum(c => c.Storage.History.Count);
         var dict = new Dictionary<uint, uint>();
         foreach (var pair in characters.SelectMany(c => c.Storage.Total))
         {
@@ -145,51 +216,49 @@ public partial class MainWindow
                 dict[pair.Key] += pair.Value;
         }
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Desynthesized {totalNumber:N0} time{(totalNumber > 1 ? "s" : "")}");
-        if (ImGui.BeginTable($"##HistoryTable", 3))
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        if (ImGui.BeginChild("RewardsTableChild"))
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.2f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
-
-            ImGui.Indent(10.0f);
-            foreach (var (itemId, count) in dict.Where(pair => pair.Key is > 0 and < 1000000).OrderBy(pair => pair.Key))
+            if (ImGui.BeginTable($"##RewardsTable", 3))
             {
-                var item = ItemSheet.GetRow(itemId)!;
+                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, IconSize.X + 10.0f);
+                ImGui.TableSetupColumn("##item");
+                ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
-                ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
-                ImGui.TableNextColumn();
+                ImGui.Indent(10.0f);
+                foreach (var (itemId, count) in dict.Where(pair => pair.Key is > 0 and < 1000000).OrderBy(pair => pair.Key))
+                {
+                    var item = ItemSheet.GetRow(itemId)!;
 
-                var name = Utils.ToStr(item.Name);
-                ImGui.TextUnformatted(name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(Utils.ToStr(item.Name));
+                    ImGui.TableNextColumn();
+                    DrawIcon(item.Icon);
+                    ImGui.TableNextColumn();
 
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{count}");
-                ImGui.TableNextRow();
+                    var name = Utils.ToStr(item.Name);
+                    if (ImGui.Selectable(name))
+                        ImGui.SetClipboardText(name);
+
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip(Utils.ToStr(item.Name));
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"x{count}");
+                    ImGui.TableNextRow();
+                }
+
+                ImGui.Unindent(10.0f);
+                ImGui.EndTable();
             }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
         }
+        ImGui.EndChild();
         ImGui.EndTabItem();
     }
 
-    private void Source()
+    private static void Source(IEnumerable<CharacterConfiguration> characters)
     {
         if (!ImGui.BeginTabItem("Sources"))
             return;
-
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-
-        if (!characters.Any())
-        {
-            Helper.NoDesynthesisData();
-            ImGui.EndTabItem();
-            return;
-        }
 
         var numberOfDesynthesis = new Dictionary<uint, uint>();
         foreach (var pair in characters.SelectMany(c => c.Storage.History))
@@ -198,52 +267,50 @@ public partial class MainWindow
                 numberOfDesynthesis[pair.Value.Source] += 1;
         }
 
-        ImGui.TextColored(ImGuiColors.HealerGreen, $"Number of Desynthesis:");
-        ImGui.Indent(10.0f);
-        if (ImGui.BeginTable($"##DesynthesisSourceTable", 3))
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        if (ImGui.BeginChild("SourceTableChild"))
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.2f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
-
-            foreach (var (source, count) in numberOfDesynthesis.OrderByDescending(pair => pair.Value))
+            if (ImGui.BeginTable($"##DesynthesisSourceTable", 3))
             {
-                var item = ItemSheet.GetRow(source)!;
+                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, IconSize.X + 10.0f);
+                ImGui.TableSetupColumn("##item");
+                ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
-                ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
-                ImGui.TableNextColumn();
+                ImGui.Indent(10.0f);
+                foreach (var (source, count) in numberOfDesynthesis.OrderByDescending(pair => pair.Value))
+                {
+                    var item = ItemSheet.GetRow(source)!;
 
-                var name = Utils.ToStr(item.Name);
-                ImGui.TextUnformatted(name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(Utils.ToStr(item.Name));
+                    ImGui.TableNextColumn();
+                    DrawIcon(item.Icon);
+                    ImGui.TableNextColumn();
 
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{count:N0}");
-                ImGui.TableNextRow();
+                    var name = Utils.ToStr(item.Name);
+                    if (ImGui.Selectable(name))
+                        ImGui.SetClipboardText(name);
+
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip(Utils.ToStr(item.Name));
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"x{count:N0}");
+                    ImGui.TableNextRow();
+                }
+
+                ImGui.Unindent(10.0f);
+                ImGui.EndTable();
             }
-
-            ImGui.EndTable();
         }
-        ImGui.Unindent(10.0f);
+        ImGui.EndChild();
 
         ImGui.EndTabItem();
     }
 
-    private void SourceSearch()
+    private void SourceSearch(IEnumerable<CharacterConfiguration> characters)
     {
         if (!ImGui.BeginTabItem("Search Source"))
             return;
-
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-
-        if (!characters.Any())
-        {
-            Helper.NoDesynthesisData();
-            ImGui.EndTabItem();
-            return;
-        }
 
         var historyDict = new Dictionary<uint, List<DesynthResult>>();
         foreach (var pair in characters.SelectMany(c => c.Storage.History))
@@ -261,9 +328,9 @@ public partial class MainWindow
         ImGui.PopFont();
 
         if (ExcelSheetSelector.ExcelSheetPopup("ItemAddPopup", out var row, SourceOptions))
-            SearchResult = row;
+            SourceSearchResult = row;
 
-        if (SearchResult == 0)
+        if (SourceSearchResult == 0)
         {
 
             ImGui.EndTabItem();
@@ -274,9 +341,9 @@ public partial class MainWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        var sourceItem = ItemSheet.GetRow(SearchResult)!;
+        var sourceItem = ItemSheet.GetRow(SourceSearchResult)!;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Searched for {Utils.ToStr(sourceItem.Name)}");
-        if (!historyDict.TryGetValue(SearchResult, out var history))
+        if (!historyDict.TryGetValue(SourceSearchResult, out var history))
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this item ...");
 
@@ -373,19 +440,10 @@ public partial class MainWindow
         ImGui.EndTabItem();
     }
 
-    private void ItemSearch()
+    private void ItemSearch(IEnumerable<CharacterConfiguration> characters)
     {
         if (!ImGui.BeginTabItem("Search Item"))
             return;
-
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-
-        if (!characters.Any())
-        {
-            Helper.NoDesynthesisData();
-            ImGui.EndTabItem();
-            return;
-        }
 
         var historyItemDict = new Dictionary<uint, Dictionary<uint, List<DesynthResult>>>();
         foreach (var pair in characters.SelectMany(c => c.Storage.History))
@@ -410,9 +468,9 @@ public partial class MainWindow
         ImGui.PopFont();
 
         if (ExcelSheetSelector.ExcelSheetPopup("ItemAddPopup", out var row, ItemOptions))
-            SearchResult = row;
+            ItemSearchResult = row;
 
-        if (SearchResult == 0)
+        if (ItemSearchResult == 0)
         {
             ImGui.EndTabItem();
             return;
@@ -422,9 +480,9 @@ public partial class MainWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        var sourceItem = ItemSheet.GetRow(SearchResult)!;
+        var sourceItem = ItemSheet.GetRow(ItemSearchResult)!;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Searched for {Utils.ToStr(sourceItem.Name)}");
-        if (!historyItemDict.TryGetValue(SearchResult, out var history))
+        if (!historyItemDict.TryGetValue(ItemSearchResult, out var history))
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this item ...");
 

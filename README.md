@@ -1,14 +1,14 @@
 # TrackyTrack
 Because tracking stuff is fun~
 
-
-### Functions
-Simple and Easy  
+### Functions 
 + Tracks data for Desynthesis
-+ Tracks data for Bulk Desynthesis (requires AllaganTools)
-+ Tracks data for Venture Coffers (requires AllaganTools)
-+ Tracks data for Gacha Coffers (requires AllaganTools)
 + Supports multiple characters
+
+#### With AllaganTools installed
++ Tracks data for Bulk Desynthesis
++ Tracks data for Venture Coffers
++ Tracks data for Gacha Coffers
 
 ### Desynthesis Tracker
 ![desynthesis](TrackyTrack/images/desynthesis.png)

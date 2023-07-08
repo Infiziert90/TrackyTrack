@@ -138,40 +138,46 @@ namespace TrackyTrack
             DesynthResultHook.Original(param1, param2, param3, param4, param5);
 
             // We have to handle Bulk Desynthesis extra
-            var addonPtr = GameGui.GetAddonByName("SalvageAutoDialog", 1);
-            if (addonPtr != nint.Zero)
+            if (Configuration.EnableBulkSupport)
             {
-                if (!AllaganToolsConsumer.SubscribeAddEvent("DesynthItemAdded", DesynthItemAdded))
+                var addonPtr = GameGui.GetAddonByName("SalvageAutoDialog", 1);
+                if (addonPtr != nint.Zero)
+                {
+                    if (!AllaganToolsConsumer.SubscribeAddEvent("DesynthItemAdded", DesynthItemAdded))
+                        return;
+
+                    if (!AllaganToolsConsumer.SubscribeRemoveEvent("DesynthItemRemoved", DesynthItemRemoved))
+                        return;
+
+                    LastBulkResult = new();
+                    FinishedBulkDesynth.Start();
+
                     return;
+                }
+            }
 
-                if (!AllaganToolsConsumer.SubscribeRemoveEvent("DesynthItemRemoved", DesynthItemRemoved))
+            if (Configuration.EnableDesynthesis)
+            {
+                var instance = AgentSalvage.Instance();
+                if (instance == null)
+                {
+                    PluginLog.Warning("AgentSalvage was null");
                     return;
+                }
 
-                LastBulkResult = new();
-                FinishedBulkDesynth.Start();
+                CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+                var character = CharacterStorage[ClientState.LocalContentId];
 
-                return;
+                character.Storage.History.Add(DateTime.Now, new DesynthResult(instance));
+                foreach (var result in instance->DesynthResultSpan.ToArray().Where(r => r.ItemId != 0))
+                {
+                    var id  = result.ItemId > 1_000_000 ? result.ItemId - 1_000_000 : result.ItemId;
+                    if (!character.Storage.Total.TryAdd(id, (uint)result.Quantity))
+                        character.Storage.Total[id] += (uint)result.Quantity;
+                }
+
+                ConfigurationBase.SaveCharacterConfig();
             }
-
-            var instance = AgentSalvage.Instance();
-            if (instance == null)
-            {
-                PluginLog.Warning("AgentSalvage was null");
-                return;
-            }
-
-            CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-            var character = CharacterStorage[ClientState.LocalContentId];
-
-            character.Storage.History.Add(DateTime.Now, new DesynthResult(instance));
-            foreach (var result in instance->DesynthResultSpan.ToArray().Where(r => r.ItemId != 0))
-            {
-                var id  = result.ItemId > 1_000_000 ? result.ItemId - 1_000_000 : result.ItemId;
-                if (!character.Storage.Total.TryAdd(id, (uint)result.Quantity))
-                    character.Storage.Total[id] += (uint)result.Quantity;
-            }
-
-            ConfigurationBase.SaveCharacterConfig();
         }
 
         public void DesynthItemAdded((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
@@ -215,17 +221,18 @@ namespace TrackyTrack
 
         public void CofferTracker(Framework _)
         {
-            if (!Configuration.EnableVentureCoffers)
+            // Both coffers disabled, we don't need to track
+            if (Configuration is { EnableVentureCoffers: false, EnableGachaCoffers: false })
                 return;
 
             var local = ClientState.LocalPlayer;
             if (local == null)
                 return;
 
-            if (!AllaganToolsConsumer.SubscribeAddEvent("CofferItemAdded", NewItemAdded))
+            if (!local.IsCasting)
                 return;
 
-            if (!local.IsCasting)
+            if (!AllaganToolsConsumer.SubscribeAddEvent("CofferItemAdded", NewItemAdded))
                 return;
 
             if (local is { CastActionId: 32161, CastActionType: 2 } or { CastActionId: 36635, CastActionType: 2 } or { CastActionId: 36636, CastActionType: 2 })
@@ -242,7 +249,7 @@ namespace TrackyTrack
             if (!OpeningCoffer)
                 return;
 
-            if (Coffer.Items.Contains(item.ItemId))
+            if (Coffer.Items.Contains(item.ItemId) && Configuration.EnableVentureCoffers)
             {
                 CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
                 var character = CharacterStorage[ClientState.LocalContentId];
@@ -254,7 +261,7 @@ namespace TrackyTrack
                 OpeningCoffer = false;
                 ConfigurationBase.SaveCharacterConfig();
             }
-            else if (GachaContent.ThreeZero.Contains(item.ItemId))
+            else if (GachaContent.ThreeZero.Contains(item.ItemId) && Configuration.EnableGachaCoffers)
             {
                 CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
                 var character = CharacterStorage[ClientState.LocalContentId];
@@ -266,7 +273,7 @@ namespace TrackyTrack
                 OpeningCoffer = false;
                 ConfigurationBase.SaveCharacterConfig();
             }
-            else if (GachaContent.FourZero.Contains(item.ItemId))
+            else if (GachaContent.FourZero.Contains(item.ItemId) && Configuration.EnableGachaCoffers)
             {
                 CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
                 var character = CharacterStorage[ClientState.LocalContentId];

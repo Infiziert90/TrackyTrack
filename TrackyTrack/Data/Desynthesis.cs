@@ -56,3 +56,26 @@ public struct BulkResult
 
     public bool IsValid => Source > 0 && Received[0].Item > 0;
 }
+
+public static class Items
+{
+    public static readonly Dictionary<uint, uint> Worth = new()
+    {
+        // Clear Demimateria
+        {8142, 200},
+        {8143, 1000},
+        {8144, 5000},
+
+        // Battlecraft Demimateria
+        {8145, 60},
+        {8146, 300},
+        {8147, 500},
+
+        // Allagan Piece
+        {5823, 25},
+        {5824, 100},
+        {5825, 500},
+        {5826, 2500},
+        {5827, 10000},
+    };
+}

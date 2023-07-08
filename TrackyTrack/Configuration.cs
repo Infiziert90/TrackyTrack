@@ -9,7 +9,9 @@ namespace TrackyTrack
         public int Version { get; set; } = 0;
 
         public bool EnableDesynthesis = true;
+        public bool EnableBulkSupport = true;
         public bool EnableVentureCoffers = true;
+        public bool EnableGachaCoffers = true;
 
         [NonSerialized]
         private DalamudPluginInterface? PluginInterface;

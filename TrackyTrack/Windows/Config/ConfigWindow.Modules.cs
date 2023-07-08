@@ -11,7 +11,7 @@ public partial class ConfigWindow
 
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Normal Modules:");
             ImGui.Indent(10.0f);
-            changed |= ImGui.Checkbox("Enable Desynthesis Tracking", ref Configuration.EnableDesynthesis);
+            changed |= ImGui.Checkbox("Desynthesis Tracking", ref Configuration.EnableDesynthesis);
             ImGui.Unindent(10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);
@@ -27,7 +27,9 @@ public partial class ConfigWindow
             if (avail)
             {
                 ImGui.Indent(10.0f);
-                changed |= ImGui.Checkbox("Enable Venture Coffer Tracking", ref Configuration.EnableVentureCoffers);
+                changed |= ImGui.Checkbox("Bulk Desynthesis Support", ref Configuration.EnableBulkSupport);
+                changed |= ImGui.Checkbox("Venture Coffer Tracking", ref Configuration.EnableVentureCoffers);
+                changed |= ImGui.Checkbox("Gacha Coffer Tracking", ref Configuration.EnableGachaCoffers);
                 ImGui.Unindent(10.0f);
             }
 
