@@ -56,7 +56,7 @@ public class ConfigurationBase : IDisposable
 
     private static string LoadFile(FileSystemInfo fileInfo)
     {
-        using var reader = new StreamReader(fileInfo.FullName);
+        using var reader = new StreamReader(fileInfo.FullName, new FileStreamOptions { Share = FileShare.ReadWrite});
         return reader.ReadToEnd();
     }
 
@@ -110,8 +110,17 @@ public class ConfigurationBase : IDisposable
             // ignore if file backup couldn't be created once
         }
 
-        File.WriteAllText(filePath, JsonConvert.SerializeObject(savedConfig, Formatting.Indented));
-        LastWriteTimes[contentId] = new FileInfo(filePath).LastWriteTimeUtc;
+        try
+        {
+            using var fileStream = new StreamWriter(filePath, new FileStreamOptions { Mode = FileMode.OpenOrCreate, Access = FileAccess.ReadWrite, Share = FileShare.ReadWrite });
+            fileStream.Write(JsonConvert.SerializeObject(savedConfig, Formatting.Indented));
+            LastWriteTimes[contentId] = new FileInfo(filePath).LastWriteTimeUtc;
+        }
+        catch (Exception e)
+        {
+            PluginLog.Error(e.Message);
+            PluginLog.Error(e.StackTrace);
+        }
     }
 
     public void DeleteCharacter(ulong id)
