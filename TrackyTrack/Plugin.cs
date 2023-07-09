@@ -137,6 +137,14 @@ namespace TrackyTrack
         {
             DesynthResultHook.Original(param1, param2, param3, param4, param5);
 
+            // DesynthResult is triggered by multiple events
+            if (param1 != 3735552)
+            {
+                PluginLog.Error("Received param1 that isn't DesynthResult");
+                PluginLog.Error($"Param1 {param1}");
+                return;
+            }
+
             // We have to handle Bulk Desynthesis extra
             if (Configuration.EnableBulkSupport)
             {
@@ -164,6 +172,10 @@ namespace TrackyTrack
                     PluginLog.Warning("AgentSalvage was null");
                     return;
                 }
+
+                // Making sure that we received real items
+                if (instance->DesynthItemId == 0)
+                    return;
 
                 CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
                 var character = CharacterStorage[ClientState.LocalContentId];
@@ -202,6 +214,7 @@ namespace TrackyTrack
 
         public void StoreBulkResult(object? _, ElapsedEventArgs __)
         {
+            PluginLog.Information("BulkTimer has elapsed");
             if (!LastBulkResult.IsValid)
                 return;
 

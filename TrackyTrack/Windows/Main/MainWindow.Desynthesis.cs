@@ -128,6 +128,19 @@ public partial class MainWindow
             ImGui.TextUnformatted($"{sum:N0}");
             ImGui.TableNextRow();
 
+            sum = 0UL;
+            foreach (var pair in dict.Where(pair => pair.Key is > 20 and < 1000000))
+            {
+                item = ItemSheet.GetRow(pair.Key)!;
+                sum += item.PriceLow * pair.Value;
+            }
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Sold To NPC");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{sum:N0}");
+            ImGui.TableNextRow();
+
             ImGui.EndTable();
         }
         ImGui.EndTabItem();
@@ -171,7 +184,10 @@ public partial class MainWindow
         var source = ItemSheet.GetRow(resultPair.Value.Source)!;
         DrawIcon(source.Icon);
         ImGui.SameLine();
-        ImGui.TextColored(ImGuiColors.HealerGreen, Utils.ToStr(source.Name));
+        ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.HealerGreen);
+        if (ImGui.Selectable(Utils.ToStr(source.Name)))
+            ImGui.SetClipboardText(Utils.ToStr(source.Name));
+        ImGui.PopStyleColor();
 
         if (ImGui.BeginTable($"##HistoryTable", 3))
         {
@@ -189,7 +205,9 @@ public partial class MainWindow
                 ImGui.TableNextColumn();
 
                 var name = Utils.ToStr(item.Name);
-                ImGui.TextUnformatted(name);
+                if (ImGui.Selectable(name))
+                    ImGui.SetClipboardText(name);
+
                 if (ImGui.IsItemHovered())
                     ImGui.SetTooltip(Utils.ToStr(item.Name));
 
@@ -321,7 +339,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis source");
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis source item");
         var buttonWidth = ImGui.GetContentRegionAvail().X / 2;
         ImGui.PushFont(UiBuilder.IconFont);
         ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(buttonWidth, 0));
@@ -345,7 +363,7 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Searched for {Utils.ToStr(sourceItem.Name)}");
         if (!historyDict.TryGetValue(SourceSearchResult, out var history))
         {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this item ...");
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this source item ...");
 
             ImGui.EndTabItem();
             return;
@@ -396,46 +414,92 @@ public partial class MainWindow
             ImGui.EndTable();
         }
 
-        ImGuiHelpers.ScaledDummy(10.0f);
+        ImGuiHelpers.ScaledDummy(5.0f);
 
-        ImGui.TextColored(ImGuiColors.HealerGreen, $"History:");
-        ImGui.Indent(10.0f);
-        if (ImGui.BeginTable($"##HistoryTable", 3))
+        var dict = new Dictionary<uint, uint>();
+        foreach (var result in history.Select(c => c.Received.First()).Where(h => h.Item > 0))
+            if (!dict.TryAdd(result.Item, 1))
+                dict[result.Item] += 1;
+
+        var sortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.2f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
+            var item = ItemSheet.GetRow(pair.Key)!;
+            var count = pair.Value;
+            var percentage = (double) count / desynthesized * 100.0;
+            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+        }).OrderByDescending(x => x.Percentage);
 
-            foreach (var result in history)
+        ImGui.TextColored(ImGuiColors.HealerGreen, $"Percentages:");
+
+        if (ImGui.BeginTable($"##PercentageSourceTable", 3))
+        {
+            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, IconSize.X + 10.0f);
+            ImGui.TableSetupColumn("Item##item");
+            ImGui.TableSetupColumn("Pct##percentage", 0, 0.25f);
+
+            ImGui.Indent(10.0f);
+            foreach (var sortedEntry in sortedList)
             {
-                foreach (var itemResult in result.Received)
-                {
-                    var item = ItemSheet.GetRow(itemResult.Item)!;
-
-                    ImGui.TableNextColumn();
-                    DrawIcon(item.Icon);
-                    ImGui.TableNextColumn();
-
-                    var name = Utils.ToStr(item.Name);
-                    ImGui.TextUnformatted(name);
-                    if (ImGui.IsItemHovered())
-                        ImGui.SetTooltip(Utils.ToStr(item.Name));
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"x{itemResult.Count}");
-                    ImGui.TableNextRow();
-                }
-
-                // add spacing
                 ImGui.TableNextColumn();
-                ImGuiHelpers.ScaledDummy(5.0f);
+                DrawIcon(sortedEntry.Icon);
+                ImGui.TableNextColumn();
 
+                ImGui.TextUnformatted(sortedEntry.Name);
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(sortedEntry.Name);
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
                 ImGui.TableNextRow();
             }
+            ImGui.Unindent(10.0f);
 
             ImGui.EndTable();
         }
-        ImGui.Unindent(10.0f);
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, $"History:");
+        if (ImGui.BeginChild("SearchSourceHistoryChild"))
+        {
+            if (ImGui.BeginTable($"##SearchSourceHistoryTable", 3))
+            {
+                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, IconSize.X + 10.0f);
+                ImGui.TableSetupColumn("##item");
+                ImGui.TableSetupColumn("##amount", 0, 0.2f);
+
+                ImGui.Indent(10.0f);
+                foreach (var result in history)
+                {
+                    foreach (var itemResult in result.Received)
+                    {
+                        var item = ItemSheet.GetRow(itemResult.Item)!;
+
+                        ImGui.TableNextColumn();
+                        DrawIcon(item.Icon);
+                        ImGui.TableNextColumn();
+
+                        var name = Utils.ToStr(item.Name);
+                        ImGui.TextUnformatted(name);
+                        if (ImGui.IsItemHovered())
+                            ImGui.SetTooltip(Utils.ToStr(item.Name));
+
+                        ImGui.TableNextColumn();
+                        ImGui.TextUnformatted($"x{itemResult.Count}");
+                        ImGui.TableNextRow();
+                    }
+
+                    // add spacing
+                    ImGui.TableNextColumn();
+                    ImGuiHelpers.ScaledDummy(5.0f);
+
+                    ImGui.TableNextRow();
+                }
+                ImGui.Unindent(10.0f);
+                ImGui.EndTable();
+            }
+        }
+        ImGui.EndChild();
 
         ImGui.EndTabItem();
     }
@@ -461,7 +525,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis reward");
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis reward item");
         var buttonWidth = ImGui.GetContentRegionAvail().X / 2;
         ImGui.PushFont(UiBuilder.IconFont);
         ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(buttonWidth, 0));
@@ -484,7 +548,7 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Searched for {Utils.ToStr(sourceItem.Name)}");
         if (!historyItemDict.TryGetValue(ItemSearchResult, out var history))
         {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this item ...");
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this reward item ...");
 
             ImGui.EndTabItem();
             return;
