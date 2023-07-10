@@ -28,3 +28,15 @@ public static class Utils
         };
     }
 }
+
+public static class StringExtensions
+{
+    public static bool ContainsAny(this string word, params string[] searchPhrases)
+    {
+        foreach (var phrase in searchPhrases)
+            if (word.Contains(phrase))
+                return true;
+
+        return false;
+    }
+}

@@ -34,7 +34,7 @@ public class ConfigurationBase : IDisposable
     {
         foreach (var file in Plugin.PluginInterface.ConfigDirectory.EnumerateFiles())
         {
-            if (file.Name.Contains(".bak"))
+            if (file.Name.ContainsAny(".bak", ".tmp"))
                 continue;
 
             ulong id;
@@ -42,10 +42,9 @@ public class ConfigurationBase : IDisposable
             {
                 id = Convert.ToUInt64(Path.GetFileNameWithoutExtension(file.Name));
             }
-            catch (Exception e)
+            catch
             {
                 PluginLog.Error($"Found file that isn't convertable. Filename: {file.Name}");
-                PluginLog.Error(e.Message);
                 continue;
             }
 
@@ -56,8 +55,21 @@ public class ConfigurationBase : IDisposable
 
     private static string LoadFile(FileSystemInfo fileInfo)
     {
-        using var reader = new StreamReader(fileInfo.FullName, new FileStreamOptions { Share = FileShare.ReadWrite});
-        return reader.ReadToEnd();
+        for (var i = 0; i < 5; i++)
+        {
+            try
+            {
+                using var reader = new StreamReader(fileInfo.FullName);
+                return reader.ReadToEnd();
+            }
+            catch
+            {
+                // Try to read until counter runs out
+                PluginLog.Warning($"Config file read was blocked {i+1}/5");
+            }
+        }
+
+        return string.Empty;
     }
 
     public CharacterConfiguration LoadConfig(ulong contentId)
@@ -96,9 +108,7 @@ public class ConfigurationBase : IDisposable
         if (existingConfigs.Skip(5).Any())
         {
             foreach (var file in existingConfigs.Skip(5).ToList())
-            {
                 file.Delete();
-            }
         }
 
         try
@@ -110,11 +120,34 @@ public class ConfigurationBase : IDisposable
             // ignore if file backup couldn't be created once
         }
 
+        Task.Run(() => SaveAndTryMoveConfig(contentId, filePath, savedConfig));
+    }
+
+    public async Task SaveAndTryMoveConfig(ulong contentId, string filePath, CharacterConfiguration savedConfig)
+    {
         try
         {
-            using var fileStream = new StreamWriter(filePath, new FileStreamOptions { Mode = FileMode.OpenOrCreate, Access = FileAccess.ReadWrite, Share = FileShare.ReadWrite });
-            fileStream.Write(JsonConvert.SerializeObject(savedConfig, Formatting.Indented));
-            LastWriteTimes[contentId] = new FileInfo(filePath).LastWriteTimeUtc;
+            var tmpPath = $"{filePath + ".tmp"}";
+            if (File.Exists(tmpPath))
+                File.Delete(tmpPath);
+
+            File.WriteAllText(tmpPath, JsonConvert.SerializeObject(savedConfig, Formatting.Indented));
+
+            for (var i = 0; i < 5; i++)
+            {
+                try
+                {
+                    File.Move(tmpPath, filePath, true);
+                    LastWriteTimes[contentId] = new FileInfo(filePath).LastWriteTimeUtc;
+                    return;
+                }
+                catch
+                {
+                    // Just try again until counter runs out
+                    PluginLog.Warning($"Config file couldn't be moved {i+1}/5");
+                    await Task.Delay(50, CancellationToken.Token);
+                }
+            }
         }
         catch (Exception e)
         {
@@ -152,14 +185,15 @@ public class ConfigurationBase : IDisposable
 
             foreach (var (contentId, savedWriteTime) in LastWriteTimes.ToArray())
             {
+                // No need to override current character as we already have up to date config
+                if (contentId != Plugin.ClientState.LocalContentId)
+                    continue;
+
                 var lastWriteTime = GetConfigLastWriteTime(contentId);
                 if (lastWriteTime != savedWriteTime)
                 {
                     LastWriteTimes[contentId] = lastWriteTime;
-
-                    // No need to override current character as we already have up to date config
-                    if (contentId != Plugin.ClientState.LocalContentId)
-                        Plugin.CharacterStorage[contentId] = LoadConfig(contentId);
+                    Plugin.CharacterStorage[contentId] = LoadConfig(contentId);
                 }
             }
         }
