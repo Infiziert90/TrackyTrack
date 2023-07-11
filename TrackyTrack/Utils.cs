@@ -27,16 +27,17 @@ public static class Utils
             _ => unsortedList.OrderBy(sortFunc)
         };
     }
-}
 
-public static class StringExtensions
-{
-    public static bool ContainsAny(this string word, params string[] searchPhrases)
+
+    public static TValue GetOrCreate<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key)
+        where TValue : new()
     {
-        foreach (var phrase in searchPhrases)
-            if (word.Contains(phrase))
-                return true;
+        if (!dict.TryGetValue(key, out var val))
+        {
+            val = new TValue();
+            dict.Add(key, val);
+        }
 
-        return false;
+        return val;
     }
 }

@@ -34,24 +34,8 @@ public class ConfigurationBase : IDisposable
     public void Load()
     {
         foreach (var file in Plugin.PluginInterface.ConfigDirectory.EnumerateFiles())
-        {
-            if (file.Name.ContainsAny(".bak", ".tmp"))
-                continue;
-
-            ulong id;
-            try
-            {
-                id = Convert.ToUInt64(Path.GetFileNameWithoutExtension(file.Name));
-            }
-            catch
-            {
-                PluginLog.Error($"Found file that isn't convertable. Filename: {file.Name}");
-                continue;
-            }
-
-            var config = LoadConfig(id);
-            Plugin.CharacterStorage[id] = config;
-        }
+            if (ulong.TryParse(Path.GetFileNameWithoutExtension(file.Name), out var id))
+                Plugin.CharacterStorage[id] = LoadConfig(id);
     }
 
     private static string LoadFile(FileSystemInfo fileInfo)
@@ -66,8 +50,9 @@ public class ConfigurationBase : IDisposable
             catch
             {
                 // Try to read until counter runs out
-                Plugin.PluginInterface.UiBuilder.AddNotification($"Config file read failed {i+1}/5", "Failed Read", NotificationType.Warning);
-                PluginLog.Warning($"Config file read was blocked {i+1}/5");
+                var content = $"Config file read failed {i + 1}/5";
+                Plugin.PluginInterface.UiBuilder.AddNotification(content, "Failed Read", NotificationType.Warning);
+                PluginLog.Warning(content);
             }
         }
 
@@ -104,32 +89,33 @@ public class ConfigurationBase : IDisposable
         if (!Plugin.CharacterStorage.TryGetValue(contentId, out var savedConfig))
             return;
 
+        var miscFolder = Path.Combine(ConfigurationDirectory, $"Misc");
+        Directory.CreateDirectory(miscFolder);
+
         var filePath = Path.Combine(ConfigurationDirectory, $"{contentId}.json");
-        var existingConfigs = Directory.EnumerateFiles(ConfigurationDirectory, $"{contentId}.json.bak.*")
+        var existingConfigs = Directory.EnumerateFiles(miscFolder, $"{contentId}.json.bak.*")
                                        .Select(c => new FileInfo(c)).OrderByDescending(c => c.LastWriteTime).ToList();
         if (existingConfigs.Skip(5).Any())
-        {
             foreach (var file in existingConfigs.Skip(5).ToList())
                 file.Delete();
-        }
 
         try
         {
-            File.Copy(filePath, $"{filePath}.bak.{DateTime.Now:yyyyMMddHH}", overwrite: true);
+            File.Copy(filePath, $"{Path.Combine(miscFolder, $"{contentId}.json")}.bak.{DateTime.Now:yyyyMMddHH}", overwrite: true);
         }
         catch
         {
             // ignore if file backup couldn't be created once
         }
 
-        Task.Run(() => SaveAndTryMoveConfig(contentId, filePath, savedConfig));
+        Task.Run(() => SaveAndTryMoveConfig(contentId, miscFolder, filePath, savedConfig));
     }
 
-    public async Task SaveAndTryMoveConfig(ulong contentId, string filePath, CharacterConfiguration savedConfig)
+    public async Task SaveAndTryMoveConfig(ulong contentId, string miscFolder, string filePath, CharacterConfiguration savedConfig)
     {
         try
         {
-            var tmpPath = $"{filePath + ".tmp"}";
+            var tmpPath = $"{Path.Combine(miscFolder, $"{contentId}.json.tmp")}";
             if (File.Exists(tmpPath))
                 File.Delete(tmpPath);
 
@@ -146,8 +132,9 @@ public class ConfigurationBase : IDisposable
                 catch
                 {
                     // Just try again until counter runs out
-                    Plugin.PluginInterface.UiBuilder.AddNotification($"Config file move failed {i+1}/5", "Failed Move", NotificationType.Warning);
-                    PluginLog.Warning($"Config file couldn't be moved {i+1}/5");
+                    var content = $"Config file couldn't be moved {i + 1}/5";
+                    Plugin.PluginInterface.UiBuilder.AddNotification(content, "Failed Move", NotificationType.Warning);
+                    PluginLog.Warning(content);
                     await Task.Delay(50, CancellationToken.Token);
                 }
             }
@@ -155,7 +142,7 @@ public class ConfigurationBase : IDisposable
         catch (Exception e)
         {
             PluginLog.Error(e.Message);
-            PluginLog.Error(e.StackTrace);
+            PluginLog.Error(e.StackTrace!);
         }
     }
 
@@ -186,17 +173,20 @@ public class ConfigurationBase : IDisposable
         {
             await Task.Delay(TimeSpan.FromSeconds(5), CancellationToken.Token);
 
-            foreach (var (contentId, savedWriteTime) in LastWriteTimes.ToArray())
+            foreach (var file in Plugin.PluginInterface.ConfigDirectory.EnumerateFiles())
             {
-                // No need to override current character as we already have up to date config
-                if (contentId == Plugin.ClientState.LocalContentId)
-                    continue;
-
-                var lastWriteTime = GetConfigLastWriteTime(contentId);
-                if (lastWriteTime != savedWriteTime)
+                if (ulong.TryParse(Path.GetFileNameWithoutExtension(file.Name), out var id))
                 {
-                    LastWriteTimes[contentId] = lastWriteTime;
-                    Plugin.CharacterStorage[contentId] = LoadConfig(contentId);
+                    // No need to override current character as we already have up to date config
+                    if (id == Plugin.ClientState.LocalContentId)
+                        continue;
+
+                    var lastWriteTime = GetConfigLastWriteTime(id);
+                    if (lastWriteTime != LastWriteTimes.GetOrCreate(id))
+                    {
+                        LastWriteTimes[id] = lastWriteTime;
+                        Plugin.CharacterStorage[id] = LoadConfig(id);
+                    }
                 }
             }
         }

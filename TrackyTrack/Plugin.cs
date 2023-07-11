@@ -214,7 +214,6 @@ namespace TrackyTrack
 
         public void StoreBulkResult(object? _, ElapsedEventArgs __)
         {
-            PluginLog.Information("BulkTimer has elapsed");
             if (!LastBulkResult.IsValid)
                 return;
 

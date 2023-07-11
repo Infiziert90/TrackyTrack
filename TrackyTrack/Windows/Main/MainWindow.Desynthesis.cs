@@ -79,7 +79,7 @@ public partial class MainWindow
 
                 ItemSearch(characters);
 
-                ILvLSearch();
+                Finder();
 
                 ImGui.EndTabBar();
             }
@@ -636,9 +636,9 @@ public partial class MainWindow
         ImGui.EndTabItem();
     }
 
-    private void ILvLSearch()
+    private void Finder()
     {
-        if (!ImGui.BeginTabItem("Search ILvL"))
+        if (!ImGui.BeginTabItem("Finder"))
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
@@ -646,7 +646,11 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesizable source");
 
         var changed = false;
-        changed |= ImGui.SliderInt("##ilvlInput", ref ILvLSearchResult, 1, HighestILvL, "iLvL %d");
+        if (ImGui.SliderInt("##ilvlInput", ref ILvLSearchResult, 1, HighestILvL, "iLvL %d"))
+        {
+            ILvLSearchResult = (int) Math.Round(ILvLSearchResult / 5.0) * 5;
+            changed = true;
+        }
         changed |= ImGui.Combo("##jobSelection", ref SelectedJob, Jobs, Jobs.Length);
         changed |= ImGui.Checkbox("Exclude Gear", ref ExcludeGear);
         changed |= ImGui.Checkbox("Exclude Marketboard Prohibited", ref ExcludeNonMB);
