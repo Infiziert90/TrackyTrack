@@ -6,11 +6,39 @@ namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
+    private Item[] DesynthCache = null!;
+
     private int SelectedCharacter;
     private int SelectedHistory;
 
     private uint SourceSearchResult;
     private uint ItemSearchResult;
+    private int ILvLSearchResult = 1;
+
+    private int HighestILvL = 1;
+    private int SelectedJob = 0;
+    private bool ExcludeGear = true;
+    private bool ExcludeNonMB = true;
+
+    private Item[] SearchCache = null!;
+
+    private static readonly string[] Jobs = { "CRP", "BSM", "ARM", "GSM", "LTW", "WVR", "ALC", "CUL" };
+
+    public void InitializeDesynth()
+    {
+        DesynthCache = ItemSheet.Where(i => i.Desynth > 0).ToArray();
+        HighestILvL = DesynthCache.Select(i => (int)i.LevelItem.Row).Max();
+
+        // Fill once
+        SearchCache = DesynthCache.Where(i => i.Desynth > 0)
+                                  .Where(i => i.ItemUICategory.Row != 39)
+                                  .Where(i => i.LevelItem.Row > ILvLSearchResult)
+                                  .Where(i => i.ClassJobRepair.Row == SelectedJob + 8)
+                                  .Where(i => !ExcludeGear || i.EquipSlotCategory.Row == 0)
+                                  .Where(i => !ExcludeNonMB || !i.IsUntradable)
+                                  .OrderBy(i => i.LevelItem.Row)
+                                  .ToArray();
+    }
 
     private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> SourceOptions = new()
     {
@@ -50,6 +78,8 @@ public partial class MainWindow
                 SourceSearch(characters);
 
                 ItemSearch(characters);
+
+                ILvLSearch();
 
                 ImGui.EndTabBar();
             }
@@ -482,7 +512,7 @@ public partial class MainWindow
                         var name = Utils.ToStr(item.Name);
                         ImGui.TextUnformatted(name);
                         if (ImGui.IsItemHovered())
-                            ImGui.SetTooltip(Utils.ToStr(item.Name));
+                            ImGui.SetTooltip(name);
 
                         ImGui.TableNextColumn();
                         ImGui.TextUnformatted($"x{itemResult.Count}");
@@ -602,6 +632,78 @@ public partial class MainWindow
 
             ImGui.EndTable();
         }
+
+        ImGui.EndTabItem();
+    }
+
+    private void ILvLSearch()
+    {
+        if (!ImGui.BeginTabItem("Search ILvL"))
+            return;
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesizable source");
+
+        var changed = false;
+        changed |= ImGui.SliderInt("##ilvlInput", ref ILvLSearchResult, 1, HighestILvL, "iLvL %d");
+        changed |= ImGui.Combo("##jobSelection", ref SelectedJob, Jobs, Jobs.Length);
+        changed |= ImGui.Checkbox("Exclude Gear", ref ExcludeGear);
+        changed |= ImGui.Checkbox("Exclude Marketboard Prohibited", ref ExcludeNonMB);
+
+        if (changed)
+        {
+            SearchCache = DesynthCache.Where(i => i.ItemUICategory.Row != 39)
+                                      .Where(i => i.LevelItem.Row > ILvLSearchResult)
+                                      .Where(i => i.ClassJobRepair.Row == SelectedJob + 8)
+                                      .Where(i => !ExcludeGear || i.EquipSlotCategory.Row == 0)
+                                      .Where(i => !ExcludeNonMB || !i.IsUntradable)
+                                      .OrderBy(i => i.LevelItem.Row)
+                                      .ToArray();
+        }
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.Separator();
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        if (!SearchCache.Any())
+        {
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this job and iLvL ...");
+
+            ImGui.EndTabItem();
+            return;
+        }
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, $"Found {SearchCache.Length:N0} item{(SearchCache.Length > 1 ? "s" : "")}");
+        if (ImGui.BeginChild("##PossibleItemsChild"))
+        {
+            ImGui.Indent(10.0f);
+            if (ImGui.BeginTable($"##PossibleItemsTable", 3))
+            {
+                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, IconSize.X + 5.0f);
+                ImGui.TableSetupColumn("##item");
+                ImGui.TableSetupColumn("##iLvL", 0, 0.25f);
+
+                foreach (var item in SearchCache)
+                {
+                    ImGui.TableNextColumn();
+                    DrawIcon(item.Icon);
+                    ImGui.TableNextColumn();
+
+                    var name = Utils.ToStr(item.Name);
+                    if (ImGui.Selectable(name))
+                        ImGui.SetClipboardText(name);
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"iLvL {item.LevelItem.Row}");
+                    ImGui.TableNextRow();
+                }
+
+                ImGui.EndTable();
+            }
+            ImGui.Unindent(10.0f);
+        }
+        ImGui.EndChild();
 
         ImGui.EndTabItem();
     }

@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Logging;
 using Newtonsoft.Json;
 
@@ -65,6 +66,7 @@ public class ConfigurationBase : IDisposable
             catch
             {
                 // Try to read until counter runs out
+                Plugin.PluginInterface.UiBuilder.AddNotification($"Config file read failed {i+1}/5", "Failed Read", NotificationType.Warning);
                 PluginLog.Warning($"Config file read was blocked {i+1}/5");
             }
         }
@@ -144,6 +146,7 @@ public class ConfigurationBase : IDisposable
                 catch
                 {
                     // Just try again until counter runs out
+                    Plugin.PluginInterface.UiBuilder.AddNotification($"Config file move failed {i+1}/5", "Failed Move", NotificationType.Warning);
                     PluginLog.Warning($"Config file couldn't be moved {i+1}/5");
                     await Task.Delay(50, CancellationToken.Token);
                 }
@@ -186,7 +189,7 @@ public class ConfigurationBase : IDisposable
             foreach (var (contentId, savedWriteTime) in LastWriteTimes.ToArray())
             {
                 // No need to override current character as we already have up to date config
-                if (contentId != Plugin.ClientState.LocalContentId)
+                if (contentId == Plugin.ClientState.LocalContentId)
                     continue;
 
                 var lastWriteTime = GetConfigLastWriteTime(contentId);

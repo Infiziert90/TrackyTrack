@@ -24,6 +24,8 @@ public partial class MainWindow : Window, IDisposable
         Configuration = configuration;
 
         ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
+
+        InitializeDesynth();
     }
 
     public void Dispose() { }
