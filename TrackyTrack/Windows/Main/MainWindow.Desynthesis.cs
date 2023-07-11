@@ -75,11 +75,9 @@ public partial class MainWindow
 
                 Source(characters);
 
-                SourceSearch(characters);
+                Search(characters);
 
-                ItemSearch(characters);
-
-                Finder();
+                Find();
 
                 ImGui.EndTabBar();
             }
@@ -355,11 +353,55 @@ public partial class MainWindow
         ImGui.EndTabItem();
     }
 
-    private void SourceSearch(IEnumerable<CharacterConfiguration> characters)
+    private void Search(IEnumerable<CharacterConfiguration> characters)
     {
-        if (!ImGui.BeginTabItem("Search Source"))
+        if (!ImGui.BeginTabItem("Search"))
             return;
 
+        ImGui.Columns(2);
+
+        var buttonWidth = ImGui.GetContentRegionAvail().X - (20.0f * ImGuiHelpers.GlobalScale);
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Search through your sources");
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.Button($"{FontAwesomeIcon.Search.ToIconString()}##sources", new Vector2(buttonWidth, 0));
+        ImGui.PopFont();
+
+        if (ExcelSheetSelector.ExcelSheetPopup("SourceResultPopup", out var sourceRow, SourceOptions))
+        {
+            SourceSearchResult = sourceRow;
+            ItemSearchResult = 0;
+        }
+
+        ImGui.NextColumn();
+
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Search through your rewards");
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.Button($"{FontAwesomeIcon.Search.ToIconString()}##item", new Vector2(buttonWidth, 0));
+        ImGui.PopFont();
+
+        if (ExcelSheetSelector.ExcelSheetPopup("ItemResultPopup", out var itemRow, ItemOptions))
+        {
+            SourceSearchResult = 0;
+            ItemSearchResult = itemRow;
+        }
+
+        ImGui.Columns(1);
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.Separator();
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        if (ItemSearchResult > 0)
+            ItemSearch(characters);
+        else if (SourceSearchResult > 0)
+            SourceSearch(characters);
+
+        ImGui.EndTabItem();
+    }
+
+    private void SourceSearch(IEnumerable<CharacterConfiguration> characters)
+    {
         var historyDict = new Dictionary<uint, List<DesynthResult>>();
         foreach (var pair in characters.SelectMany(c => c.Storage.History))
         {
@@ -367,35 +409,11 @@ public partial class MainWindow
                 historyDict[pair.Value.Source].Add(pair.Value);
         }
 
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis source item");
-        var buttonWidth = ImGui.GetContentRegionAvail().X / 2;
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(buttonWidth, 0));
-        ImGui.PopFont();
-
-        if (ExcelSheetSelector.ExcelSheetPopup("ItemAddPopup", out var row, SourceOptions))
-            SourceSearchResult = row;
-
-        if (SourceSearchResult == 0)
-        {
-
-            ImGui.EndTabItem();
-            return;
-        }
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-        ImGui.Separator();
-        ImGuiHelpers.ScaledDummy(5.0f);
-
         var sourceItem = ItemSheet.GetRow(SourceSearchResult)!;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Searched for {Utils.ToStr(sourceItem.Name)}");
         if (!historyDict.TryGetValue(SourceSearchResult, out var history))
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this source item ...");
-
-            ImGui.EndTabItem();
             return;
         }
 
@@ -446,12 +464,12 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        var dict = new Dictionary<uint, uint>();
+        var percentageDict = new Dictionary<uint, uint>();
         foreach (var result in history.Select(c => c.Received.First()).Where(h => h.Item > 0))
-            if (!dict.TryAdd(result.Item, 1))
-                dict[result.Item] += 1;
+            if (!percentageDict.TryAdd(result.Item, 1))
+                percentageDict[result.Item] += 1;
 
-        var sortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
+        var sortedList = percentageDict.Where(pair => pair.Value > 0).Select(pair =>
         {
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
@@ -472,14 +490,13 @@ public partial class MainWindow
             {
                 ImGui.TableNextColumn();
                 DrawIcon(sortedEntry.Icon);
-                ImGui.TableNextColumn();
 
+                ImGui.TableNextColumn();
                 ImGui.TextUnformatted(sortedEntry.Name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(sortedEntry.Name);
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
+
                 ImGui.TableNextRow();
             }
             ImGui.Unindent(10.0f);
@@ -530,15 +547,10 @@ public partial class MainWindow
             }
         }
         ImGui.EndChild();
-
-        ImGui.EndTabItem();
     }
 
     private void ItemSearch(IEnumerable<CharacterConfiguration> characters)
     {
-        if (!ImGui.BeginTabItem("Search Item"))
-            return;
-
         var historyItemDict = new Dictionary<uint, Dictionary<uint, List<DesynthResult>>>();
         foreach (var pair in characters.SelectMany(c => c.Storage.History))
         {
@@ -553,34 +565,11 @@ public partial class MainWindow
                     historyItemDict[pair.Value.Received.First().Item][pair.Value.Source].Add(pair.Value);
         }
 
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesis reward item");
-        var buttonWidth = ImGui.GetContentRegionAvail().X / 2;
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(buttonWidth, 0));
-        ImGui.PopFont();
-
-        if (ExcelSheetSelector.ExcelSheetPopup("ItemAddPopup", out var row, ItemOptions))
-            ItemSearchResult = row;
-
-        if (ItemSearchResult == 0)
-        {
-            ImGui.EndTabItem();
-            return;
-        }
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-        ImGui.Separator();
-        ImGuiHelpers.ScaledDummy(5.0f);
-
         var sourceItem = ItemSheet.GetRow(ItemSearchResult)!;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Searched for {Utils.ToStr(sourceItem.Name)}");
         if (!historyItemDict.TryGetValue(ItemSearchResult, out var history))
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this reward item ...");
-
-            ImGui.EndTabItem();
             return;
         }
 
@@ -632,13 +621,11 @@ public partial class MainWindow
 
             ImGui.EndTable();
         }
-
-        ImGui.EndTabItem();
     }
 
-    private void Finder()
+    private void Find()
     {
-        if (!ImGui.BeginTabItem("Finder"))
+        if (!ImGui.BeginTabItem("Find"))
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
