@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+using System.Net.Http;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 
@@ -27,7 +29,6 @@ public static class Utils
             _ => unsortedList.OrderBy(sortFunc)
         };
     }
-
 
     public static TValue GetOrCreate<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key)
         where TValue : new()

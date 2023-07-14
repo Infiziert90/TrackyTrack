@@ -1,4 +1,5 @@
-﻿using Dalamud.Logging;
+﻿using System.Collections.Specialized;
+using Dalamud.Logging;
 using TrackyTrack.Data;
 using Lumina.Excel.GeneratedSheets;
 
@@ -56,8 +57,7 @@ public partial class MainWindow
     {
         if (ImGui.BeginTabItem("Desynthesis"))
         {
-            var characters = Plugin.CharacterStorage.Values.ToArray();
-            if (!characters.Any())
+            if (!Plugin.CharacterStorage.Values.Any(c => c.Storage.History.Count > 0))
             {
                 Helper.NoDesynthesisData();
 
@@ -65,6 +65,7 @@ public partial class MainWindow
                 return;
             }
 
+            var characters = Plugin.CharacterStorage.Values.ToArray();
             if (ImGui.BeginTabBar("##DesynthTabBar"))
             {
                 Stats(characters);
@@ -91,6 +92,13 @@ public partial class MainWindow
             return;
 
         var totalNumber = characters.Sum(c => c.Storage.History.Count);
+        if (totalNumber == 0)
+        {
+            ImGui.TextColored(ImGuiColors.ParsedOrange, "Tracking starts after your first desynthesis.");
+            ImGui.EndTabItem();
+            return;
+        }
+
         var dict = new Dictionary<uint, uint>();
         foreach (var pair in characters.SelectMany(c => c.Storage.Total))
         {
@@ -147,8 +155,8 @@ public partial class MainWindow
             ImGui.TextUnformatted($"x{bestCrystal.Value}");
 
             var sum = 0UL;
-            foreach (var pair in dict.Where(pair => Items.Worth.ContainsKey(pair.Key)))
-                sum += Items.Worth[pair.Key] * pair.Value;
+            foreach (var pair in dict.Where(pair => Items.GilItems.ContainsKey(pair.Key)))
+                sum += Items.GilItems[pair.Key] * pair.Value;
 
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Pure Gil Made");
@@ -182,6 +190,13 @@ public partial class MainWindow
         var existingCharacters = Plugin.CharacterStorage.Values
                                        .Select(character => $"{character.CharacterName}@{character.World}")
                                        .ToArray();
+
+        if (!existingCharacters.Any())
+        {
+            ImGui.TextColored(ImGuiColors.ParsedOrange, "Tracking starts after your first desynthesis.");
+            ImGui.EndTabItem();
+            return;
+        }
 
         var selectedCharacter = SelectedCharacter;
         ImGui.Combo("##existingCharacters", ref selectedCharacter, existingCharacters, existingCharacters.Length);
@@ -262,6 +277,13 @@ public partial class MainWindow
                 dict[pair.Key] += pair.Value;
         }
 
+        if (!dict.Any())
+        {
+            ImGui.TextColored(ImGuiColors.ParsedOrange, "Tracking starts after your first desynthesis.");
+            ImGui.EndTabItem();
+            return;
+        }
+
         ImGuiHelpers.ScaledDummy(5.0f);
 
         if (ImGui.BeginChild("RewardsTableChild"))
@@ -311,6 +333,13 @@ public partial class MainWindow
         {
             if (!numberOfDesynthesis.TryAdd(pair.Value.Source, 1))
                 numberOfDesynthesis[pair.Value.Source] += 1;
+        }
+
+        if (!numberOfDesynthesis.Any())
+        {
+            ImGui.TextColored(ImGuiColors.ParsedOrange, "Tracking starts after your first desynthesis.");
+            ImGui.EndTabItem();
+            return;
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
@@ -440,7 +469,7 @@ public partial class MainWindow
             ImGui.TableSetupColumn("##statSymbol", 0, 0.05f);
             ImGui.TableSetupColumn("##statMax", 0, 0.1f);
 
-            foreach (var statPair in statDict.OrderByDescending(pair => pair.Key))
+            foreach (var statPair in SortByKeyCustom(statDict))
             {
                 var name = Utils.ToStr(ItemSheet.GetRow(statPair.Key)!.Name);
                 ImGui.TableNextColumn();
@@ -602,7 +631,7 @@ public partial class MainWindow
             ImGui.TableSetupColumn("##statSymbol", 0, 0.05f);
             ImGui.TableSetupColumn("##statMax", 0, 0.1f);
 
-            foreach (var statPair in statDict.OrderByDescending(pair => pair.Key))
+            foreach (var statPair in SortByKeyCustom(statDict))
             {
                 var name = Utils.ToStr(ItemSheet.GetRow(statPair.Key)!.Name);
                 ImGui.TableNextColumn();
@@ -700,4 +729,20 @@ public partial class MainWindow
 
         ImGui.EndTabItem();
     }
+
+private const int GilItemOrder = 1_000_000;
+private const int CrystalOrder = 2_000_000;
+public static IOrderedEnumerable<KeyValuePair<uint, TValue>> SortByKeyCustom<TValue>(Dictionary<uint, TValue> unsortedDict)
+{
+    return unsortedDict.OrderBy(pair =>
+    {
+        var idx = pair.Key;
+        if (idx < 20)
+            idx += CrystalOrder;
+        else if (Items.GilItems.ContainsKey(idx))
+            idx += GilItemOrder;
+
+        return idx;
+    });
+}
 }

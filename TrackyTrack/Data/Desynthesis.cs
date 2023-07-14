@@ -59,7 +59,7 @@ public struct BulkResult
 
 public static class Items
 {
-    public static readonly Dictionary<uint, uint> Worth = new()
+    public static readonly Dictionary<uint, uint> GilItems = new()
     {
         // Clear Demimateria
         {8142, 200},
@@ -70,6 +70,11 @@ public static class Items
         {8145, 60},
         {8146, 300},
         {8147, 500},
+
+        // Fieldcraft Demimateria
+        {8148, 44},
+        {8149, 220},
+        {8150, 400},
 
         // Allagan Piece
         {5823, 25},
