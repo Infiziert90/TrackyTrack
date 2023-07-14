@@ -151,14 +151,13 @@ public class ConfigurationBase : IDisposable
         if (!Plugin.CharacterStorage.ContainsKey(id))
             return;
 
-        Plugin.CharacterStorage.Remove(id);
-        var file = Plugin.PluginInterface.ConfigDirectory.EnumerateFiles().FirstOrDefault(f => f.Name == $"{id}.json");
-        if (file == null)
-            return;
-
         try
         {
-            file.Delete();
+            LastWriteTimes.Remove(id);
+            Plugin.CharacterStorage.Remove(id);
+            var file = new FileInfo(Path.Combine(ConfigurationDirectory, $"{id}.json"));
+            if (file.Exists)
+                file.Delete();
         }
         catch (Exception e)
         {

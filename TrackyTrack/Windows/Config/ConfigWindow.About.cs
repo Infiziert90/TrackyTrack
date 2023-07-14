@@ -23,7 +23,6 @@ public partial class ConfigWindow
                 ImGui.SameLine();
                 ImGui.TextColored(ImGuiColors.ParsedOrange, Plugin.Version);
             }
-
             ImGui.EndChild();
 
             ImGui.Separator();
@@ -42,8 +41,14 @@ public partial class ConfigWindow
                 if (ImGui.Button("Issues"))
                     Dalamud.Utility.Util.OpenLink("https://github.com/Infiziert90/TrackyTrack/issues");
                 ImGui.PopStyleColor();
-            }
 
+                ImGui.SameLine();
+
+                ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.12549f, 0.74902f, 0.33333f, 0.6f));
+                if (ImGui.Button("Ko-Fi Tip"))
+                    Dalamud.Utility.Util.OpenLink("https://ko-fi.com/infiii");
+                ImGui.PopStyleColor();
+            }
             ImGui.EndChild();
 
             ImGui.EndTabItem();

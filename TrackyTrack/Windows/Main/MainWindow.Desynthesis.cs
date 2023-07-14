@@ -507,7 +507,7 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(5.0f);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, $"History:");
-        if (ImGui.BeginChild("SearchSourceHistoryChild"))
+        if (ImGui.BeginChild("SearchSourceHistoryChild", new Vector2(0, 200 * ImGuiHelpers.GlobalScale)))
         {
             if (ImGui.BeginTable($"##SearchSourceHistoryTable", 3))
             {
@@ -547,6 +547,8 @@ public partial class MainWindow
             }
         }
         ImGui.EndChild();
+
+        ImGuiHelpers.ScaledDummy(5.0f);
     }
 
     private void ItemSearch(IEnumerable<CharacterConfiguration> characters)
