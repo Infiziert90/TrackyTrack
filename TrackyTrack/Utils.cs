@@ -1,5 +1,3 @@
-using System.Collections.Specialized;
-using System.Net.Http;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 
