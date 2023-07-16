@@ -106,7 +106,7 @@ public partial class MainWindow
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
-
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
         if (ImGui.BeginTable($"##TotalStatsTable", 3))
         {
             ImGui.TableSetupColumn("##stat", 0, 0.8f);
@@ -114,15 +114,34 @@ public partial class MainWindow
             ImGui.TableSetupColumn("##amount");
 
             ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Desynthesis");
+            ImGui.Indent(10.0f);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Desynthesized");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{totalNumber:N0} time{(totalNumber > 1 ? "s" : "")}");
+
             ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+
+            var avg = characters.Sum(c => c.Storage.History.Values.Sum(result => result.Received.Length)) / (double) totalNumber;
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Avg");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{avg:F2} Reward{(avg > 1 ? "s" : "")}");
+            ImGui.Unindent(10.0f);
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+
+            ImGuiHelpers.ScaledDummy(5.0f);
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Most often:");
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
 
             var destroyed = numberOfDesynthesis.MaxBy(pair => pair.Value);
             var item = ItemSheet.GetRow(destroyed.Key)!;
-            ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Most Often");
+
+            ImGui.Indent(10.0f);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Destroyed");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
             ImGui.TableNextColumn();
@@ -131,7 +150,7 @@ public partial class MainWindow
             var bestItem = dict.Where(pair => pair.Key is > 20 and < 1000000).MaxBy(pair => pair.Value);
             item = ItemSheet.GetRow(bestItem.Key)!;
             ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Highest Reward");
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Rewarded");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
             ImGui.TableNextColumn();
@@ -140,21 +159,31 @@ public partial class MainWindow
             var bestCrystal = dict.Where(pair => pair.Key is > 0 and < 20).MaxBy(pair => pair.Value);
             item = ItemSheet.GetRow(bestCrystal.Key)!;
             ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Highest Crystal");
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Crystal");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{bestCrystal.Value}");
+            ImGui.Unindent(10.0f);
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+
+            ImGuiHelpers.ScaledDummy(5.0f);
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Gil:");
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
 
             var sum = 0UL;
             foreach (var pair in dict.Where(pair => Items.GilItems.ContainsKey(pair.Key)))
                 sum += Items.GilItems[pair.Key] * pair.Value;
 
-            ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Pure Gil Made");
+            ImGui.Indent(10.0f);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Pure");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{sum:N0}");
-            ImGui.TableNextRow();
+            ImGui.Unindent(10.0f);
 
             ImGui.EndTable();
         }
