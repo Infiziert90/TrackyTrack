@@ -140,8 +140,8 @@ namespace TrackyTrack
             // DesynthResult is triggered by multiple events
             if (param1 != 3735552)
             {
-                PluginLog.Error("Received param1 that isn't DesynthResult");
-                PluginLog.Error($"Param1 {param1}");
+                PluginLog.Warning("Received param1 that isn't DesynthResult");
+                PluginLog.Warning($"Param1 {param1}");
                 return;
             }
 
