@@ -14,6 +14,13 @@ public class CharacterConfiguration
 
     public string CharacterName = "";
     public string World = "Unknown";
+
+    public uint Teleports = 0;
+    public uint TeleportCost = 0;
+
+    public uint Repairs = 0;
+    public uint RepairCost = 0;
+
     public Desynth Storage = new();
     public VentureCoffer Coffer = new();
     public GachaThreeZero GachaThreeZero = new();

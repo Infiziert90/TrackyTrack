@@ -11,6 +11,8 @@ public partial class ConfigWindow
 
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Normal Modules:");
             ImGui.Indent(10.0f);
+            changed |= ImGui.Checkbox("Repair Cost Tracking", ref Configuration.EnableRepair);
+            changed |= ImGui.Checkbox("Teleport Cost Tracking", ref Configuration.EnableTeleport);
             changed |= ImGui.Checkbox("Desynthesis Tracking", ref Configuration.EnableDesynthesis);
             ImGui.Unindent(10.0f);
 

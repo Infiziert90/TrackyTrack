@@ -1,14 +1,14 @@
-﻿namespace TrackyTrack.Data;
+﻿using Newtonsoft.Json;
+
+namespace TrackyTrack.Data;
 
 public class VentureCoffer
 {
     public int Opened = 0;
     public Dictionary<uint, uint> Obtained = new();
-}
 
-public static class Coffer
-{
-    public static readonly List<uint> Items = new()
+    [JsonIgnore]
+    public static readonly List<uint> Content = new()
     {
         13114, // Pure White
         13115, // Jet Black

@@ -49,7 +49,7 @@ public partial class MainWindow
 
         // fill dict in order
         var dict = new Dictionary<uint, uint>();
-        foreach (var item in Coffer.Items)
+        foreach (var item in VentureCoffer.Content)
             dict.Add(item, 0);
 
         // fill dict with real values
@@ -66,7 +66,7 @@ public partial class MainWindow
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Coffer.Items.Count}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {VentureCoffer.Content.Count}");
         if (ImGui.BeginTable($"##HistoryTable", 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);

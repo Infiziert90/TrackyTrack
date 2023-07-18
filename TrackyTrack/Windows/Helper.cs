@@ -4,6 +4,12 @@ namespace TrackyTrack.Windows;
 
 public static class Helper
 {
+    public static void NoCharacters()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("No characters found\nPlease teleport anywhere.");
+    }
+
     public static void NoDesynthesisData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);

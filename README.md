@@ -2,13 +2,15 @@
 Because tracking stuff is fun~
 
 ### Functions 
-+ Tracks data for Desynthesis
++ Track repair costs
++ Track teleport costs
++ Track result data for Desynthesis
 + Supports multiple characters
 
 #### With AllaganTools installed
-+ Tracks data for Bulk Desynthesis
-+ Tracks data for Venture Coffers
-+ Tracks data for Gacha Coffers
++ Track result data for Bulk Desynthesis
++ Track reward data for Venture Coffers
++ Track reward data for Gacha Coffers
 
 ### Desynthesis Tracker
 ![desynthesis](TrackyTrack/images/desynthesis.png)

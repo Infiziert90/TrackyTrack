@@ -50,7 +50,7 @@ public partial class MainWindow
 
         // fill dict in order
         var dict = new Dictionary<uint, uint>();
-        foreach (var item in GachaContent.ThreeZero)
+        foreach (var item in Data.GachaThreeZero.Content)
             dict.Add(item, 0);
 
         // fill dict with real values
@@ -67,7 +67,7 @@ public partial class MainWindow
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {GachaContent.ThreeZero.Count}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaThreeZero.Content.Count}");
         if (ImGui.BeginTable($"##GachaThreeZeroTable", 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
@@ -132,7 +132,7 @@ public partial class MainWindow
 
         // fill dict in order
         var dict = new Dictionary<uint, uint>();
-        foreach (var item in GachaContent.FourZero)
+        foreach (var item in Data.GachaFourZero.Content)
             dict.Add(item, 0);
 
         // fill dict with real values
@@ -149,7 +149,7 @@ public partial class MainWindow
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {GachaContent.FourZero.Count}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaFourZero.Content.Count}");
         if (ImGui.BeginTable($"##GachaFourZeroTable", 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);

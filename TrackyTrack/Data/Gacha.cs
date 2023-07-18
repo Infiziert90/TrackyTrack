@@ -1,21 +1,16 @@
-﻿namespace TrackyTrack.Data;
+﻿using Newtonsoft.Json;
+
+namespace TrackyTrack.Data;
+
+// Content from: https://github.com/Caraxi/SimpleTweaksPlugin/blob/7c46ac283353126e0c1619843824e30669a65775/Tweaks/Tooltips/TrackGachaItems.cs#L26C5-L26C5
 
 public class GachaThreeZero
 {
     public int Opened = 0;
     public Dictionary<uint, uint> Obtained = new();
-}
 
-public class GachaFourZero
-{
-    public int Opened = 0;
-    public Dictionary<uint, uint> Obtained = new();
-}
-
-// From: https://github.com/Caraxi/SimpleTweaksPlugin/blob/7c46ac283353126e0c1619843824e30669a65775/Tweaks/Tooltips/TrackGachaItems.cs#L26C5-L26C5
-public static class GachaContent
-{
-    public static readonly List<uint> ThreeZero = new()
+    [JsonIgnore]
+    public static readonly List<uint> Content = new()
     {
         9350, 12051, 6187, 15441, 6175, 7564, 6186, 6203, 6177, 14099, 17525, 15440, 14098, 6003, 12055, 6199, 6205,
         16570, 16568, 6189, 15447, 8193, 9347, 14103, 12054, 8194, 12061, 6191, 12069, 13279, 6179, 12058, 13283,
@@ -24,8 +19,15 @@ public static class GachaContent
         6213, 6200, 6190, 16573, 17527, 14093, 13284, 13276, 14095, 6214, 15436, 15437, 14094, 6184, 14083, 6183,
         6198, 8192
     };
+}
 
-    public static readonly List<uint> FourZero = new()
+public class GachaFourZero
+{
+    public int Opened = 0;
+    public Dictionary<uint, uint> Obtained = new();
+
+    [JsonIgnore]
+    public static readonly List<uint> Content = new()
     {
         24902, 21921, 21063, 20529, 20530, 21920, 24002, 20524, 24635, 23027, 24001, 23023, 20533, 24219, 24630, 21052,
         20542, 24903, 20538, 21064, 20541, 21058, 20536, 23032, 23998, 20525, 21916, 20531, 21193, 23989, 24634, 21059,

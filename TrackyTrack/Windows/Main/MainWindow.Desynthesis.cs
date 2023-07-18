@@ -176,8 +176,8 @@ public partial class MainWindow
             ImGui.TableNextColumn();
 
             var sum = 0UL;
-            foreach (var pair in dict.Where(pair => Items.GilItems.ContainsKey(pair.Key)))
-                sum += Items.GilItems[pair.Key] * pair.Value;
+            foreach (var pair in dict.Where(pair => Desynth.GilItems.ContainsKey(pair.Key)))
+                sum += Desynth.GilItems[pair.Key] * pair.Value;
 
             ImGui.Indent(10.0f);
             ImGui.TextColored(ImGuiColors.HealerGreen, "Pure");
@@ -473,7 +473,7 @@ public partial class MainWindow
 
         var desynthesized = history.Count;
         ImGui.TextColored(ImGuiColors.HealerGreen, $"Desynthesized {desynthesized:N0} time{(desynthesized > 1 ? "s" : "")}");
-        if (ImGui.BeginTable($"##HistoryStats", 5, 0, new Vector2(400, 0)))
+        if (ImGui.BeginTable($"##HistoryStats", 5, 0, new Vector2(400 * ImGuiHelpers.GlobalScale, 0)))
         {
             ImGui.TableSetupColumn("Reward##statItemName", 0, 0.6f);
             ImGui.TableSetupColumn("Min##statMin", 0, 0.1f);
@@ -642,7 +642,7 @@ public partial class MainWindow
 
         var desynthesized = history.Values.Sum(list => list.Count);
         ImGui.TextColored(ImGuiColors.HealerGreen, $"Seen as reward {desynthesized:N0} time{(desynthesized > 1 ? "s" : "")}");
-        if (ImGui.BeginTable($"##HistoryStats", 4, 0, new Vector2(300, 0)))
+        if (ImGui.BeginTable($"##HistoryStats", 4, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
         {
             ImGui.TableSetupColumn("##statItemName", 0, 0.6f);
             ImGui.TableSetupColumn("##statMin", 0, 0.1f);
@@ -757,7 +757,7 @@ public static IOrderedEnumerable<KeyValuePair<uint, TValue>> SortByKeyCustom<TVa
         var idx = pair.Key;
         if (idx < 20)
             idx += CrystalOrder;
-        else if (Items.GilItems.ContainsKey(idx))
+        else if (Desynth.GilItems.ContainsKey(idx))
             idx += GilItemOrder;
 
         return idx;

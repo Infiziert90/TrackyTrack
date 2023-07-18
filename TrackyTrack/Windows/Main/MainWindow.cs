@@ -37,6 +37,8 @@ public partial class MainWindow : Window, IDisposable
         {
             if (ImGui.BeginTabBar("##TrackerTabBar"))
             {
+                StatsTab();
+
                 DesynthesisTab();
 
                 CofferTab();
