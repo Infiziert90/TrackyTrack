@@ -23,6 +23,11 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(5.0f);
 
         var teleports = characters.Sum(c => c.Teleports);
+        var tickets = characters.Sum(c => c.TeleportsWithTicket);
+        var teleportsWithTickets = teleports - tickets;
+        if (teleportsWithTickets == 0)
+            teleportsWithTickets = 1;
+
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Teleport:");
         ImGui.Indent(10.0f);
         if (teleports > 0)
@@ -40,6 +45,13 @@ public partial class MainWindow
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Tickets");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{tickets} utilized");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Costs");
 
                 var teleportCosts = characters.Sum(c => c.TeleportCost);
@@ -51,7 +63,7 @@ public partial class MainWindow
 
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Average");
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{teleportCosts / teleports:N0} gil");
+                ImGui.TextUnformatted($"{teleportCosts / teleportsWithTickets:N0} gil");
                 ImGui.EndTable();
             }
         }

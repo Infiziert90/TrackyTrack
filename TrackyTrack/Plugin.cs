@@ -179,6 +179,16 @@ namespace TrackyTrack
             ConfigurationBase.SaveCharacterConfig();
         }
 
+        public void AetheryteTicketHandler()
+        {
+            CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+            var character = CharacterStorage[ClientState.LocalContentId];
+
+            character.TeleportsWithTicket += 1;
+            character.Teleports += 1;
+            ConfigurationBase.SaveCharacterConfig();
+        }
+
         public void RepairHandler(uint repairs)
         {
             TimerManager.Repaired = repairs;

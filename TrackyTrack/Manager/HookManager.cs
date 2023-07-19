@@ -60,14 +60,22 @@ public class HookManager
         if (eventId != 517)
             return;
 
-        // teleport log handler
-        if (param1 == 4590)
-            Plugin.TeleportCostHandler(param2);
+        switch (param1)
+        {
+            // teleport log handler
+            case 4590:
+                Plugin.TeleportCostHandler(param2);
+                break;
+            // aetheryte ticket log handler
+            case 4591:
+                Plugin.AetheryteTicketHandler();
+                break;
+            // Repair log handler
+            case 1388:
+                Plugin.RepairHandler(param2);
+                break;
+        }
 
-        // Repair log handler
-        if (param1 == 1388)
-            Plugin.RepairHandler(param2);
-
-        PluginLog.Information($"Cate {category} id {eventId} param1 {param1} param2 {param2} param3 {param3}");
+        PluginLog.Information($"Cate {category} id {eventId} param1 {param1} param2 {param2} param3 {param3} param4 {param4} param5 {param5} param6 {param6} target {targetId} param7 {param7}");
     }
 }

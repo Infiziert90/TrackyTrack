@@ -158,13 +158,13 @@ public class TimerManager
             save = true;
         }
 
-        if (OpeningCoffer)
-            Plugin.ChatGui.Print($"[TrackyTrack] Found an item that is possible from chest {item.ItemId} but in no list");
-
         if (save)
         {
             OpeningCoffer = false;
             Plugin.ConfigurationBase.SaveCharacterConfig();
         }
+
+        if (OpeningCoffer)
+            Plugin.ChatGui.Print($"[TrackyTrack] Found an item that is possible from chest {item.ItemId} but in no list");
     }
 }
