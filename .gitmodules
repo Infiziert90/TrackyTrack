@@ -1,0 +1,3 @@
+[submodule "CriticalCommonLib"]
+	path = CriticalCommonLib
+	url = https://github.com/Critical-Impact/CriticalCommonLib.git

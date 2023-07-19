@@ -37,8 +37,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="30.0.1" />
-    <PackageReference Include="DalamudPackager" Version="2.1.11" />
+        <ProjectReference Include="..\CriticalCommonLib\CriticalCommonLib.csproj" />
+        <PackageReference Include="CsvHelper" Version="30.0.1" />
+        <PackageReference Include="DalamudPackager" Version="2.1.11" />
         <Reference Include="FFXIVClientStructs">
             <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
             <Private>false</Private>
