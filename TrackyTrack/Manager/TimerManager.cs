@@ -10,12 +10,12 @@ public class TimerManager
     private Plugin Plugin;
 
     private BulkResult LastBulkResult = new();
-    private Timer FinishedBulkDesynth = new(1 * 1000);
+    private readonly Timer FinishedBulkDesynth = new(1 * 1000);
 
-    private Timer CastTimer = new(3 * 1000);
+    private readonly Timer CastTimer = new(3 * 1000);
     private bool OpeningCoffer;
 
-    private Timer RepairTimer = new(0.5 * 1000);
+    private readonly Timer RepairTimer = new(0.5 * 1000);
     public uint GilCount;
     public uint Repaired;
 

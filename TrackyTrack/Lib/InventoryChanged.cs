@@ -3,13 +3,12 @@ using CriticalCommonLib.Enums;
 using CriticalCommonLib.Extensions;
 using CriticalCommonLib.Models;
 using CriticalCommonLib.Services;
-using Dalamud.Logging;
 using static CriticalCommonLib.Services.InventoryMonitor;
 using static FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
 
 namespace TrackyTrack.Lib;
 
-// Extracted from CriticalLib->InventoryMonitor with just specific inventory types
+// Extracted from CriticalLib->InventoryMonitor with just specific inventory type scanning
 public static class InventoryChanged
 {
     private static readonly Dictionary<ulong, Inventory> CachedInventories;
@@ -49,7 +48,6 @@ public static class InventoryChanged
     public static void LoadOnLogin(object? _, EventArgs __) => LoadData();
     public static void LoadData()
     {
-        PluginLog.Information("OnLogin triggered");
         var characterId = Plugin.ClientState.LocalContentId;
         if (characterId == 0)
             return;
@@ -63,6 +61,7 @@ public static class InventoryChanged
 
         GenerateCharacterInventories(inventory, inventoryChanges);
         GenerateArmouryChestInventories(inventory, inventoryChanges);
+        GenerateCrystalInventories(inventory, inventoryChanges);
 
         GenerateItemCounts();
     }
@@ -97,6 +96,7 @@ public static class InventoryChanged
 
         GenerateCharacterInventories(inventory, inventoryChanges);
         GenerateArmouryChestInventories(inventory, inventoryChanges);
+        GenerateCrystalInventories(inventory, inventoryChanges);
 
         GenerateItemCounts();
         var newItemCounts = ItemCounts;
@@ -198,6 +198,26 @@ public static class InventoryChanged
                     newItem.GearSets = new uint[]{};
                 }
             });
+        }
+    }
+
+    private static void GenerateCrystalInventories(Inventory inventory, List<InventoryChange> inventoryChanges)
+    {
+        var inventoryTypes = new HashSet<FFXIVClientStructs.FFXIV.Client.Game.InventoryType>();
+        inventoryTypes.Add( FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Crystals);
+        foreach (var inventoryType in inventoryTypes)
+        {
+            if (!Plugin.InventoryScanner.InMemory.Contains(inventoryType))
+            {
+                return;
+            }
+        }
+
+        foreach (var inventoryType in inventoryTypes)
+        {
+            var items = Plugin.InventoryScanner.GetInventoryByType(inventoryType);
+            var inventoryCategory = inventoryType.Convert().ToInventoryCategory();
+            inventory.LoadGameItems(items, inventoryType.Convert(), inventoryCategory, false, inventoryChanges);
         }
     }
 
