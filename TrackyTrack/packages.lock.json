@@ -13,6 +13,48 @@
         "requested": "[2.1.11, )",
         "resolved": "2.1.11",
         "contentHash": "9qlAWoRRTiL/geAvuwR/g6Bcbrd/bJJgVnB/RurBiyKs6srsP0bvpoo8IK+Eg8EA6jWeM6/YJWs66w4FIAzqPw=="
+      },
+      "CSVFile": {
+        "type": "Transitive",
+        "resolved": "3.1.0",
+        "contentHash": "yz/FptkwDL0bxhaxoyrFPI5SyxUUfuZtbH1E2yLiHHFZFFrSXNnWJHfXSt5Anvy1gWpHCLpC520Bxy6G/Opp1g=="
+      },
+      "Dalamud.ContextMenu": {
+        "type": "Transitive",
+        "resolved": "1.2.3",
+        "contentHash": "ydemplF7DNcA/LLeongDVzWUD/JV0Fw3EwA2+P0jYq3Le2ZYSt4U8qyJq4FyoChqt0lFG8BxYCAzfeWp4Jmnqw=="
+      },
+      "NaturalSort.Extension": {
+        "type": "Transitive",
+        "resolved": "3.2.0",
+        "contentHash": "E6DE1xnwGYIwvxMeqW/TwJ882q+NL+TBJtW1x+u5u77HMCupL9qBQUkQikFcZYH0oSBr47qLpC/UYx4atTLdQA=="
+      },
+      "SerialQueue": {
+        "type": "Transitive",
+        "resolved": "2.1.0",
+        "contentHash": "rmQcrFXgcrqT9M6+xdxAK/JWx1vFuCRT8fTdce4ALdze2/8N5yMRW9Vmkresw+JpL+JC8zuC1HfDkrfVgBUIqA=="
+      },
+      "System.Reactive": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
+      },
+      "criticalcommonlib": {
+        "type": "Project",
+        "dependencies": {
+          "Dalamud.ContextMenu": "[1.2.3, )",
+          "LuminaSupplemental.Excel": "[6.0.2, )",
+          "NaturalSort.Extension": "[3.2.0, )",
+          "SerialQueue": "[2.1.0, )",
+          "System.Reactive": "[5.0.0, )"
+        }
+      },
+      "luminasupplemental.excel": {
+        "type": "Project",
+        "dependencies": {
+          "CSVFile": "[3.1.0, )",
+          "CsvHelper": "[30.0.1, )"
+        }
       }
     }
   }

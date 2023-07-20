@@ -23,13 +23,6 @@ public partial class MainWindow
         if (!ImGui.BeginTabItem("Venture"))
             return;
 
-        if (!Plugin.AllaganToolsConsumer.IsAvailable)
-        {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"AllaganTools not available");
-            ImGui.EndTabItem();
-            return;
-        }
-
         var characters = Plugin.CharacterStorage.Values.ToArray();
 
         if (!characters.Any())

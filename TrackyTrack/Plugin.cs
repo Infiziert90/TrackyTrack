@@ -1,4 +1,8 @@
 using System.Reflection;
+using CriticalCommonLib;
+using CriticalCommonLib.Services;
+using CriticalCommonLib.Services.Ui;
+using CriticalCommonLib.Time;
 using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -10,10 +14,10 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using TrackyTrack.Attributes;
 using TrackyTrack.Data;
-using TrackyTrack.IPC;
 using TrackyTrack.Windows.Main;
 using TrackyTrack.Windows.Config;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using TrackyTrack.Lib;
 using TrackyTrack.Manager;
 
 namespace TrackyTrack
@@ -28,6 +32,11 @@ namespace TrackyTrack
         [PluginService] public static ChatGui ChatGui { get; private set; } = null!;
         [PluginService] public static SigScanner SigScanner { get; private set; } = null!;
         [PluginService] public static GameGui GameGui { get; private set; } = null!;
+        public static OdrScanner OdrScanner { get; private set; } = null!;
+        public static IGameUiManager GameUi { get; private set; } = null!;
+        public static IGameInterface GameInterface { get; private set; } = null!;
+        public static IInventoryScanner InventoryScanner { get; private set; } = null!;
+        public static ICharacterMonitor CharacterMonitor { get; private set; } = null!;
 
         public string Name => "Tracky Track";
 
@@ -45,7 +54,6 @@ namespace TrackyTrack
         public ConfigurationBase ConfigurationBase;
         public Dictionary<ulong, CharacterConfiguration> CharacterStorage = new();
 
-        public static AllaganToolsConsumer AllaganToolsConsumer = null!;
         private TimerManager TimerManager;
         private HookManager HookManager;
 
@@ -58,7 +66,20 @@ namespace TrackyTrack
 
             TexturesCache.Initialize();
 
-            AllaganToolsConsumer = new AllaganToolsConsumer();
+            PluginInterface.Create<Service>();
+
+            Service.SeTime = new SeTime();
+            Service.ExcelCache = new ExcelCache(Data);
+            Service.ExcelCache.PreCacheItemData();
+
+            GameInterface = new GameInterface();
+            CharacterMonitor = new CharacterMonitor();
+
+            GameUi = new GameUiManager();
+            OdrScanner = new OdrScanner(CharacterMonitor);
+            InventoryScanner = new InventoryScanner(CharacterMonitor, GameUi, GameInterface, OdrScanner);
+            InventoryScanner.Enable();
+
             TimerManager = new TimerManager(this);
             HookManager = new HookManager(this);
 
@@ -90,9 +111,17 @@ namespace TrackyTrack
 
             TexturesCache.Instance?.Dispose();
 
+            InventoryScanner.Dispose();
+            OdrScanner.Dispose();
+            GameUi.Dispose();
+            CharacterMonitor.Dispose();
+            GameInterface.Dispose();
+            Service.Dereference();
+
+            InventoryChanged.Dispose();
+
             HookManager.Dispose();
             TimerManager.Dispose();
-            AllaganToolsConsumer.Dispose();
             Framework.Update -= CofferTracker;
         }
 
@@ -115,10 +144,10 @@ namespace TrackyTrack
             var addonPtr = GameGui.GetAddonByName("SalvageAutoDialog", 1);
             if (addonPtr != nint.Zero)
             {
-                if (!AllaganToolsConsumer.SubscribeAddEvent("DesynthItemAdded", TimerManager.DesynthItemAdded))
+                if (!InventoryChanged.SubscribeAddEvent("DesynthItemAdded", TimerManager.DesynthItemAdded))
                     return;
 
-                if (!AllaganToolsConsumer.SubscribeRemoveEvent("DesynthItemRemoved", TimerManager.DesynthItemRemoved))
+                if (!InventoryChanged.SubscribeRemoveEvent("DesynthItemRemoved", TimerManager.DesynthItemRemoved))
                     return;
 
                 TimerManager.StartBulk();
@@ -162,7 +191,7 @@ namespace TrackyTrack
             if (local == null || !local.IsCasting)
                 return;
 
-            if (!AllaganToolsConsumer.SubscribeAddEvent("CofferItemAdded", TimerManager.StoreCofferResult))
+            if (!InventoryChanged.SubscribeAddEvent("CofferItemAdded", TimerManager.StoreCofferResult))
                 return;
 
             if (local is { CastActionId: 32161, CastActionType: 2 } or { CastActionId: 36635, CastActionType: 2 } or { CastActionId: 36636, CastActionType: 2 })

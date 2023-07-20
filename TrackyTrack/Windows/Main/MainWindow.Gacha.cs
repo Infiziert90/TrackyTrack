@@ -25,13 +25,6 @@ public partial class MainWindow
         if (!ImGui.BeginTabItem("Gacha 3.0"))
             return;
 
-        if (!Plugin.AllaganToolsConsumer.IsAvailable)
-        {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"AllaganTools not available");
-            ImGui.EndTabItem();
-            return;
-        }
-
         var characters = Plugin.CharacterStorage.Values.ToArray();
         if (!characters.Any())
         {
@@ -106,13 +99,6 @@ public partial class MainWindow
     {
         if (!ImGui.BeginTabItem("Gacha 4.0"))
             return;
-
-        if (!Plugin.AllaganToolsConsumer.IsAvailable)
-        {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"AllaganTools not available");
-            ImGui.EndTabItem();
-            return;
-        }
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
         if (!characters.Any())
