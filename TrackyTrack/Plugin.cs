@@ -69,7 +69,7 @@ namespace TrackyTrack
             PluginInterface.Create<Service>();
 
             Service.SeTime = new SeTime();
-            Service.ExcelCache = new ExcelCache(Data);
+            Service.ExcelCache = new ExcelCache(Data, false,false,false);
             Service.ExcelCache.PreCacheItemData();
 
             GameInterface = new GameInterface();

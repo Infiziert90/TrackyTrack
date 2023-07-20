@@ -9,6 +9,7 @@ using static FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
 
 namespace TrackyTrack.Lib;
 
+// Extracted from CriticalLib->InventoryMonitor with just specific inventory types
 public static class InventoryChanged
 {
     private static readonly Dictionary<ulong, Inventory> CachedInventories;
@@ -297,6 +298,8 @@ public static class InventoryChanged
     public static void Dispose()
     {
         Plugin.InventoryScanner.BagsChanged -= BagsChangedTrigger;
+        Plugin.CharacterMonitor.OnCharacterRemoved -= OnCharacterRemoved;
+        Plugin.ClientState.Login -= LoadOnLogin;
     }
 
     public enum EventType
