@@ -2,6 +2,7 @@
 Because tracking stuff is fun~
 
 ### Normal Functions 
++ Track currency increase
 + Track repair costs
 + Track teleport costs
 + Track result data for Desynthesis
