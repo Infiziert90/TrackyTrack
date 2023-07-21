@@ -13,7 +13,7 @@ public partial class ConfigWindow
             ImGui.Indent(10.0f);
             changed |= ImGui.Checkbox("Repair Cost Tracking", ref Configuration.EnableRepair);
             changed |= ImGui.Checkbox("Teleport Cost Tracking", ref Configuration.EnableTeleport);
-            changed |= ImGui.Checkbox("Grand Company Seal Tracking", ref Configuration.EnableGCSeals);
+            changed |= ImGui.Checkbox("Grand Company Seal Tracking", ref Configuration.EnableCurrency);
             changed |= ImGui.Checkbox("Desynthesis Tracking", ref Configuration.EnableDesynthesis);
             ImGui.Unindent(10.0f);
 
@@ -26,7 +26,10 @@ public partial class ConfigWindow
             ImGui.Unindent(10.0f);
 
             if (changed)
+            {
+                Plugin.FrameworkManager.IsSafe = false;
                 Configuration.Save();
+            }
 
             ImGui.EndTabItem();
         }

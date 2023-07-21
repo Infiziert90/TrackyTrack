@@ -30,10 +30,28 @@ public partial class MainWindow
             ImGui.TableSetupColumn("##CurrencyNum");
 
             ImGui.TableNextColumn();
+
             var seals = characters.Sum(c => c.GCSeals);
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Seals");
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Grand Company");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{seals:N0}");
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+
+            var mgp = characters.Sum(c => c.MGP);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Gold Saucer");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{mgp:N0}");
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+
+            var allied = characters.Sum(c => c.AlliedSeals);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Allied Seals");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{allied:N0}");
+
             ImGui.EndTable();
         }
         ImGui.Unindent(10.0f);

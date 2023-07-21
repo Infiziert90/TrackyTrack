@@ -12,19 +12,19 @@ public static class Utils
 
     public static IOrderedEnumerable<SortedEntry> SortEntries(IEnumerable<SortedEntry> unsortedList, ImGuiTableColumnSortSpecsPtr sortSpecsPtr)
     {
-        Func<SortedEntry, object> sortFunc = sortSpecsPtr.ColumnIndex switch
+        object SortFunction(SortedEntry entry) => sortSpecsPtr.ColumnIndex switch
         {
-            1 => x => x.Name,
-            2 => x => x.Count,
-            3 => x => x.Percentage,
-            _ => x => x.Percentage
+            1 => entry.Name,
+            2 => entry.Count,
+            3 => entry.Percentage,
+            _ => entry.Percentage
         };
 
         return sortSpecsPtr.SortDirection switch
         {
-            ImGuiSortDirection.Ascending => unsortedList.OrderBy(sortFunc),
-            ImGuiSortDirection.Descending => unsortedList.OrderByDescending(sortFunc),
-            _ => unsortedList.OrderBy(sortFunc)
+            ImGuiSortDirection.Ascending => unsortedList.OrderBy(SortFunction),
+            ImGuiSortDirection.Descending => unsortedList.OrderByDescending(SortFunction),
+            _ => unsortedList.OrderBy(SortFunction)
         };
     }
 

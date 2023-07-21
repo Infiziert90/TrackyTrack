@@ -55,8 +55,8 @@ namespace TrackyTrack
         public Dictionary<ulong, CharacterConfiguration> CharacterStorage = new();
 
         public TimerManager TimerManager;
+        public FrameworkManager FrameworkManager;
         private HookManager HookManager;
-        private FrameworkManager FrameworkManager;
         private InventoryChanged InventoryChanged;
 
         public Plugin()
@@ -181,12 +181,23 @@ namespace TrackyTrack
             ConfigurationBase.SaveCharacterConfig();
         }
 
-        public void SealHandler(uint sealIncrease)
+        public void CurrencyHandler(uint itemId, uint increase)
         {
             CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
             var character = CharacterStorage[ClientState.LocalContentId];
 
-            character.GCSeals += sealIncrease;
+            switch (itemId)
+            {
+                case 20:
+                    character.GCSeals += increase;
+                    break;
+                case 27:
+                    character.AlliedSeals += increase;
+                    break;
+                case 29:
+                    character.MGP += increase;
+                    break;
+            }
             ConfigurationBase.SaveCharacterConfig();
         }
 

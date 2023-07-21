@@ -7,10 +7,12 @@ public class FrameworkManager
 {
     private Plugin Plugin;
 
-    private bool IsSafe;
+    public bool IsSafe;
 
     private uint GilCount;
     private uint SealCount;
+    private uint MGPCount;
+    private uint AlliedSealsCount;
 
 
     public FrameworkManager(Plugin plugin)
@@ -50,6 +52,8 @@ public class FrameworkManager
         var container = instance->GetInventoryContainer(InventoryType.Currency);
         GilCount = container->Items[0].Quantity;
         SealCount = container->Items[1].Quantity + container->Items[2].Quantity + container->Items[3].Quantity;
+        MGPCount = container->Items[9].Quantity;
+        AlliedSealsCount = container->Items[8].Quantity;
 
         IsSafe = true;
     }
@@ -76,17 +80,25 @@ public class FrameworkManager
             GilCount = currentGil;
         }
 
-        if (Plugin.Configuration.EnableGCSeals)
+        if (Plugin.Configuration.EnableCurrency)
         {
             var currentSeals = 0u;
             currentSeals += container->Items[1].Quantity;
             currentSeals += container->Items[2].Quantity;
             currentSeals += container->Items[3].Quantity;
-
             if (currentSeals > SealCount)
-                Plugin.SealHandler(currentSeals - SealCount);
-
+                Plugin.CurrencyHandler(20, currentSeals - SealCount);
             SealCount = currentSeals;
+
+            var currentMGP = container->Items[9].Quantity;
+            if (currentMGP > MGPCount)
+                Plugin.CurrencyHandler(29, currentMGP - MGPCount);
+            MGPCount = currentMGP;
+
+            var currentAlliedSeals = container->Items[8].Quantity;
+            if (currentAlliedSeals > AlliedSealsCount)
+                Plugin.CurrencyHandler(27, currentAlliedSeals - AlliedSealsCount);
+            AlliedSealsCount = currentAlliedSeals;
         }
     }
 
