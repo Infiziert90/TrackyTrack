@@ -22,6 +22,24 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "Currency:");
+        ImGui.Indent(10.0f);
+        if (ImGui.BeginTable($"##CurrencyStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
+        {
+            ImGui.TableSetupColumn("##CurrencyStat", 0, 0.6f);
+            ImGui.TableSetupColumn("##CurrencyNum");
+
+            ImGui.TableNextColumn();
+            var seals = characters.Sum(c => c.GCSeals);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Seals");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{seals:N0}");
+            ImGui.EndTable();
+        }
+        ImGui.Unindent(10.0f);
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+
         var teleports = characters.Sum(c => c.Teleports);
         var aetheryteTickets = characters.Sum(c => c.TeleportsAetheryte);
         var gcTickets = characters.Sum(c => c.TeleportsGC);

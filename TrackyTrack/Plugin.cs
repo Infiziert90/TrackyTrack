@@ -54,8 +54,9 @@ namespace TrackyTrack
         public ConfigurationBase ConfigurationBase;
         public Dictionary<ulong, CharacterConfiguration> CharacterStorage = new();
 
-        private TimerManager TimerManager;
+        public TimerManager TimerManager;
         private HookManager HookManager;
+        private FrameworkManager FrameworkManager;
         private InventoryChanged InventoryChanged;
 
         public Plugin()
@@ -85,6 +86,7 @@ namespace TrackyTrack
 
             TimerManager = new TimerManager(this);
             HookManager = new HookManager(this);
+            FrameworkManager = new FrameworkManager(this);
 
             ConfigWindow = new ConfigWindow(this);
             MainWindow = new MainWindow(this, Configuration);
@@ -99,7 +101,10 @@ namespace TrackyTrack
 
             ConfigurationBase.Load();
 
-            Framework.Update += CofferTracker;
+            // Register all events
+            InventoryChanged.SubscribeAddEvent("CofferItemAdded", TimerManager.StoreCofferResult);
+            InventoryChanged.SubscribeRemoveEvent("DesynthItemRemoved", TimerManager.DesynthItemRemoved);
+            InventoryChanged.SubscribeAddEvent("DesynthItemAdded", TimerManager.DesynthItemAdded);
         }
 
         public void Dispose()
@@ -125,7 +130,7 @@ namespace TrackyTrack
 
             HookManager.Dispose();
             TimerManager.Dispose();
-            Framework.Update -= CofferTracker;
+            FrameworkManager.Dispose();
         }
 
         [Command("/ttracker")]
@@ -146,15 +151,7 @@ namespace TrackyTrack
         {
             var addonPtr = GameGui.GetAddonByName("SalvageAutoDialog", 1);
             if (addonPtr != nint.Zero)
-            {
-                if (!InventoryChanged.SubscribeAddEvent("DesynthItemAdded", TimerManager.DesynthItemAdded))
-                    return;
-
-                if (!InventoryChanged.SubscribeRemoveEvent("DesynthItemRemoved", TimerManager.DesynthItemRemoved))
-                    return;
-
                 TimerManager.StartBulk();
-            }
         }
 
         public unsafe void DesynthHandler()
@@ -184,43 +181,13 @@ namespace TrackyTrack
             ConfigurationBase.SaveCharacterConfig();
         }
 
-        public void CofferTracker(Framework _)
+        public void SealHandler(uint sealIncrease)
         {
-            var local = ClientState.LocalPlayer;
-            if (local == null || !local.IsCasting)
-                return;
+            CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+            var character = CharacterStorage[ClientState.LocalContentId];
 
-            if (!InventoryChanged.SubscribeAddEvent("CofferItemAdded", TimerManager.StoreCofferResult))
-                return;
-
-            switch (local)
-            {
-                // Coffers
-                case { CastActionId: 32161, CastActionType: 2 }:
-                case { CastActionId: 36635, CastActionType: 2 }:
-                case { CastActionId: 36636, CastActionType: 2 }:
-                {
-                    if (Configuration.EnableVentureCoffers || Configuration.EnableGachaCoffers)
-                        TimerManager.StartCoffer();
-                    break;
-                }
-
-                // Tickets
-                case { CastActionId: 21069, CastActionType: 2 }:
-                case { CastActionId: 21070, CastActionType: 2 }:
-                case { CastActionId: 21071, CastActionType: 2 }:
-                case { CastActionId: 30362, CastActionType: 2 }:
-                case { CastActionId: 28064, CastActionType: 2 }:
-                {
-                    if (TimerManager.TicketUsedTimer.Enabled)
-                        return;
-
-                    // 100ms before cast finish is when cast counts as successful
-                    if (local.CurrentCastTime + 0.100 > local.TotalCastTime)
-                        CastedTicketHandler(local.CastActionId);
-                    break;
-                }
-            }
+            character.GCSeals += sealIncrease;
+            ConfigurationBase.SaveCharacterConfig();
         }
 
         public void TeleportCostHandler(uint cost)

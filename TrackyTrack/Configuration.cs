@@ -10,6 +10,7 @@ namespace TrackyTrack
 
         public bool EnableTeleport = true;
         public bool EnableRepair = true;
+        public bool EnableGCSeals = true;
 
         public bool EnableDesynthesis = true;
         public bool EnableBulkSupport = true;

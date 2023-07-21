@@ -26,6 +26,8 @@ public class CharacterConfiguration
     public uint Repairs = 0;
     public uint RepairCost = 0;
 
+    public uint GCSeals = 0;
+
     public Desynth Storage = new();
     public VentureCoffer Coffer = new();
     public GachaThreeZero GachaThreeZero = new();

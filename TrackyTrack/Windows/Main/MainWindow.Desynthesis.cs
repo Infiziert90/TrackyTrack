@@ -56,8 +56,9 @@ public partial class MainWindow
     {
         if (ImGui.BeginTabItem("Desynthesis"))
         {
-            var characters = Plugin.CharacterStorage.Values.ToArray();
-            if (characters.Sum(c => c.Storage.History.Count) == 0)
+            // Sort out any character with 0 desynthesis
+            var characters = Plugin.CharacterStorage.Values.Where(c => c.Storage.History.Count > 0).ToArray();
+            if (!characters.Any())
             {
                 Helper.NoDesynthesisData();
 
@@ -69,7 +70,7 @@ public partial class MainWindow
             {
                 Stats(characters);
 
-                History();
+                History(characters);
 
                 Rewards(characters);
 
@@ -190,14 +191,12 @@ public partial class MainWindow
         ImGui.EndTabItem();
     }
 
-    private void History()
+    private void History(CharacterConfiguration[] characters)
     {
         if (!ImGui.BeginTabItem("History"))
             return;
 
-        var existingCharacters = Plugin.CharacterStorage.Values
-                                       .Select(character => $"{character.CharacterName}@{character.World}")
-                                       .ToArray();
+        var existingCharacters = characters.Select(character => $"{character.CharacterName}@{character.World}").ToArray();
 
         var selectedCharacter = SelectedCharacter;
         ImGui.Combo("##existingCharacters", ref selectedCharacter, existingCharacters, existingCharacters.Length);
@@ -207,14 +206,8 @@ public partial class MainWindow
             SelectedHistory = 0;
         }
 
-        var selectedChar = Plugin.CharacterStorage.Values.ToList()[SelectedCharacter];
+        var selectedChar = characters[SelectedCharacter];
         var history = selectedChar.Storage.History.Reverse().Select(pair => $"{pair.Key}").ToArray();
-        if (!history.Any())
-        {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, "Tracking starts after your first desynthesis.");
-            ImGui.EndTabItem();
-            return;
-        }
 
         ImGui.Combo("##voyageSelection", ref SelectedHistory, history, history.Length);
         Helper.DrawArrows(ref SelectedHistory, history.Length);

@@ -1,5 +1,4 @@
 ﻿using System.Timers;
-using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using TrackyTrack.Data;
 
@@ -18,7 +17,6 @@ public class TimerManager
     public readonly Timer TicketUsedTimer = new(1 * 1000);
 
     private readonly Timer RepairTimer = new(0.5 * 1000);
-    public uint GilCount;
     public uint Repaired;
 
     public TimerManager(Plugin plugin)
@@ -35,32 +33,9 @@ public class TimerManager
 
         RepairTimer.AutoReset = false;
         RepairTimer.Elapsed += (_, _) => Repaired = 0;
-
-        Plugin.Framework.Update += RegisterRepair;
     }
 
-    public void Dispose()
-    {
-        Plugin.Framework.Update -= RegisterRepair;
-    }
-
-    public unsafe void RegisterRepair(Framework _)
-    {
-        if (!Plugin.Configuration.EnableRepair)
-            return;
-
-        var instance = InventoryManager.Instance();
-        if (instance == null)
-            return;
-
-        var container = instance->GetInventoryContainer(InventoryType.Currency);
-        var currentGil = container->Items[0].Quantity;
-
-        if (currentGil < GilCount)
-            RepairResult(currentGil);
-
-        GilCount = currentGil;
-    }
+    public void Dispose() { }
 
     public void StartBulk()
     {
@@ -86,7 +61,7 @@ public class TimerManager
         RepairTimer.Start();
     }
 
-    public void RepairResult(uint currentGil)
+    public void RepairResult(uint gilDifference)
     {
         if (!RepairTimer.Enabled)
             return;
@@ -95,7 +70,7 @@ public class TimerManager
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
         character.Repairs += Repaired;
-        character.RepairCost += GilCount - currentGil;
+        character.RepairCost += gilDifference;
 
         Plugin.ConfigurationBase.SaveCharacterConfig();
     }

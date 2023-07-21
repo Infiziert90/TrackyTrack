@@ -13,19 +13,19 @@ public static class Helper
     public static void NoDesynthesisData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
-        WrappedError("No data found for this character\nPlease desynthesis an item.");
+        WrappedError("No data stored for desynthesis\nPlease desynthesis an item.");
     }
 
     public static void NoVentureCofferData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
-        WrappedError("No data found for this character\nPlease open a venture coffer.");
+        WrappedError("No data stored for venture coffers\nPlease open a venture coffer.");
     }
 
     public static void NoGachaData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
-        WrappedError("No data found for this character\nPlease open a gacha coffer (from GC).");
+        WrappedError("No data stored for gacha coffers\nPlease open a gacha coffer (from GC).");
     }
 
     public static void WrappedError(string text)
