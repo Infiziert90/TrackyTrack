@@ -56,6 +56,7 @@ namespace TrackyTrack
 
         private TimerManager TimerManager;
         private HookManager HookManager;
+        private InventoryChanged InventoryChanged;
 
         public Plugin()
         {
@@ -79,6 +80,8 @@ namespace TrackyTrack
             OdrScanner = new OdrScanner(CharacterMonitor);
             InventoryScanner = new InventoryScanner(CharacterMonitor, GameUi, GameInterface, OdrScanner);
             InventoryScanner.Enable();
+
+            InventoryChanged = new InventoryChanged();
 
             TimerManager = new TimerManager(this);
             HookManager = new HookManager(this);
@@ -183,10 +186,6 @@ namespace TrackyTrack
 
         public void CofferTracker(Framework _)
         {
-            // Both coffers disabled, we don't need to track
-            if (Configuration is { EnableVentureCoffers: false, EnableGachaCoffers: false })
-                return;
-
             var local = ClientState.LocalPlayer;
             if (local == null || !local.IsCasting)
                 return;
@@ -194,8 +193,34 @@ namespace TrackyTrack
             if (!InventoryChanged.SubscribeAddEvent("CofferItemAdded", TimerManager.StoreCofferResult))
                 return;
 
-            if (local is { CastActionId: 32161, CastActionType: 2 } or { CastActionId: 36635, CastActionType: 2 } or { CastActionId: 36636, CastActionType: 2 })
-                TimerManager.StartCast();
+            switch (local)
+            {
+                // Coffers
+                case { CastActionId: 32161, CastActionType: 2 }:
+                case { CastActionId: 36635, CastActionType: 2 }:
+                case { CastActionId: 36636, CastActionType: 2 }:
+                {
+                    if (Configuration.EnableVentureCoffers || Configuration.EnableGachaCoffers)
+                        TimerManager.StartCoffer();
+                    break;
+                }
+
+                // Tickets
+                case { CastActionId: 21069, CastActionType: 2 }:
+                case { CastActionId: 21070, CastActionType: 2 }:
+                case { CastActionId: 21071, CastActionType: 2 }:
+                case { CastActionId: 30362, CastActionType: 2 }:
+                case { CastActionId: 28064, CastActionType: 2 }:
+                {
+                    if (TimerManager.TicketUsedTimer.Enabled)
+                        return;
+
+                    // 100ms before cast finish is when cast counts as successful
+                    if (local.CurrentCastTime + 0.100 > local.TotalCastTime)
+                        CastedTicketHandler(local.CastActionId);
+                    break;
+                }
+            }
         }
 
         public void TeleportCostHandler(uint cost)
@@ -213,7 +238,30 @@ namespace TrackyTrack
             CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
             var character = CharacterStorage[ClientState.LocalContentId];
 
-            character.TeleportsWithTicket += 1;
+            character.TeleportsAetheryte += 1;
+            character.Teleports += 1;
+            ConfigurationBase.SaveCharacterConfig();
+        }
+
+        public void CastedTicketHandler(uint ticketId)
+        {
+            TimerManager.StartTicketUsed();
+
+            CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+            var character = CharacterStorage[ClientState.LocalContentId];
+
+            switch (ticketId)
+            {
+                case 21069 or 21070 or 21071:
+                    character.TeleportsGC += 1;
+                    break;
+                case 30362:
+                    character.TeleportsVesperBay += 1;
+                    break;
+                case 28064:
+                    character.TeleportsVesperBay += 1;
+                    break;
+            }
             character.Teleports += 1;
             ConfigurationBase.SaveCharacterConfig();
         }

@@ -9,18 +9,16 @@ using static FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
 namespace TrackyTrack.Lib;
 
 // Extracted from CriticalLib->InventoryMonitor with just specific inventory type scanning
-public static class InventoryChanged
+public class InventoryChanged
 {
-    private static readonly Dictionary<ulong, Inventory> CachedInventories;
-    private static Dictionary<(uint, ItemFlags, ulong), int> ItemCounts = new();
+    private readonly Dictionary<ulong, Inventory> CachedInventories = new();
+    private Dictionary<(uint, ItemFlags, ulong), int> ItemCounts = new();
 
     public record EventSubscriber(EventType Type, Action<(uint, ItemFlags, ulong, uint)> Action);
-    public static readonly Dictionary<string, EventSubscriber> Subscribed = new();
+    public readonly Dictionary<string, EventSubscriber> Subscribed = new();
 
-    static InventoryChanged()
+    public InventoryChanged()
     {
-        CachedInventories = new Dictionary<ulong, Inventory>();
-
         Plugin.InventoryScanner.BagsChanged += BagsChangedTrigger;
         Plugin.CharacterMonitor.OnCharacterRemoved += OnCharacterRemoved;
         Plugin.ClientState.Login += LoadOnLogin;
@@ -29,13 +27,13 @@ public static class InventoryChanged
             LoadData();
     }
 
-    private static void OnCharacterRemoved(ulong characterId)
+    private void OnCharacterRemoved(ulong characterId)
     {
         if (CachedInventories.ContainsKey(characterId))
             ClearCharacterInventories(characterId);
     }
 
-    public static void ClearCharacterInventories(ulong characterId)
+    public void ClearCharacterInventories(ulong characterId)
     {
         if (CachedInventories.TryGetValue(characterId, out var inventory))
         {
@@ -45,8 +43,8 @@ public static class InventoryChanged
     }
 
 
-    public static void LoadOnLogin(object? _, EventArgs __) => LoadData();
-    public static void LoadData()
+    public void LoadOnLogin(object? _, EventArgs __) => LoadData();
+    public void LoadData()
     {
         var characterId = Plugin.ClientState.LocalContentId;
         if (characterId == 0)
@@ -66,20 +64,12 @@ public static class InventoryChanged
         GenerateItemCounts();
     }
 
-    public static void FillEmptySlots()
-    {
-        foreach (var inventory in CachedInventories)
-        {
-            inventory.Value.FillSlots();
-        }
-    }
-
-    private static void BagsChangedTrigger(List<BagChange> _)
+    private void BagsChangedTrigger(List<BagChange> _)
     {
         Task.Run(GenerateInventoriesTask);
     }
 
-    private static void GenerateInventoriesTask()
+    private void GenerateInventoriesTask()
     {
         var characterId = Plugin.ClientState.LocalContentId;
         if (characterId == 0)
@@ -104,7 +94,7 @@ public static class InventoryChanged
         Plugin.Framework.RunOnFrameworkThread(() => { TriggerInventoryChanged(inventoryChanges, itemChanges); });
     }
 
-    public static void GenerateItemCounts()
+    public void GenerateItemCounts()
     {
         var retainerItemCounts = new Dictionary<(uint, ItemFlags, ulong), int>();
         var itemCounts = new Dictionary<(uint, ItemFlags), int>();
@@ -277,7 +267,7 @@ public static class InventoryChanged
         };
     }
 
-    public static bool SubscribeAddEvent(string id, Action<(uint, ItemFlags, ulong, uint)> action)
+    public bool SubscribeAddEvent(string id, Action<(uint, ItemFlags, ulong, uint)> action)
     {
         if (Subscribed.ContainsKey(id))
             return true;
@@ -286,7 +276,7 @@ public static class InventoryChanged
         return true;
     }
 
-    public static bool SubscribeRemoveEvent(string id, Action<(uint, ItemFlags, ulong, uint)> action)
+    public bool SubscribeRemoveEvent(string id, Action<(uint, ItemFlags, ulong, uint)> action)
     {
         if (Subscribed.ContainsKey(id))
             return true;
@@ -295,7 +285,7 @@ public static class InventoryChanged
         return true;
     }
 
-    public static void TriggerInventoryChanged(List<InventoryChange> _, ItemChanges? changedItems)
+    public void TriggerInventoryChanged(List<InventoryChange> _, ItemChanges? changedItems)
     {
         if (changedItems != null)
         {
@@ -315,7 +305,7 @@ public static class InventoryChanged
         }
     }
 
-    public static void Dispose()
+    public void Dispose()
     {
         Plugin.InventoryScanner.BagsChanged -= BagsChangedTrigger;
         Plugin.CharacterMonitor.OnCharacterRemoved -= OnCharacterRemoved;

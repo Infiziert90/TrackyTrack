@@ -16,8 +16,12 @@ public class CharacterConfiguration
     public string World = "Unknown";
 
     public uint Teleports = 0;
-    public uint TeleportsWithTicket = 0;
     public uint TeleportCost = 0;
+    // Tickets
+    public uint TeleportsAetheryte = 0;
+    public uint TeleportsGC = 0;
+    public uint TeleportsVesperBay = 0;
+    public uint TeleportsFirmament = 0;
 
     public uint Repairs = 0;
     public uint RepairCost = 0;

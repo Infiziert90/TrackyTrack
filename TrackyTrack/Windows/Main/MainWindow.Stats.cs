@@ -23,10 +23,14 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(5.0f);
 
         var teleports = characters.Sum(c => c.Teleports);
-        var tickets = characters.Sum(c => c.TeleportsWithTicket);
-        var teleportsWithTickets = teleports - tickets;
-        if (teleportsWithTickets == 0)
-            teleportsWithTickets = 1;
+        var aetheryteTickets = characters.Sum(c => c.TeleportsAetheryte);
+        var gcTickets = characters.Sum(c => c.TeleportsGC);
+        var vesperTickets = characters.Sum(c => c.TeleportsVesperBay);
+        var firmamentTickets = characters.Sum(c => c.TeleportsFirmament);
+
+        var teleportsWithout = teleports - aetheryteTickets - gcTickets - vesperTickets;
+        if (teleportsWithout == 0)
+            teleportsWithout = 1;
 
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Teleport:");
         ImGui.Indent(10.0f);
@@ -34,20 +38,13 @@ public partial class MainWindow
         {
             if (ImGui.BeginTable($"##TeleportStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
             {
-                ImGui.TableSetupColumn("##TeleportStat", 0, 0.5f);
+                ImGui.TableSetupColumn("##TeleportStat", 0, 0.6f);
                 ImGui.TableSetupColumn("##TeleportNum");
 
                 ImGui.TableNextColumn();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Used");
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{teleports} times");
-
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Tickets");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{tickets} utilized");
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
@@ -63,13 +60,49 @@ public partial class MainWindow
 
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Average");
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{teleportCosts / teleportsWithTickets:N0} gil");
+                ImGui.TextUnformatted($"{teleportCosts / teleportsWithout:N0} gil");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Tickets");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.Indent(10.0f);
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Aetheryte");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{aetheryteTickets} used");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Grand Company");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{gcTickets} used");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Vesper Bay");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{vesperTickets} used");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Firmament");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{firmamentTickets} used");
+                ImGui.Unindent(10.0f);
+
                 ImGui.EndTable();
             }
         }
         else
         {
-            ImGui.TextColored(ImGuiColors.DalamudOrange, "You haven't used teleport yet");
+            ImGui.TextColored(ImGuiColors.DalamudOrange, "You haven't used teleport yet1");
         }
         ImGui.Unindent(10.0f);
 
@@ -82,7 +115,7 @@ public partial class MainWindow
         {
             if (ImGui.BeginTable($"##RepairStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
             {
-                ImGui.TableSetupColumn("##RepairStat", 0, 0.5f);
+                ImGui.TableSetupColumn("##RepairStat", 0, 0.6f);
                 ImGui.TableSetupColumn("##RepairNum");
 
                 ImGui.TableNextColumn();

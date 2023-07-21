@@ -15,6 +15,8 @@ public class TimerManager
     private readonly Timer CastTimer = new(3 * 1000);
     private bool OpeningCoffer;
 
+    public readonly Timer TicketUsedTimer = new(1 * 1000);
+
     private readonly Timer RepairTimer = new(0.5 * 1000);
     public uint GilCount;
     public uint Repaired;
@@ -28,6 +30,8 @@ public class TimerManager
 
         CastTimer.AutoReset = false;
         CastTimer.Elapsed += (_, _) => OpeningCoffer = false;
+
+        TicketUsedTimer.AutoReset = false;
 
         RepairTimer.AutoReset = false;
         RepairTimer.Elapsed += (_, _) => Repaired = 0;
@@ -64,12 +68,17 @@ public class TimerManager
         FinishedBulkDesynth.Start();
     }
 
-    public void StartCast()
+    public void StartCoffer()
     {
         CastTimer.Stop();
         CastTimer.Start();
 
         OpeningCoffer = true;
+    }
+
+    public void StartTicketUsed()
+    {
+        TicketUsedTimer.Start();
     }
 
     public void StartRepair()
