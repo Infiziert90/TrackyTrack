@@ -21,30 +21,15 @@ public class FrameworkManager
 
         Plugin.Framework.Update += CofferTracker;
         Plugin.Framework.Update += CurrencyTracker;
-
-        Plugin.ClientState.Login += ScanOnLogin;
-        Plugin.ClientState.Logout += ResetOnLogout;
-
-        if (Plugin.ClientState.IsLoggedIn)
-            ScanCurrentCharacter();
     }
 
     public void Dispose()
     {
         Plugin.Framework.Update -= CofferTracker;
         Plugin.Framework.Update -= CurrencyTracker;
-
-        Plugin.ClientState.Login -= ScanOnLogin;
-        Plugin.ClientState.Logout -= ResetOnLogout;
     }
-
-    public void ScanOnLogin(object? _, EventArgs __) => ScanCurrentCharacter();
-    public void ResetOnLogout(object? _, EventArgs __) => IsSafe = false;
-
     public unsafe void ScanCurrentCharacter()
     {
-        IsSafe = false;
-
         var instance = InventoryManager.Instance();
         if (instance == null)
             return;
@@ -60,6 +45,13 @@ public class FrameworkManager
 
     public unsafe void CurrencyTracker(Framework _)
     {
+        // Only run for real characters
+        if (Plugin.ClientState.LocalContentId == 0)
+        {
+            IsSafe = false;
+            return;
+        }
+
         if (!IsSafe)
         {
             ScanCurrentCharacter();

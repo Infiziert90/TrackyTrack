@@ -84,7 +84,10 @@ public class ConfigurationBase : IDisposable
         // Only allow saving of current character
         var contentId = Plugin.ClientState.LocalContentId;
         if (contentId == 0)
+        {
+            PluginLog.Error("ClientId was 0 but something called Save()");
             return;
+        }
 
         if (!Plugin.CharacterStorage.TryGetValue(contentId, out var savedConfig))
             return;
