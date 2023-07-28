@@ -9,7 +9,7 @@ public class TimerManager
     private Plugin Plugin;
 
     private BulkResult LastBulkResult = new();
-    private readonly Timer FinishedBulkDesynth = new(1 * 1000);
+    private readonly Timer AwaitingBulkDesynth = new(1 * 1000);
 
     private readonly Timer CastTimer = new(3 * 1000);
     private bool OpeningCoffer;
@@ -19,12 +19,17 @@ public class TimerManager
     private readonly Timer RepairTimer = new(0.5 * 1000);
     public uint Repaired;
 
+    private Territory EurekaTerritory;
+    private CofferRarity EurekaRarity;
+    private EurekaResult EurekaResult = new();
+    public readonly Timer AwaitingEurekaResult = new(1 * 1000);
+
     public TimerManager(Plugin plugin)
     {
         Plugin = plugin;
 
-        FinishedBulkDesynth.AutoReset = false;
-        FinishedBulkDesynth.Elapsed += StoreBulkResult;
+        AwaitingBulkDesynth.AutoReset = false;
+        AwaitingBulkDesynth.Elapsed += StoreBulkResult;
 
         CastTimer.AutoReset = false;
         CastTimer.Elapsed += (_, _) => OpeningCoffer = false;
@@ -33,6 +38,9 @@ public class TimerManager
 
         RepairTimer.AutoReset = false;
         RepairTimer.Elapsed += (_, _) => Repaired = 0;
+
+        AwaitingEurekaResult.AutoReset = false;
+        AwaitingEurekaResult.Elapsed += StoreEurekaResult;
     }
 
     public void Dispose() { }
@@ -40,7 +48,7 @@ public class TimerManager
     public void StartBulk()
     {
         LastBulkResult = new();
-        FinishedBulkDesynth.Start();
+        AwaitingBulkDesynth.Start();
     }
 
     public void StartCoffer()
@@ -61,6 +69,14 @@ public class TimerManager
         RepairTimer.Start();
     }
 
+    public void StartEureka(uint rarity)
+    {
+        EurekaTerritory = (Territory) Plugin.ClientState.TerritoryType;
+        EurekaRarity = (CofferRarity) rarity;
+        EurekaResult = new();
+        AwaitingEurekaResult.Start();
+    }
+
     public void RepairResult(uint gilDifference)
     {
         if (!RepairTimer.Enabled)
@@ -77,7 +93,7 @@ public class TimerManager
 
     public void DesynthItemAdded((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
     {
-        if (!FinishedBulkDesynth.Enabled)
+        if (!AwaitingBulkDesynth.Enabled)
             return;
 
         // 19 and below are crystals
@@ -89,7 +105,7 @@ public class TimerManager
 
     public void DesynthItemRemoved((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
     {
-        if (!FinishedBulkDesynth.Enabled)
+        if (!AwaitingBulkDesynth.Enabled)
             return;
 
         LastBulkResult.AddSource(item.ItemId);
@@ -150,5 +166,25 @@ public class TimerManager
 
         if (OpeningCoffer)
             Plugin.ChatGui.Print($"[TrackyTrack] Found an item that is possible from chest {item.ItemId} but in no list");
+    }
+
+    public void EurekaItemAdded((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
+    {
+        if (!AwaitingEurekaResult.Enabled)
+            return;
+
+        EurekaResult.AddItem(item.ItemId, item.Quantity);
+    }
+
+    public void StoreEurekaResult(object? _, ElapsedEventArgs __)
+    {
+        if (!EurekaResult.IsValid)
+            return;
+
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        character.Eureka.History[EurekaTerritory][EurekaRarity].Add(DateTime.Now, EurekaResult);
+        character.Eureka.Opened += 1;
+
+        Plugin.ConfigurationBase.SaveCharacterConfig();
     }
 }

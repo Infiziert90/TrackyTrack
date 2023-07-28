@@ -36,6 +36,8 @@ public class CharacterConfiguration
     public GachaThreeZero GachaThreeZero = new();
     public GachaFourZero GachaFourZero = new();
 
+    public EurekaTracker Eureka = new();
+
     public CharacterConfiguration() { }
 
     public CharacterConfiguration(ulong id, PlayerCharacter local)

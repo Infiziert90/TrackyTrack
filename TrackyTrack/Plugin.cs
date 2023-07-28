@@ -103,8 +103,9 @@ namespace TrackyTrack
 
             // Register all events
             InventoryChanged.SubscribeAddEvent("CofferItemAdded", TimerManager.StoreCofferResult);
-            InventoryChanged.SubscribeRemoveEvent("DesynthItemRemoved", TimerManager.DesynthItemRemoved);
             InventoryChanged.SubscribeAddEvent("DesynthItemAdded", TimerManager.DesynthItemAdded);
+            InventoryChanged.SubscribeRemoveEvent("DesynthItemRemoved", TimerManager.DesynthItemRemoved);
+            InventoryChanged.SubscribeAddEvent("EurekaItemAdded", TimerManager.EurekaItemAdded);
         }
 
         public void Dispose()

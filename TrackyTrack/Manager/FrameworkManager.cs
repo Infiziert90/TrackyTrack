@@ -21,12 +21,14 @@ public class FrameworkManager
 
         Plugin.Framework.Update += CofferTracker;
         Plugin.Framework.Update += CurrencyTracker;
+        Plugin.Framework.Update += EurekaTracker;
     }
 
     public void Dispose()
     {
         Plugin.Framework.Update -= CofferTracker;
         Plugin.Framework.Update -= CurrencyTracker;
+        Plugin.Framework.Update -= EurekaTracker;
     }
     public unsafe void ScanCurrentCharacter()
     {
@@ -127,6 +129,30 @@ public class FrameworkManager
                     Plugin.CastedTicketHandler(local.CastActionId);
                 break;
             }
+        }
+    }
+
+    public void EurekaTracker(Framework _)
+    {
+        if (!Plugin.Configuration.EnableEurekaCoffers)
+            return;
+
+        var local = Plugin.ClientState.LocalPlayer;
+        if (local == null || !local.IsCasting)
+            return;
+
+        // Interaction cast on coffer
+        if (local is { CastActionId: 21, CastActionType: 4 })
+        {
+            if (Plugin.TimerManager.AwaitingEurekaResult.Enabled)
+                return;
+
+            if (local.TargetObject == null)
+                return;
+
+            // 100ms before cast finish is when cast counts as successful
+            if (local.CurrentCastTime + 0.100 > local.TotalCastTime)
+                Plugin.TimerManager.StartEureka(local.TargetObject.DataId);
         }
     }
 }

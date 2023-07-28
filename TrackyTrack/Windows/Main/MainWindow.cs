@@ -45,6 +45,8 @@ public partial class MainWindow : Window, IDisposable
 
                 GachaTab();
 
+                BunnyTab();
+
                 ImGui.EndTabBar();
             }
         }

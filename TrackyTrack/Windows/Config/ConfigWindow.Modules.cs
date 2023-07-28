@@ -23,6 +23,7 @@ public partial class ConfigWindow
             changed |= ImGui.Checkbox("Bulk Desynthesis Support", ref Configuration.EnableBulkSupport);
             changed |= ImGui.Checkbox("Venture Coffer Tracking", ref Configuration.EnableVentureCoffers);
             changed |= ImGui.Checkbox("Gacha Coffer Tracking", ref Configuration.EnableGachaCoffers);
+            changed |= ImGui.Checkbox("Bunny Coffer Tracking", ref Configuration.EnableEurekaCoffers);
             ImGui.Unindent(10.0f);
 
             if (changed)

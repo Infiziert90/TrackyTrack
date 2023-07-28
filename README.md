@@ -9,9 +9,10 @@ Because tracking stuff is fun~
 + Supports multiple characters
 
 ### Advanced  Functions
-+ Track result data for Bulk Desynthesis
-+ Track reward data for Venture Coffers
-+ Track reward data for Gacha Coffers
++ Track results for Bulk Desynthesis
++ Track rewards for Venture Coffers
++ Track rewards for Gacha Coffers
++ Track rewards for Eureka Bunny Coffers
 
 ### Desynthesis Tracker
 ![desynthesis](TrackyTrack/images/desynthesis.png)

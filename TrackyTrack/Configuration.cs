@@ -16,6 +16,7 @@ namespace TrackyTrack
         public bool EnableBulkSupport = true;
         public bool EnableVentureCoffers = true;
         public bool EnableGachaCoffers = true;
+        public bool EnableEurekaCoffers = true;
 
         [NonSerialized]
         private DalamudPluginInterface? PluginInterface;
