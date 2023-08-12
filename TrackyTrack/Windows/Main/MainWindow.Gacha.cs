@@ -92,6 +92,34 @@ public partial class MainWindow
             ImGui.Unindent(10.0f);
             ImGui.EndTable();
         }
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
+        if (ImGui.BeginTable($"##GachaThreeMissingTable", 2))
+        {
+            ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
+            ImGui.TableSetupColumn("Item##missingItem");
+
+            ImGui.TableHeadersRow();
+
+            ImGui.Indent(10.0f);
+            foreach (var itemId in Data.GachaThreeZero.Content.Where(i => dict[i] == 0))
+            {
+                var item = ItemSheet.GetRow(itemId)!;
+
+                ImGui.TableNextColumn();
+                DrawIcon(item.Icon);
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted(item.Name);
+
+                ImGui.TableNextRow();
+            }
+
+            ImGui.Unindent(10.0f);
+            ImGui.EndTable();
+        }
         ImGui.EndTabItem();
     }
 
@@ -161,6 +189,34 @@ public partial class MainWindow
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
+                ImGui.TableNextRow();
+            }
+
+            ImGui.Unindent(10.0f);
+            ImGui.EndTable();
+        }
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
+        if (ImGui.BeginTable($"##GachaFourMissingTable", 2))
+        {
+            ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
+            ImGui.TableSetupColumn("Item##missingItem");
+
+            ImGui.TableHeadersRow();
+
+            ImGui.Indent(10.0f);
+            foreach (var itemId in Data.GachaFourZero.Content.Where(i => dict[i] == 0))
+            {
+                var item = ItemSheet.GetRow(itemId)!;
+
+                ImGui.TableNextColumn();
+                DrawIcon(item.Icon);
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted(item.Name);
+
                 ImGui.TableNextRow();
             }
 
