@@ -1,9 +1,40 @@
-﻿using TrackyTrack.Data;
+﻿using System.Globalization;
+using System.IO;
+using CsvHelper;
+using CsvHelper.Configuration;
+using Dalamud.Logging;
+using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
+    private static CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
+
+    public class ExportLoot
+    {
+        public uint ItemId { get; set; }
+        public string Name { get; set; }
+        public uint Amount { get; set; }
+
+        public ExportLoot(uint id, uint amount)
+        {
+            ItemId = id;
+            Name = Utils.ToStr(ItemSheet.GetRow(id)!.Name);
+            Amount = amount;
+        }
+    }
+
+    public sealed class ExportMap : ClassMap<ExportLoot>
+    {
+        public ExportMap()
+        {
+            Map(m => m.ItemId).Index(0).Name("ItemId");
+            Map(m => m.Name).Index(1).Name("Name");
+            Map(m => m.Amount).Index(2).Name("Amount");
+        }
+    }
+
     private void CofferTab()
     {
         if (ImGui.BeginTabItem("Coffers"))
@@ -92,5 +123,37 @@ public partial class MainWindow
             ImGui.EndTable();
         }
         ImGui.EndTabItem();
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+        if (ImGui.Button("Export to clipboard"))
+            ExportToClipboard(dict);
+    }
+
+    private void ExportToClipboard(Dictionary<uint, uint> dict)
+    {
+        try
+        {
+            using var writer = new StringWriter();
+            using var csv = new CsvWriter(writer, CsvConfig);
+
+            csv.Context.RegisterClassMap(new ExportMap());
+
+            csv.WriteHeader<ExportLoot>();
+            csv.NextRecord();
+
+            foreach (var detailedLoot in dict.Select(pair => new ExportLoot(pair.Key, pair.Value)))
+            {
+                csv.WriteRecord(detailedLoot);
+                csv.NextRecord();
+            }
+
+            ImGui.SetClipboardText(writer.ToString());
+
+            Plugin.ChatGui.Print("Export to clipboard done.");
+        }
+        catch (Exception e)
+        {
+            PluginLog.Error(e.StackTrace ?? "No Stacktrace");
+        }
     }
 }

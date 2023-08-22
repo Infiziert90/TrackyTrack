@@ -41,8 +41,8 @@ public class HookManager
         // DesynthResult is triggered by multiple events
         if (param1 != 3735552)
         {
-            PluginLog.Warning("Received param1 that isn't DesynthResult");
-            PluginLog.Warning($"Param1 {param1}");
+            PluginLog.Debug("Received param1 that isn't DesynthResult1");
+            PluginLog.Debug($"Param1 {param1}");
             return;
         }
 

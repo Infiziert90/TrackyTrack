@@ -32,7 +32,7 @@ public partial class ConfigWindow
             {
                 ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedBlue);
                 if (ImGui.Button("Discord Thread"))
-                    Dalamud.Utility.Util.OpenLink("https://canary.discord.com/channels/581875019861328007/1094255662860599428");
+                    Dalamud.Utility.Util.OpenLink("https://canary.discord.com/channels/581875019861328007/1143510564165926992");
                 ImGui.PopStyleColor();
 
                 ImGui.SameLine();

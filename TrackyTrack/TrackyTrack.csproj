@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>Infi</Authors>
-        <Version>0.0.6.1</Version>
+        <Version>0.0.6.2</Version>
         <Description>Tracking data is fun</Description>
         <PackageProjectUrl>https://github.com/Infiziert90/TrackyTrack</PackageProjectUrl>
     </PropertyGroup>
