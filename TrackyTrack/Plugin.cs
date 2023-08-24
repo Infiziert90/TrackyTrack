@@ -135,6 +135,7 @@ namespace TrackyTrack
         }
 
         [Command("/ttracker")]
+        [Aliases("/tracky")]
         [HelpMessage("Opens the tracker")]
         private void OnCommand(string command, string args)
         {

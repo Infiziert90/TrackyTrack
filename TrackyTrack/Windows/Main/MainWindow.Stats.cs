@@ -111,26 +111,35 @@ public partial class MainWindow
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{aetheryteTickets} used");
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+                if (aetheryteTickets > 0)
+                {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
 
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Grand Company");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{gcTickets} used");
+                    ImGui.TextColored(ImGuiColors.HealerGreen, "Grand Company");
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"{gcTickets} used");
+                }
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+                if (vesperTickets > 0)
+                {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
 
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Vesper Bay");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{vesperTickets} used");
+                    ImGui.TextColored(ImGuiColors.HealerGreen, "Vesper Bay");
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"{vesperTickets} used");
+                }
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+                if (firmamentTickets > 0)
+                {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
 
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Firmament");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{firmamentTickets} used");
+                    ImGui.TextColored(ImGuiColors.HealerGreen, "Firmament");
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"{firmamentTickets} used");
+                }
                 ImGui.Unindent(10.0f);
 
                 ImGui.EndTable();
