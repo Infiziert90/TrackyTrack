@@ -30,6 +30,11 @@ public class CharacterConfiguration
     public uint GCSeals = 0;
     public uint MGP = 0;
     public uint AlliedSeals = 0;
+    public uint Ventures = 0;
+    public uint SackOfNuts = 0;
+    public uint CenturioSeal = 0;
+    public uint Bicolor = 0;
+    public uint Skybuilder = 0;
 
     public Desynth Storage = new();
     public VentureCoffer Coffer = new();

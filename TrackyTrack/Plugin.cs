@@ -183,21 +183,36 @@ namespace TrackyTrack
             ConfigurationBase.SaveCharacterConfig();
         }
 
-        public void CurrencyHandler(uint itemId, uint increase)
+        public void CurrencyHandler(Currency currency, int increase)
         {
             CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
             var character = CharacterStorage[ClientState.LocalContentId];
 
-            switch (itemId)
+            switch (currency)
             {
-                case 20:
-                    character.GCSeals += increase;
+                case Currency.StormSeals or Currency.SerpentSeals or Currency.FlameSeals:
+                    character.GCSeals += (uint) increase;
                     break;
-                case 27:
-                    character.AlliedSeals += increase;
+                case Currency.AlliedSeals:
+                    character.AlliedSeals += (uint) increase;
                     break;
-                case 29:
-                    character.MGP += increase;
+                case Currency.MGP:
+                    character.MGP += (uint) increase;
+                    break;
+                case Currency.Bicolor:
+                    character.Bicolor += (uint) increase;
+                    break;
+                case Currency.SackOfNuts:
+                    character.SackOfNuts += (uint) increase;
+                    break;
+                case Currency.CenturioSeals:
+                    character.CenturioSeal += (uint) increase;
+                    break;
+                case Currency.Ventures:
+                    character.Ventures += (uint) increase;
+                    break;
+                case Currency.Skybuilders:
+                    character.Skybuilder += (uint) increase;
                     break;
             }
             ConfigurationBase.SaveCharacterConfig();

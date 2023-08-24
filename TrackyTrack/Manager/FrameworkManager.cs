@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
 
@@ -9,10 +10,20 @@ public class FrameworkManager
 
     public bool IsSafe;
 
-    private uint GilCount;
-    private uint SealCount;
-    private uint MGPCount;
-    private uint AlliedSealsCount;
+    private static Dictionary<Currency, int> CurrencyCounts = new()
+    {
+        { Currency.Gil, 0 },             // Gil
+        { Currency.StormSeals, 0 },      // Storm Seals
+        { Currency.SerpentSeals, 0 },    // Serpent Seals
+        { Currency.FlameSeals, 0 },      // Flame Seals
+        { Currency.MGP, 0 },             // MGP
+        { Currency.AlliedSeals, 0 },     // Allied Seals
+        { Currency.Ventures, 0 },        // Venture
+        { Currency.SackOfNuts, 0 },      // Sack of Nuts
+        { Currency.CenturioSeals, 0 },   // Centurio Seals
+        { Currency.Bicolor, 0 },         // Bicolor
+        { Currency.Skybuilders, 0 },     // Skybuilders
+    };
 
 
     public FrameworkManager(Plugin plugin)
@@ -37,10 +48,8 @@ public class FrameworkManager
             return;
 
         var container = instance->GetInventoryContainer(InventoryType.Currency);
-        GilCount = container->Items[0].Quantity;
-        SealCount = container->Items[1].Quantity + container->Items[2].Quantity + container->Items[3].Quantity;
-        MGPCount = container->Items[9].Quantity;
-        AlliedSealsCount = container->Items[8].Quantity;
+        foreach (var currency in CurrencyCounts.Keys)
+            CurrencyCounts[currency] = instance->GetInventoryItemCount((uint) currency, false, false, false);
 
         IsSafe = true;
     }
@@ -64,35 +73,23 @@ public class FrameworkManager
         if (instance == null)
             return;
 
-        var container = instance->GetInventoryContainer(InventoryType.Currency);
-
         if (Plugin.Configuration.EnableRepair)
         {
-            var currentGil = container->Items[0].Quantity;
-            if (currentGil < GilCount)
-                Plugin.TimerManager.RepairResult(GilCount - currentGil);
-            GilCount = currentGil;
+            var currentGil = instance->GetInventoryItemCount((uint) Currency.Gil, false, false, false);
+            if (currentGil < CurrencyCounts[Currency.Gil])
+                Plugin.TimerManager.RepairResult(CurrencyCounts[Currency.Gil] - currentGil);
+            CurrencyCounts[Currency.Gil] = currentGil;
         }
 
         if (Plugin.Configuration.EnableCurrency)
         {
-            var currentSeals = 0u;
-            currentSeals += container->Items[1].Quantity;
-            currentSeals += container->Items[2].Quantity;
-            currentSeals += container->Items[3].Quantity;
-            if (currentSeals > SealCount)
-                Plugin.CurrencyHandler(20, currentSeals - SealCount);
-            SealCount = currentSeals;
-
-            var currentMGP = container->Items[9].Quantity;
-            if (currentMGP > MGPCount)
-                Plugin.CurrencyHandler(29, currentMGP - MGPCount);
-            MGPCount = currentMGP;
-
-            var currentAlliedSeals = container->Items[8].Quantity;
-            if (currentAlliedSeals > AlliedSealsCount)
-                Plugin.CurrencyHandler(27, currentAlliedSeals - AlliedSealsCount);
-            AlliedSealsCount = currentAlliedSeals;
+            foreach (var (currency, oldCount) in CurrencyCounts)
+            {
+                var current = instance->GetInventoryItemCount((uint) currency, false, false, false);
+                if (current > oldCount)
+                    Plugin.CurrencyHandler(currency, current - oldCount);
+                CurrencyCounts[currency] = current;
+            }
         }
     }
 

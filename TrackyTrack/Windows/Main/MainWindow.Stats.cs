@@ -44,13 +44,71 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{mgp:N0}");
 
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
+            var ventures = characters.Sum(c => c.Ventures);
+            if (ventures > 0)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Venture Coins");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{ventures:N0}");
+            }
 
             var allied = characters.Sum(c => c.AlliedSeals);
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Allied Seals");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{allied:N0}");
+            if (allied > 0)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Allied Seals");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{allied:N0}");
+            }
+
+            var centurio = characters.Sum(c => c.CenturioSeal);
+            if (centurio > 0)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Centurio Seals");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{centurio:N0}");
+            }
+
+            var nuts = characters.Sum(c => c.SackOfNuts);
+            if (nuts > 0)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Sack of Nuts");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{nuts:N0}");
+            }
+
+            var bicolor = characters.Sum(c => c.Bicolor);
+            if (bicolor > 0)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Bicolor Gemstones");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{bicolor:N0}");
+            }
+
+            var skybuilders = characters.Sum(c => c.Skybuilder);
+            if (skybuilders > 0)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Skybuilders' Scrip");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{skybuilders:N0}");
+            }
 
             ImGui.EndTable();
         }

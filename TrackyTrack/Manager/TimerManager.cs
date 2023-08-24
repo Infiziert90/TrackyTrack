@@ -77,7 +77,7 @@ public class TimerManager
         AwaitingEurekaResult.Start();
     }
 
-    public void RepairResult(uint gilDifference)
+    public void RepairResult(int gilDifference)
     {
         if (!RepairTimer.Enabled)
             return;
@@ -86,7 +86,7 @@ public class TimerManager
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
         character.Repairs += Repaired;
-        character.RepairCost += gilDifference;
+        character.RepairCost += (uint) gilDifference;
 
         Plugin.ConfigurationBase.SaveCharacterConfig();
     }
