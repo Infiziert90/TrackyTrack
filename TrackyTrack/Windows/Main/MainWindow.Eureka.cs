@@ -12,11 +12,27 @@ public partial class MainWindow
         {
             if (ImGui.BeginTabBar("##BunnyTabBar"))
             {
-                Pagos();
+                var characters = Plugin.CharacterStorage.Values;
+                if (!characters.Any())
+                {
+                    Helper.NoEurekaCofferData();
+                    return;
+                }
 
-                Pyros();
+                var characterCoffers = characters.Where(c => c.Eureka.Opened > 0).ToArray();
+                if (!characterCoffers.Any())
+                {
+                    Helper.NoEurekaCofferData();
+                    return;
+                }
 
-                Hydatos();
+                EurekaStats(characterCoffers);
+
+                Pagos(characterCoffers);
+
+                Pyros(characterCoffers);
+
+                Hydatos(characterCoffers);
 
                 ImGui.EndTabBar();
             }
@@ -24,52 +40,104 @@ public partial class MainWindow
         }
     }
 
-    private void Pagos()
+    private void EurekaStats(CharacterConfiguration[] characters)
+    {
+        if (!ImGui.BeginTabItem("Stats"))
+            return;
+
+        var worth = 0L;
+        var totalNumber = 0;
+        var territoryCoffers = new Dictionary<Territory, Dictionary<CofferRarity, int>>();
+        foreach (var (territory, rarityDictionary) in characters.SelectMany(c => c.Eureka.History))
+        {
+            territoryCoffers[territory] = new Dictionary<CofferRarity, int>();
+            foreach (var (rarity, history) in rarityDictionary)
+            {
+                totalNumber += history.Count;
+                worth += history.Count * rarity.ToWorth();
+                territoryCoffers[territory][rarity] = history.Count;
+            }
+        }
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
+        if (ImGui.BeginTable($"##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
+        {
+            ImGui.TableSetupColumn("##stat", 0, 0.4f);
+            ImGui.TableSetupColumn("##opened");
+
+            ImGui.TableNextColumn();
+            ImGui.Indent(10.0f);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{totalNumber:N0} Coffer{(totalNumber > 1 ? "s" : "")}");
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Worth");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{worth:N0} Gil");
+
+            foreach (var (territory, rarityDictionary) in territoryCoffers)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGuiHelpers.ScaledDummy(5.0f);
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, territory.ToName());
+
+                ImGui.Indent(10.0f);
+                foreach (var (rarity, rarityCount) in rarityDictionary)
+                {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.TextColored(ImGuiColors.HealerGreen, rarity.ToName());
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"{rarityCount:N0}  Coffer{(rarityCount > 1 ? "s" : "")}");
+                }
+                ImGui.Unindent(10.0f);
+            }
+            ImGui.Unindent(10.0f);
+            ImGui.EndTable();
+        }
+        ImGui.EndTabItem();
+    }
+
+    private void Pagos(CharacterConfiguration[] characters)
     {
         if (!ImGui.BeginTabItem("Pagos"))
             return;
 
-        CofferHistory(Territory.Pagos);
+        CofferHistory(Territory.Pagos, characters);
 
         ImGui.EndTabItem();
     }
 
-    private void Pyros()
+    private void Pyros(CharacterConfiguration[] characters)
     {
         if (!ImGui.BeginTabItem("Pyros"))
             return;
 
-        CofferHistory(Territory.Pyros);
+        CofferHistory(Territory.Pyros, characters);
 
         ImGui.EndTabItem();
     }
 
-    private void Hydatos()
+    private void Hydatos(CharacterConfiguration[] characters)
     {
         if (!ImGui.BeginTabItem("Hydatos"))
             return;
 
-        CofferHistory(Territory.Hydatos);
+        CofferHistory(Territory.Hydatos, characters);
 
         ImGui.EndTabItem();
     }
 
-    private void CofferHistory(Territory territory)
+    private void CofferHistory(Territory territory, CharacterConfiguration[] characters)
     {
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (!characters.Any())
-        {
-            Helper.NoEurekaCofferData();
-            return;
-        }
-
-        var characterCoffers = characters.Where(c => c.Eureka.Opened > 0).ToList();
-        if (!characterCoffers.Any())
-        {
-            Helper.NoEurekaCofferData();
-            return;
-        }
-
         var rarity = (int) Rarity;
         ImGui.RadioButton("Bronze", ref rarity, (int) CofferRarity.Bronze);
         ImGui.SameLine();
@@ -80,7 +148,7 @@ public partial class MainWindow
 
         // fill dict with real values
         var dict = new Dictionary<uint, (uint Total, uint Obtained)>();
-        foreach (var pair in characterCoffers.SelectMany(c => c.Eureka.History).Where(pair => pair.Key == territory).Select(pair => pair.Value[Rarity]))
+        foreach (var pair in characters.SelectMany(c => c.Eureka.History).Where(pair => pair.Key == territory).Select(pair => pair.Value[Rarity]))
         {
             foreach (var result in pair.Values.SelectMany(result => result.Items))
             {
@@ -98,7 +166,7 @@ public partial class MainWindow
             return;
         }
 
-        var opened = characterCoffers.Select(c => c.Eureka.History[territory][Rarity].Count).Sum();
+        var opened = characters.Select(c => c.Eureka.History[territory][Rarity].Count).Sum();
         var unsortedList = dict.Where(pair => pair.Value.Obtained > 0).Select(pair =>
         {
             var item = ItemSheet.GetRow(pair.Key)!;

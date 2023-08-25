@@ -116,7 +116,6 @@ public partial class MainWindow
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Tickets");
 
                 ImGui.TableNextRow();
