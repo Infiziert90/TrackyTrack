@@ -32,6 +32,7 @@ namespace TrackyTrack
         [PluginService] public static ChatGui ChatGui { get; private set; } = null!;
         [PluginService] public static SigScanner SigScanner { get; private set; } = null!;
         [PluginService] public static GameGui GameGui { get; private set; } = null!;
+
         public static OdrScanner OdrScanner { get; private set; } = null!;
         public static IGameUiManager GameUi { get; private set; } = null!;
         public static IGameInterface GameInterface { get; private set; } = null!;
@@ -151,8 +152,7 @@ namespace TrackyTrack
 
         public void BulkHandler()
         {
-            var addonPtr = GameGui.GetAddonByName("SalvageAutoDialog", 1);
-            if (addonPtr != nint.Zero)
+            if (GameGui.GetAddonByName("SalvageAutoDialog") != nint.Zero)
                 TimerManager.StartBulk();
         }
 

@@ -59,4 +59,20 @@ public class CharacterConfiguration
         CharacterName = Plugin.ClientState.LocalPlayer?.Name.ToString() ?? "",
         World = Plugin.ClientState.LocalPlayer?.HomeWorld.GameData?.Name.ToString() ?? "Unknown"
     };
+
+    public uint GetCurrencyCount(Currency currency)
+    {
+        return (currency) switch
+        {
+            Currency.SerpentSeals or Currency.FlameSeals or Currency.StormSeals => GCSeals,
+            Currency.MGP => MGP,
+            Currency.AlliedSeals => AlliedSeals,
+            Currency.CenturioSeals => CenturioSeal,
+            Currency.Bicolor => Bicolor,
+            Currency.Skybuilders => Skybuilder,
+            Currency.SackOfNuts => SackOfNuts,
+            Currency.Ventures => Ventures,
+            _ => 0
+        };
+    }
 }

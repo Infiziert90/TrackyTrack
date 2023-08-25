@@ -6,11 +6,11 @@ namespace TrackyTrack.Manager;
 
 public class FrameworkManager
 {
-    private Plugin Plugin;
+    private readonly Plugin Plugin;
 
     public bool IsSafe;
 
-    private static Dictionary<Currency, int> CurrencyCounts = new()
+    private static readonly Dictionary<Currency, int> CurrencyCounts = new()
     {
         { Currency.Gil, 0 },             // Gil
         { Currency.StormSeals, 0 },      // Storm Seals
@@ -47,7 +47,6 @@ public class FrameworkManager
         if (instance == null)
             return;
 
-        var container = instance->GetInventoryContainer(InventoryType.Currency);
         foreach (var currency in CurrencyCounts.Keys)
             CurrencyCounts[currency] = instance->GetInventoryItemCount((uint) currency, false, false, false);
 
@@ -132,6 +131,9 @@ public class FrameworkManager
     public void EurekaTracker(Framework _)
     {
         if (!Plugin.Configuration.EnableEurekaCoffers)
+            return;
+
+        if (!EurekaExtensions.AsArray.Contains(Plugin.ClientState.TerritoryType))
             return;
 
         var local = Plugin.ClientState.LocalPlayer;

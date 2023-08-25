@@ -25,6 +25,7 @@ public partial class MainWindow : Window, IDisposable
 
         ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
 
+        InitializeStats();
         InitializeDesynth();
     }
 
@@ -64,7 +65,14 @@ public partial class MainWindow : Window, IDisposable
 
     private static void DrawIcon(uint iconId)
     {
+        var size = IconSize * ImGuiHelpers.GlobalScale;
         var texture = TexturesCache.Instance!.GetTextureFromIconId(iconId);
-        ImGui.Image(texture.ImGuiHandle, IconSize);
+        ImGui.Image(texture.ImGuiHandle, size);
+    }
+
+    private static void DrawIcon(uint iconId, Vector2 size)
+    {
+        var texture = TexturesCache.Instance!.GetTextureFromIconId(iconId);
+        ImGui.Image(texture.ImGuiHandle, size);
     }
 }

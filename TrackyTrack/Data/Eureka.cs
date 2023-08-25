@@ -39,7 +39,7 @@ public record EurekaResult
 
     public void AddItem(uint item, uint count) => Items.Add(new EurekaItem(item, count));
     [JsonIgnore] public bool IsValid => Items.Any();
-};
+}
 
 public record EurekaItem(uint Item, uint Count);
 
@@ -57,8 +57,10 @@ public enum CofferRarity : uint
     Bronze = 2009532
 }
 
-public static class TerritoryExtensions
+public static class EurekaExtensions
 {
+    public static readonly uint[] AsArray = (uint[]) Enum.GetValues(typeof(Territory));
+
     public static string ToName(this Territory territory)
     {
         return (territory) switch
@@ -67,20 +69,6 @@ public static class TerritoryExtensions
             Territory.Pyros => "Pyros",
             Territory.Hydatos => "Hydatos",
             _ => "Unknown"
-        };
-    }
-}
-
-public static class CofferRarityExtensions
-{
-    public static uint ToWorth(this CofferRarity rarity)
-    {
-        return (rarity) switch
-        {
-            CofferRarity.Gold => 100_000,
-            CofferRarity.Silver => 25_000,
-            CofferRarity.Bronze => 10_000,
-            _ => 0
         };
     }
 
@@ -92,6 +80,17 @@ public static class CofferRarityExtensions
             CofferRarity.Silver => "Silver",
             CofferRarity.Gold => "Gold",
             _ => "Unknown"
+        };
+    }
+
+    public static uint ToWorth(this CofferRarity rarity)
+    {
+        return (rarity) switch
+        {
+            CofferRarity.Gold => 100_000,
+            CofferRarity.Silver => 25_000,
+            CofferRarity.Bronze => 10_000,
+            _ => 0
         };
     }
 }

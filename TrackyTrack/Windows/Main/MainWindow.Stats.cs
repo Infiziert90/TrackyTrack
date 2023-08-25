@@ -1,7 +1,17 @@
-﻿namespace TrackyTrack.Windows.Main;
+﻿using TrackyTrack.Data;
+
+namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
+    private static readonly Dictionary<Currency, uint> IconList = new();
+
+    private static void InitializeStats()
+    {
+        foreach (var currency in (Currency[])Enum.GetValues(typeof(Currency)))
+            IconList[currency] = ItemSheet.GetRow((uint)currency)!.Icon;
+    }
+
     private void StatsTab()
     {
         if (ImGui.BeginTabItem("Stats##GeneralStats"))
@@ -22,97 +32,41 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
+        ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(0.5f, 0.5f));
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Currency:");
         ImGui.Indent(10.0f);
-        if (ImGui.BeginTable($"##CurrencyStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
+        if (ImGui.BeginTable($"##CurrencyStatsTable", 3, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
         {
-            ImGui.TableSetupColumn("##CurrencyStat", 0, 0.6f);
+            ImGui.TableSetupColumn("##CurrencyStat", 0, 0.7f);
+            ImGui.TableSetupColumn("##CurrencyIcon", 0, 0.17f);
             ImGui.TableSetupColumn("##CurrencyNum");
 
-            ImGui.TableNextColumn();
+            var textHeight = ImGui.CalcTextSize("Grand Company").Y * 1.5f;
+            var iconSize = new Vector2(textHeight, textHeight);
 
-            var seals = characters.Sum(c => c.GCSeals);
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Grand Company");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{seals:N0}");
-
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-
-            var mgp = characters.Sum(c => c.MGP);
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Gold Saucer");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{mgp:N0}");
-
-            var ventures = characters.Sum(c => c.Ventures);
-            if (ventures > 0)
+            foreach (var currency in (Currency[]) Enum.GetValues(typeof(Currency)))
             {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+                // We skip these as they are duplicates and aren't saved
+                if (currency is Currency.Gil or Currency.StormSeals or Currency.SerpentSeals)
+                    continue;
 
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Venture Coins");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{ventures:N0}");
-            }
+                var count = characters.Sum(c => c.GetCurrencyCount(currency));
+                if (count == 0)
+                    continue;
 
-            var allied = characters.Sum(c => c.AlliedSeals);
-            if (allied > 0)
-            {
-                ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Allied Seals");
+                ImGui.AlignTextToFramePadding();
+                ImGui.TextColored(ImGuiColors.HealerGreen, currency.ToName());
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{allied:N0}");
-            }
-
-            var centurio = characters.Sum(c => c.CenturioSeal);
-            if (centurio > 0)
-            {
-                ImGui.TableNextRow();
+                DrawIcon(IconList[currency], iconSize);
                 ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Centurio Seals");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{centurio:N0}");
-            }
-
-            var nuts = characters.Sum(c => c.SackOfNuts);
-            if (nuts > 0)
-            {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Sack of Nuts");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{nuts:N0}");
-            }
-
-            var bicolor = characters.Sum(c => c.Bicolor);
-            if (bicolor > 0)
-            {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Bicolor Gemstones");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{bicolor:N0}");
-            }
-
-            var skybuilders = characters.Sum(c => c.Skybuilder);
-            if (skybuilders > 0)
-            {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Skybuilders' Scrip");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{skybuilders:N0}");
+                ImGui.TextUnformatted($"x{count:N0}");
             }
 
             ImGui.EndTable();
         }
         ImGui.Unindent(10.0f);
+        ImGui.PopStyleVar();
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
@@ -155,6 +109,10 @@ public partial class MainWindow
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Average");
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{teleportCosts / teleportsWithout:N0} gil");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGuiHelpers.ScaledDummy(5.0f);
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();

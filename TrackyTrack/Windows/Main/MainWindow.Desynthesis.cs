@@ -146,7 +146,7 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{destroyed.Value}");
+            ImGui.TextUnformatted($"x{destroyed.Value:N0}");
 
             var bestItem = dict.Where(pair => pair.Key is > 20 and < 1000000).MaxBy(pair => pair.Value);
             item = ItemSheet.GetRow(bestItem.Key)!;
@@ -155,7 +155,7 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{bestItem.Value}");
+            ImGui.TextUnformatted($"x{bestItem.Value:N0}");
 
             var bestCrystal = dict.Where(pair => pair.Key is > 0 and < 20).MaxBy(pair => pair.Value);
             item = ItemSheet.GetRow(bestCrystal.Key)!;
@@ -164,7 +164,7 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{bestCrystal.Value}");
+            ImGui.TextUnformatted($"x{bestCrystal.Value:N0}");
             ImGui.Unindent(10.0f);
 
             ImGui.TableNextRow();
