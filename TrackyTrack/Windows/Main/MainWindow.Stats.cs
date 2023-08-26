@@ -30,6 +30,25 @@ public partial class MainWindow
             return;
         }
 
+        if (Configuration is { EnableCurrency: false, EnableTeleport: false, EnableRepair: false })
+        {
+            ImGuiHelpers.ScaledDummy(10.0f);
+            Helper.WrappedError("No stats module enabled\n  - Currency\n  - Teleport\n  - Repair");
+            return;
+        }
+
+        if (Configuration.EnableCurrency)
+            CurrencyStats(characters);
+
+        if (Configuration.EnableTeleport)
+            TeleportStats(characters);
+
+        if (Configuration.EnableRepair)
+            RepairStats(characters);
+    }
+
+    private void CurrencyStats(CharacterConfiguration[] characters)
+    {
         ImGuiHelpers.ScaledDummy(5.0f);
 
         ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(0.5f, 0.5f));
@@ -69,7 +88,10 @@ public partial class MainWindow
         ImGui.PopStyleVar();
 
         ImGuiHelpers.ScaledDummy(5.0f);
+    }
 
+    private void TeleportStats(CharacterConfiguration[] characters)
+    {
         var teleports = characters.Sum(c => c.Teleports);
         var aetheryteTickets = characters.Sum(c => c.TeleportsAetheryte);
         var gcTickets = characters.Sum(c => c.TeleportsGC);
@@ -167,7 +189,10 @@ public partial class MainWindow
         ImGui.Unindent(10.0f);
 
         ImGuiHelpers.ScaledDummy(5.0f);
+    }
 
+    private void RepairStats(CharacterConfiguration[] characters)
+    {
         var repairs = characters.Sum(c => c.Repairs);
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Repair:");
         ImGui.Indent(10.0f);

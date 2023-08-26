@@ -1,4 +1,6 @@
-﻿namespace TrackyTrack.Windows.Config;
+﻿using Dalamud.Interface.Components;
+
+namespace TrackyTrack.Windows.Config;
 
 public partial class ConfigWindow
 {
@@ -12,8 +14,25 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Normal:");
             ImGui.Indent(10.0f);
             changed |= ImGui.Checkbox("Currency Tracking", ref Configuration.EnableCurrency);
+            ImGuiComponents.HelpMarker("Tracks the total amount over time." +
+                                       "\n  - Grand Company Seals" +
+                                       "\n  - MGP" +
+                                       "\n  - Venture Coins" +
+                                       "\n  - Allied Seals" +
+                                       "\n  - Centurio Seals" +
+                                       "\n  - Sack Of Nuts" +
+                                       "\n  - Bicolor Gemstone" +
+                                       "\n  - Skybuilders' Scrip");
             changed |= ImGui.Checkbox("Repair Cost Tracking", ref Configuration.EnableRepair);
+            ImGuiComponents.HelpMarker("Tracks repairs done at any Mender NPC." +
+                                       "\nNo support for repairs using the skill and other players");
             changed |= ImGui.Checkbox("Teleport Cost Tracking", ref Configuration.EnableTeleport);
+            ImGuiComponents.HelpMarker("Tracks the total amount of teleports done." +
+                                      "\nAlso tracks the following tickets:" +
+                                      "\n  - Aetheryte Tickets" +
+                                      "\n  - Grand Company Tickets" +
+                                      "\n  - Vesper Bay Tickets" +
+                                      "\n  - Firmament Tickets");
             changed |= ImGui.Checkbox("Desynthesis Tracking", ref Configuration.EnableDesynthesis);
             ImGui.Unindent(10.0f);
 
