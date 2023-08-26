@@ -102,15 +102,19 @@ namespace TrackyTrack
 
             ConfigurationBase.Load();
 
-            // Register all events
-            InventoryChanged.SubscribeAddEvent("CofferItemAdded", TimerManager.StoreCofferResult);
-            InventoryChanged.SubscribeAddEvent("DesynthItemAdded", TimerManager.DesynthItemAdded);
-            InventoryChanged.SubscribeRemoveEvent("DesynthItemRemoved", TimerManager.DesynthItemRemoved);
-            InventoryChanged.SubscribeAddEvent("EurekaItemAdded", TimerManager.EurekaItemAdded);
+            InventoryChanged.OnItemAdded += TimerManager.StoreCofferResult;
+            InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
+            InventoryChanged.OnItemAdded += TimerManager.EurekaItemAdded;
+            InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
         }
 
         public void Dispose()
         {
+            InventoryChanged.OnItemAdded -= TimerManager.StoreCofferResult;
+            InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
+            InventoryChanged.OnItemAdded -= TimerManager.EurekaItemAdded;
+            InventoryChanged.OnItemRemoved -= TimerManager.DesynthItemRemoved;
+
             ConfigurationBase.Dispose();
             WindowSystem.RemoveAllWindows();
 

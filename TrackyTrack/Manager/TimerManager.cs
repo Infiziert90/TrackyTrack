@@ -1,4 +1,5 @@
 ﻿using System.Timers;
+using CriticalCommonLib.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using TrackyTrack.Data;
 
@@ -91,19 +92,19 @@ public class TimerManager
         Plugin.ConfigurationBase.SaveCharacterConfig();
     }
 
-    public void DesynthItemAdded((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
+    public void DesynthItemAdded(InventoryMonitor.ItemChangesItem item)
     {
         if (!AwaitingBulkDesynth.Enabled)
             return;
 
         // 19 and below are crystals
         if (item.ItemId > 19)
-            LastBulkResult.AddItem(item.ItemId, item.Quantity, item.Flags == InventoryItem.ItemFlags.HQ);
+            LastBulkResult.AddItem(item.ItemId, (uint) item.Quantity, item.Flags == InventoryItem.ItemFlags.HQ);
         else
-            LastBulkResult.AddCrystal(item.ItemId, item.Quantity);
+            LastBulkResult.AddCrystal(item.ItemId, (uint) item.Quantity);
     }
 
-    public void DesynthItemRemoved((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
+    public void DesynthItemRemoved(InventoryMonitor.ItemChangesItem item)
     {
         if (!AwaitingBulkDesynth.Enabled)
             return;
@@ -129,7 +130,7 @@ public class TimerManager
         Plugin.ConfigurationBase.SaveCharacterConfig();
     }
 
-    public void StoreCofferResult((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
+    public void StoreCofferResult(InventoryMonitor.ItemChangesItem item)
     {
         if (!OpeningCoffer)
             return;
@@ -139,22 +140,22 @@ public class TimerManager
         if (VentureCoffer.Content.Contains(item.ItemId) && Plugin.Configuration.EnableVentureCoffers)
         {
             character.Coffer.Opened += 1;
-            if (!character.Coffer.Obtained.TryAdd(item.ItemId, item.Quantity))
-                character.Coffer.Obtained[item.ItemId] += item.Quantity;
+            if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.Coffer.Obtained[item.ItemId] += (uint) item.Quantity;
             save = true;
         }
         else if (GachaThreeZero.Content.Contains(item.ItemId) && Plugin.Configuration.EnableGachaCoffers)
         {
             character.GachaThreeZero.Opened += 1;
-            if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, item.Quantity))
-                character.GachaThreeZero.Obtained[item.ItemId] += item.Quantity;
+            if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
             save = true;
         }
         else if (GachaFourZero.Content.Contains(item.ItemId) && Plugin.Configuration.EnableGachaCoffers)
         {
             character.GachaFourZero.Opened += 1;
-            if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, item.Quantity))
-                character.GachaFourZero.Obtained[item.ItemId] += item.Quantity;
+            if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
             save = true;
         }
 
@@ -168,12 +169,12 @@ public class TimerManager
             Plugin.ChatGui.Print($"[TrackyTrack] Found an item that is possible from chest {item.ItemId} but in no list");
     }
 
-    public void EurekaItemAdded((uint ItemId, InventoryItem.ItemFlags Flags, ulong CharacterId, uint Quantity) item)
+    public void EurekaItemAdded(InventoryMonitor.ItemChangesItem item)
     {
         if (!AwaitingEurekaResult.Enabled)
             return;
 
-        EurekaResult.AddItem(item.ItemId, item.Quantity);
+        EurekaResult.AddItem(item.ItemId, (uint) item.Quantity);
     }
 
     public void StoreEurekaResult(object? _, ElapsedEventArgs __)

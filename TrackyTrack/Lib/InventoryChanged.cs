@@ -14,8 +14,11 @@ public class InventoryChanged
     private readonly Dictionary<ulong, Inventory> CachedInventories = new();
     private Dictionary<(uint, ItemFlags, ulong), int> ItemCounts = new();
 
-    public record EventSubscriber(EventType Type, Action<(uint, ItemFlags, ulong, uint)> Action);
-    public readonly Dictionary<string, EventSubscriber> Subscribed = new();
+    public event ItemAddedEvent? OnItemAdded;
+    public delegate void ItemAddedEvent(ItemChangesItem changedItem);
+
+    public event ItemRemovedEvent? OnItemRemoved;
+    public delegate void ItemRemovedEvent(ItemChangesItem changedItem);
 
     public InventoryChanged()
     {
@@ -267,41 +270,17 @@ public class InventoryChanged
         };
     }
 
-    public bool SubscribeAddEvent(string id, Action<(uint, ItemFlags, ulong, uint)> action)
-    {
-        if (Subscribed.ContainsKey(id))
-            return true;
-
-        Subscribed.Add(id, new EventSubscriber(EventType.ItemAdded, action));
-        return true;
-    }
-
-    public bool SubscribeRemoveEvent(string id, Action<(uint, ItemFlags, ulong, uint)> action)
-    {
-        if (Subscribed.ContainsKey(id))
-            return true;
-
-        Subscribed.Add(id, new EventSubscriber(EventType.ItemRemoved, action));
-        return true;
-    }
-
     public void TriggerInventoryChanged(List<InventoryChange> _, ItemChanges? changedItems)
     {
         if (changedItems != null)
         {
             foreach (var changedItem in changedItems.NewItems)
-            {
                 if (changedItem.ItemId != 1)
-                    foreach (var subscriber in Subscribed.Values.Where(s => s.Type == EventType.ItemAdded))
-                        subscriber.Action((changedItem.ItemId, changedItem.Flags, changedItem.CharacterId, (uint)changedItem.Quantity));
-            }
+                    OnItemAdded?.Invoke(changedItem);
 
             foreach (var changedItem in changedItems.RemovedItems)
-            {
                 if (changedItem.ItemId != 1)
-                    foreach (var subscriber in Subscribed.Values.Where(s => s.Type == EventType.ItemRemoved))
-                        subscriber.Action((changedItem.ItemId, changedItem.Flags, changedItem.CharacterId, (uint)changedItem.Quantity));
-            }
+                    OnItemRemoved?.Invoke(changedItem);
         }
     }
 
@@ -310,11 +289,5 @@ public class InventoryChanged
         Plugin.InventoryScanner.BagsChanged -= BagsChangedTrigger;
         Plugin.CharacterMonitor.OnCharacterRemoved -= OnCharacterRemoved;
         Plugin.ClientState.Login -= LoadOnLogin;
-    }
-
-    public enum EventType
-    {
-        ItemAdded = 0,
-        ItemRemoved = 1
     }
 }
