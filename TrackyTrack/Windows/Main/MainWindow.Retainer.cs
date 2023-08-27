@@ -3,6 +3,7 @@ using System.IO;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Dalamud.Logging;
+using Lumina.Excel.GeneratedSheets;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
@@ -11,8 +12,20 @@ public partial class MainWindow
 {
     private int RetainerSelectedCharacter;
     private int RetainerSelectedHistory;
+    private int RetainerAvgInput = 100;
 
-    private static CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
+    private int LastTotalQuick;
+
+    // cache
+    private int CofferVentures;
+    private int TotalCoffers;
+
+    private double GearCount;
+    private long TotalLvl;
+    private long TotalSeals;
+    private double TotalFCPoints;
+
+    private static readonly CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
 
     public class ExportLoot
     {
@@ -54,6 +67,8 @@ public partial class MainWindow
                     return;
                 }
 
+                RetainerStats(characters);
+
                 RetainerHistory(characters);
 
                 VentureCoffers(characters);
@@ -62,6 +77,122 @@ public partial class MainWindow
             }
             ImGui.EndTabItem();
         }
+    }
+
+    private void RetainerStats(CharacterConfiguration[] characters)
+    {
+        if (!ImGui.BeginTabItem("Stats"))
+            return;
+
+        var history = characters.SelectMany(c => c.Retainer.History).ToArray();
+        var totalNormal = history.Count(c => c.Value.VentureType != 395);
+        var totalQuick = history.Count(c => c.Value.VentureType == 395);
+
+        if (LastTotalQuick != totalQuick)
+        {
+            LastTotalQuick = totalQuick;
+
+            // Coffers only drop from max level retainers
+            CofferVentures = history.Count(pair => pair.Value.MaxLevel);
+            TotalCoffers = history.Count(pair => pair.Value.Item == 32161);
+
+            // All valid gear is rarity green or higher
+            (Item Item, bool HQ)[] validGear = history.Select(c => (ItemSheet.GetRow(c.Value.Item)!, c.Value.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
+            GearCount = validGear.Length;
+            TotalLvl = validGear.Sum(i => i.Item.LevelItem.Row);
+            TotalSeals = validGear.Sum(i => GCSupplySheet.GetRow(i.Item.LevelItem.Row)!.SealsExpertDelivery);
+            TotalFCPoints = validGear.Sum(i =>
+            {
+                var iLvL = i.Item.LevelItem.Row;
+                if ((iLvL & 1) == 1)
+                    iLvL += 1;
+
+                return (i.HQ ? 3.0 : 1.5) * iLvL;
+            });
+        }
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Types:");
+        if (ImGui.BeginTable($"##TotalStatsTable", 2))
+        {
+            ImGui.TableSetupColumn("##stat", 0, 0.6f);
+            ImGui.TableSetupColumn("##amount");
+
+            ImGui.Indent(10.0f);
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Normal");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{totalNormal:N0} time{(totalNormal > 1 ? "s" : "")}");
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Quick");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{totalQuick:N0} time{(totalQuick > 1 ? "s" : "")}");
+            ImGui.Unindent(10.0f);
+
+            if (GearCount > 0)
+            {
+                ImGui.TableNextColumn();
+                ImGuiHelpers.ScaledDummy(5.0f);
+                ImGui.TextColored(ImGuiColors.DalamudViolet, "Average:");
+                ImGui.Indent(10.0f);
+
+                ImGui.TableNextRow();
+
+                var avgLvL = TotalLvl / GearCount;
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "iLvL");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avgLvL:F2}");
+
+                var avgFCPoints = TotalFCPoints / GearCount;
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "FC Points");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avgFCPoints:F2}");
+
+                var avgSeals = TotalSeals / GearCount;
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "GC Seals");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avgSeals:F2}");
+                ImGui.Unindent(10.0f);
+            }
+
+            if (CofferVentures > 0)
+            {
+                ImGui.TableNextColumn();
+                ImGuiHelpers.ScaledDummy(5.0f);
+                ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Coffers:");
+                ImGui.Indent(10.0f);
+
+                ImGui.TableNextRow();
+
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Obtained");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{TotalCoffers:N0}");
+
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Max Level");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{CofferVentures:N0} venture{(CofferVentures > 1 ? "s" : "")}");
+
+                ImGui.TableNextColumn();
+                var width = ImGui.CalcTextSize("10000").X * 1.2f;
+                var avg = (TotalCoffers/ (double) CofferVentures) * RetainerAvgInput;
+                ImGui.AlignTextToFramePadding();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Chance in");
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(width);
+                ImGui.InputInt("##AvgInput", ref RetainerAvgInput, 0);
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avg:F2} coffer{(avg > 1 ? "s" : "")}");
+                ImGui.Unindent(10.0f);
+            }
+
+            ImGui.EndTable();
+        }
+        ImGui.EndTabItem();
     }
 
     private void RetainerHistory(CharacterConfiguration[] characters)

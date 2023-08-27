@@ -189,8 +189,8 @@ namespace TrackyTrack
             foreach (var result in instance->DesynthResultSpan.ToArray().Where(r => r.ItemId != 0))
             {
                 var id  = result.ItemId > 1_000_000 ? result.ItemId - 1_000_000 : result.ItemId;
-                if (!character.Storage.Total.TryAdd(id, (uint)result.Quantity))
-                    character.Storage.Total[id] += (uint)result.Quantity;
+                if (!character.Storage.Total.TryAdd(id, (uint) result.Quantity))
+                    character.Storage.Total[id] += (uint) result.Quantity;
             }
 
             ConfigurationBase.SaveCharacterConfig();
@@ -198,6 +198,9 @@ namespace TrackyTrack
 
         public unsafe void RetainerHandler(uint venture, uint item, uint count, bool isHQ)
         {
+            if (!Configuration.EnableRetainer)
+                return;
+
             var retainer = RetainerManager.Instance();
             if (retainer == null)
                 return;

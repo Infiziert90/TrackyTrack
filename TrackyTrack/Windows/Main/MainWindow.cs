@@ -9,7 +9,8 @@ public partial class MainWindow : Window, IDisposable
     private Plugin Plugin;
     private Configuration Configuration;
 
-    public static ExcelSheet<Item> ItemSheet = null!;
+    private static ExcelSheet<Item> ItemSheet = null!;
+    private static ExcelSheet<GCSupplyDutyReward> GCSupplySheet = null!;
     private static readonly Vector2 IconSize = new(28, 28);
 
     public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky")
@@ -24,6 +25,7 @@ public partial class MainWindow : Window, IDisposable
         Configuration = configuration;
 
         ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
+        GCSupplySheet = Plugin.Data.GetExcelSheet<GCSupplyDutyReward>()!;
 
         InitializeStats();
         InitializeDesynth();

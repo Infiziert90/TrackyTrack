@@ -14,6 +14,7 @@ namespace TrackyTrack
 
         public bool EnableDesynthesis = true;
         public bool EnableBulkSupport = true;
+        public bool EnableRetainer = true;
         public bool EnableVentureCoffers = true;
         public bool EnableGachaCoffers = true;
         public bool EnableEurekaCoffers = true;

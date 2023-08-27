@@ -34,6 +34,7 @@ public partial class ConfigWindow
                                       "\n  - Vesper Bay Tickets" +
                                       "\n  - Firmament Tickets");
             changed |= ImGui.Checkbox("Desynthesis Tracking", ref Configuration.EnableDesynthesis);
+            changed |= ImGui.Checkbox("Retainer Venture Tracking", ref Configuration.EnableRetainer);
             ImGui.Unindent(10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);
