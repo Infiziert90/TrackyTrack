@@ -16,6 +16,9 @@ public partial class MainWindow
                 if (!characters.Any())
                 {
                     Helper.NoEurekaCofferData();
+
+                    ImGui.EndTabBar();
+                    ImGui.EndTabItem();
                     return;
                 }
 
@@ -23,6 +26,9 @@ public partial class MainWindow
                 if (!characterCoffers.Any())
                 {
                     Helper.NoEurekaCofferData();
+
+                    ImGui.EndTabBar();
+                    ImGui.EndTabItem();
                     return;
                 }
 

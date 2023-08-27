@@ -9,6 +9,9 @@ namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
+    private int RetainerSelectedCharacter;
+    private int RetainerSelectedHistory;
+
     private static CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
 
     public class ExportLoot
@@ -37,11 +40,23 @@ public partial class MainWindow
 
     private void CofferTab()
     {
-        if (ImGui.BeginTabItem("Coffers"))
+        if (ImGui.BeginTabItem("Retainer"))
         {
-            if (ImGui.BeginTabBar("##CofferTabBar"))
+            if (ImGui.BeginTabBar("##RetainerTabBar"))
             {
-                Coffers();
+                var characters = Plugin.CharacterStorage.Values.ToArray();
+                if (!characters.Any())
+                {
+                    Helper.NoVentureCofferData();
+
+                    ImGui.EndTabBar();
+                    ImGui.EndTabItem();
+                    return;
+                }
+
+                RetainerHistory(characters);
+
+                VentureCoffers(characters);
 
                 ImGui.EndTabBar();
             }
@@ -49,19 +64,71 @@ public partial class MainWindow
         }
     }
 
-    private void Coffers()
+    private void RetainerHistory(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Venture"))
+        if (!ImGui.BeginTabItem("History"))
             return;
 
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-
+        characters = characters.Where(c => c.Retainer.History.Any()).ToArray();
         if (!characters.Any())
         {
-            Helper.NoVentureCofferData();
+            Helper.NoRetainerData();
+
             ImGui.EndTabItem();
             return;
         }
+
+        var existingCharacters = characters.Select(character => $"{character.CharacterName}@{character.World}").ToArray();
+        var selectedCharacter = RetainerSelectedCharacter;
+        ImGui.Combo("##existingCharacters", ref selectedCharacter, existingCharacters, existingCharacters.Length);
+        if (selectedCharacter != RetainerSelectedCharacter)
+        {
+            RetainerSelectedCharacter = selectedCharacter;
+            RetainerSelectedHistory = 0;
+        }
+
+        var selectedChar = characters[RetainerSelectedCharacter];
+        var history = selectedChar.Retainer.History.Reverse().Select(pair => $"{pair.Key}").ToArray();
+
+        ImGui.Combo("##voyageSelection", ref RetainerSelectedHistory, history, history.Length);
+        Helper.DrawArrows(ref RetainerSelectedHistory, history.Length);
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.Separator();
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        var ventureResult = selectedChar.Retainer.History.Reverse().ToArray()[RetainerSelectedHistory].Value;
+
+        if (ImGui.BeginTable($"##HistoryTable", 3))
+        {
+            ImGui.TableSetupColumn("##icon", 0, 0.2f);
+            ImGui.TableSetupColumn("##item");
+            ImGui.TableSetupColumn("##amount", 0, 0.2f);
+
+            ImGui.Indent(10.0f);
+            var item = ItemSheet.GetRow(ventureResult.Item)!;
+
+            ImGui.TableNextColumn();
+            DrawIcon(item.Icon);
+            ImGui.TableNextColumn();
+
+            var name = Utils.ToStr(item.Name);
+            ImGui.TextUnformatted(name);
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{ventureResult.Count}");
+            ImGui.TableNextRow();
+            ImGui.Unindent(10.0f);
+
+            ImGui.EndTable();
+        }
+        ImGui.EndTabItem();
+    }
+
+    private void VentureCoffers(CharacterConfiguration[] characters)
+    {
+        if (!ImGui.BeginTabItem("Venture Coffers"))
+            return;
 
         var characterCoffers = characters.Where(c => c.Coffer.Opened > 0).ToList();
         if (!characterCoffers.Any())

@@ -12,6 +12,7 @@ using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using TrackyTrack.Attributes;
 using TrackyTrack.Data;
 using TrackyTrack.Windows.Main;
@@ -38,6 +39,7 @@ namespace TrackyTrack
         public static IGameInterface GameInterface { get; private set; } = null!;
         public static IInventoryScanner InventoryScanner { get; private set; } = null!;
         public static ICharacterMonitor CharacterMonitor { get; private set; } = null!;
+        public static AddonController AddonController { get; private set; } = null!;
 
         public string Name => "Tracky Track";
 
@@ -102,6 +104,10 @@ namespace TrackyTrack
 
             ConfigurationBase.Load();
 
+            AddonController = new AddonController();
+            AddonController.AddonFinalize += FrameworkManager.RetainerChecker;
+            AddonController.AddonPostSetup += FrameworkManager.RetainerPreChecker;
+
             InventoryChanged.OnItemAdded += TimerManager.StoreCofferResult;
             InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
             InventoryChanged.OnItemAdded += TimerManager.EurekaItemAdded;
@@ -110,6 +116,9 @@ namespace TrackyTrack
 
         public void Dispose()
         {
+            AddonController.AddonFinalize -= FrameworkManager.RetainerChecker;
+            AddonController.AddonPostSetup -= FrameworkManager.RetainerPreChecker;
+
             InventoryChanged.OnItemAdded -= TimerManager.StoreCofferResult;
             InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
             InventoryChanged.OnItemAdded -= TimerManager.EurekaItemAdded;
@@ -183,6 +192,21 @@ namespace TrackyTrack
                 if (!character.Storage.Total.TryAdd(id, (uint)result.Quantity))
                     character.Storage.Total[id] += (uint)result.Quantity;
             }
+
+            ConfigurationBase.SaveCharacterConfig();
+        }
+
+        public unsafe void RetainerHandler(uint venture, uint item, uint count, bool isHQ)
+        {
+            var retainer = RetainerManager.Instance();
+            if (retainer == null)
+                return;
+
+            CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+            var character = CharacterStorage[ClientState.LocalContentId];
+
+            var isMaxLevel = retainer->GetActiveRetainer()->Level == 90;
+            character.Retainer.History.Add(DateTime.Now, new VentureResult(venture, item, count, isHQ, isMaxLevel));
 
             ConfigurationBase.SaveCharacterConfig();
         }

@@ -16,6 +16,12 @@ public static class Helper
         WrappedError("No data stored for desynthesis\nPlease desynthesis an item.");
     }
 
+    public static void NoRetainerData()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("No data stored for retainers\nPlease complete a venture with your retainer.");
+    }
+
     public static void NoVentureCofferData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);

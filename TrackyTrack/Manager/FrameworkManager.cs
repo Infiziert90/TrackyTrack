@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -25,6 +26,7 @@ public class FrameworkManager
         { Currency.Skybuilders, 0 },     // Skybuilders
     };
 
+    private uint LastSeenVentureId = 0;
 
     public FrameworkManager(Plugin plugin)
     {
@@ -51,6 +53,45 @@ public class FrameworkManager
             CurrencyCounts[currency] = instance->GetInventoryItemCount((uint) currency, false, false, false);
 
         IsSafe = true;
+    }
+
+    public unsafe void RetainerPreChecker(AddonArgs addonInfo)
+    {
+        var retainer = RetainerManager.Instance();
+        if (retainer != null)
+        {
+            try
+            {
+                if (addonInfo.AddonName == "SelectString")
+                    LastSeenVentureId = retainer->GetActiveRetainer()->VentureID;
+            }
+            catch
+            {
+                // Do nothing
+            }
+        }
+    }
+
+    public unsafe void RetainerChecker(AddonArgs addonInfo)
+    {
+        if (addonInfo.AddonName == "RetainerTaskResult")
+        {
+            try
+            {
+                    var value = AtkStage.GetSingleton()->AtkArrayDataHolder->NumberArrays[105]->IntArray;
+                    var item = value[295];
+                    var isHQ = item > 1_000_000;
+                    if (isHQ)
+                        item -= 1_000_000;
+                    var count = (short)(value[297] & 0xffff);
+
+                    Plugin.RetainerHandler(LastSeenVentureId, (uint) item, (uint) count, isHQ);
+            }
+            catch
+            {
+                // Do nothing
+            }
+        }
     }
 
     public unsafe void CurrencyTracker(Framework _)
