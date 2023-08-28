@@ -175,7 +175,7 @@ public partial class MainWindow
                 ImGui.TextUnformatted($"{TotalCoffers:N0}");
 
                 ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Max Level");
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Valid");
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{CofferVentures:N0} venture{(CofferVentures > 1 ? "s" : "")}");
 
