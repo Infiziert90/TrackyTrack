@@ -84,20 +84,22 @@ public partial class MainWindow
         if (!ImGui.BeginTabItem("Stats"))
             return;
 
-        var history = characters.SelectMany(c => c.Retainer.History).ToArray();
-        var totalNormal = history.Count(c => c.Value.VentureType != 395);
-        var totalQuick = history.Count(c => c.Value.VentureType == 395);
+        var history = characters.SelectMany(c => c.VentureStorage.History.Values).ToArray();
+        var quickHistory = history.Where(v => v.IsQuickVenture).ToArray();
+
+        var totalNormal = history.Count(c => !c.IsQuickVenture);
+        var totalQuick = quickHistory.Length;
 
         if (LastTotalQuick != totalQuick)
         {
             LastTotalQuick = totalQuick;
 
             // Coffers only drop from max level retainers
-            CofferVentures = history.Count(pair => pair.Value.MaxLevel);
-            TotalCoffers = history.Count(pair => pair.Value.Item == 32161);
+            CofferVentures = quickHistory.Count(v => v.MaxLevel);
+            TotalCoffers = quickHistory.Count(v => v.Primary.Item == 32161);
 
             // All valid gear is rarity green or higher
-            (Item Item, bool HQ)[] validGear = history.Select(c => (ItemSheet.GetRow(c.Value.Item)!, c.Value.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
+            (Item Item, bool HQ)[] validGear = quickHistory.Select(v => (ItemSheet.GetRow(v.Primary.Item)!, v.Primary.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
             GearCount = validGear.Length;
             TotalLvl = validGear.Sum(i => i.Item.LevelItem.Row);
             TotalSeals = validGear.Sum(i => GCSupplySheet.GetRow(i.Item.LevelItem.Row)!.SealsExpertDelivery);
@@ -200,7 +202,7 @@ public partial class MainWindow
         if (!ImGui.BeginTabItem("History"))
             return;
 
-        characters = characters.Where(c => c.Retainer.History.Any()).ToArray();
+        characters = characters.Where(c => c.VentureStorage.History.Any()).ToArray();
         if (!characters.Any())
         {
             Helper.NoRetainerData();
@@ -219,7 +221,7 @@ public partial class MainWindow
         }
 
         var selectedChar = characters[RetainerSelectedCharacter];
-        var history = selectedChar.Retainer.History.Reverse().Select(pair => $"{pair.Key}").ToArray();
+        var history = selectedChar.VentureStorage.History.Reverse().Select(pair => $"{pair.Key}").ToArray();
 
         ImGui.Combo("##voyageSelection", ref RetainerSelectedHistory, history, history.Length);
         Helper.DrawArrows(ref RetainerSelectedHistory, history.Length);
@@ -228,7 +230,7 @@ public partial class MainWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        var ventureResult = selectedChar.Retainer.History.Reverse().ToArray()[RetainerSelectedHistory].Value;
+        var ventureResult = selectedChar.VentureStorage.History.Reverse().ToArray()[RetainerSelectedHistory].Value;
 
         if (ImGui.BeginTable($"##HistoryTable", 3))
         {
@@ -237,18 +239,24 @@ public partial class MainWindow
             ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
             ImGui.Indent(10.0f);
-            var item = ItemSheet.GetRow(ventureResult.Item)!;
+            foreach (var ventureItem in ventureResult.Items)
+            {
+                if (!ventureItem.Valid)
+                    continue;
 
-            ImGui.TableNextColumn();
-            DrawIcon(item.Icon);
-            ImGui.TableNextColumn();
+                var item = ItemSheet.GetRow(ventureItem.Item)!;
 
-            var name = Utils.ToStr(item.Name);
-            ImGui.TextUnformatted(name);
+                ImGui.TableNextColumn();
+                DrawIcon(item.Icon);
+                ImGui.TableNextColumn();
 
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{ventureResult.Count}");
-            ImGui.TableNextRow();
+                var name = Utils.ToStr(item.Name);
+                ImGui.TextUnformatted(name);
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{ventureItem.Count}");
+                ImGui.TableNextRow();
+            }
             ImGui.Unindent(10.0f);
 
             ImGui.EndTable();

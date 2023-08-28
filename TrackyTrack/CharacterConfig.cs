@@ -30,7 +30,7 @@ public class CharacterConfiguration
     public uint GCSeals = 0;
     public uint MGP = 0;
     public uint AlliedSeals = 0;
-    public uint Ventures = 0;
+    public uint VentureCoins = 0;
     public uint SackOfNuts = 0;
     public uint CenturioSeal = 0;
     public uint Bicolor = 0;
@@ -40,7 +40,7 @@ public class CharacterConfiguration
     public VentureCoffer Coffer = new();
     public GachaThreeZero GachaThreeZero = new();
     public GachaFourZero GachaFourZero = new();
-    public Retainer Retainer = new();
+    public Retainer VentureStorage = new();
     public EurekaTracker Eureka = new();
 
     public CharacterConfiguration() { }
@@ -71,7 +71,7 @@ public class CharacterConfiguration
             Currency.Bicolor => Bicolor,
             Currency.Skybuilders => Skybuilder,
             Currency.SackOfNuts => SackOfNuts,
-            Currency.Ventures => Ventures,
+            Currency.Ventures => VentureCoins,
             _ => 0
         };
     }

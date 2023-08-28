@@ -79,13 +79,19 @@ public class FrameworkManager
             try
             {
                     var value = AtkStage.GetSingleton()->AtkArrayDataHolder->NumberArrays[105]->IntArray;
-                    var item = value[295];
-                    var isHQ = item > 1_000_000;
-                    if (isHQ)
-                        item -= 1_000_000;
-                    var count = (short)(value[297] & 0xffff);
+                    var primary = value[295];
+                    var primaryHQ = primary > 1_000_000;
+                    if (primaryHQ)
+                        primary -= 1_000_000;
+                    var primaryCount = (short)(value[297] & 0xffff);
 
-                    Plugin.RetainerHandler(LastSeenVentureId, (uint) item, (uint) count, isHQ);
+                    var additionalItem = value[298];
+                    var additionalHQ = additionalItem > 1_000_000;
+                    if (additionalHQ)
+                        additionalItem -= 1_000_000;
+                    var additionalCount = (short) (value[300] & 0xffff);
+
+                    Plugin.RetainerHandler(LastSeenVentureId,new VentureItem((uint) primary, primaryCount, primaryHQ),new VentureItem((uint) additionalItem, additionalCount, additionalHQ));
             }
             catch
             {

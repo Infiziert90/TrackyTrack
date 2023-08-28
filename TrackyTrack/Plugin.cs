@@ -196,7 +196,7 @@ namespace TrackyTrack
             ConfigurationBase.SaveCharacterConfig();
         }
 
-        public unsafe void RetainerHandler(uint venture, uint item, uint count, bool isHQ)
+        public unsafe void RetainerHandler(uint venture, VentureItem primary, VentureItem additional)
         {
             if (!Configuration.EnableRetainer)
                 return;
@@ -209,7 +209,7 @@ namespace TrackyTrack
             var character = CharacterStorage[ClientState.LocalContentId];
 
             var isMaxLevel = retainer->GetActiveRetainer()->Level == 90;
-            character.Retainer.History.Add(DateTime.Now, new VentureResult(venture, item, count, isHQ, isMaxLevel));
+            character.VentureStorage.History.Add(DateTime.Now, new VentureResult(venture, new List<VentureItem>{primary, additional}, isMaxLevel));
 
             ConfigurationBase.SaveCharacterConfig();
         }
@@ -240,7 +240,7 @@ namespace TrackyTrack
                     character.CenturioSeal += (uint) increase;
                     break;
                 case Currency.Ventures:
-                    character.Ventures += (uint) increase;
+                    character.VentureCoins += (uint) increase;
                     break;
                 case Currency.Skybuilders:
                     character.Skybuilder += (uint) increase;
