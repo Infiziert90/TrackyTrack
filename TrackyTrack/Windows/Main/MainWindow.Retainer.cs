@@ -14,15 +14,14 @@ public partial class MainWindow
     private int RetainerSelectedHistory;
     private int RetainerAvgInput = 100;
 
-    private int LastTotalQuick;
+    private int TotalQuick;
 
     // cache
     private int CofferVentures;
     private int TotalCoffers;
 
-    private double GearCount;
-    private long TotalLvl;
-    private long TotalSeals;
+    private double TotalLvl;
+    private double TotalSeals;
     private double TotalFCPoints;
 
     private static readonly CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
@@ -90,9 +89,9 @@ public partial class MainWindow
         var totalNormal = history.Count(c => !c.IsQuickVenture);
         var totalQuick = quickHistory.Length;
 
-        if (LastTotalQuick != totalQuick)
+        if (TotalQuick != totalQuick)
         {
-            LastTotalQuick = totalQuick;
+            TotalQuick = totalQuick;
 
             // Coffers only drop from max level retainers
             CofferVentures = quickHistory.Count(v => v.MaxLevel);
@@ -100,7 +99,6 @@ public partial class MainWindow
 
             // All valid gear is rarity green or higher
             (Item Item, bool HQ)[] validGear = quickHistory.Select(v => (ItemSheet.GetRow(v.Primary.Item)!, v.Primary.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
-            GearCount = validGear.Length;
             TotalLvl = validGear.Sum(i => i.Item.LevelItem.Row);
             TotalSeals = validGear.Sum(i => GCSupplySheet.GetRow(i.Item.LevelItem.Row)!.SealsExpertDelivery);
             TotalFCPoints = validGear.Sum(i =>
@@ -131,7 +129,7 @@ public partial class MainWindow
             ImGui.TextUnformatted($"{totalQuick:N0} time{(totalQuick > 1 ? "s" : "")}");
             ImGui.Unindent(10.0f);
 
-            if (GearCount > 0)
+            if (TotalQuick > 0)
             {
                 ImGui.TableNextColumn();
                 ImGuiHelpers.ScaledDummy(5.0f);
@@ -140,19 +138,19 @@ public partial class MainWindow
 
                 ImGui.TableNextRow();
 
-                var avgLvL = TotalLvl / GearCount;
+                var avgLvL = TotalLvl / TotalQuick;
                 ImGui.TableNextColumn();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "iLvL");
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{avgLvL:F2}");
 
-                var avgFCPoints = TotalFCPoints / GearCount;
+                var avgFCPoints = TotalFCPoints / TotalQuick;
                 ImGui.TableNextColumn();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "FC Points");
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{avgFCPoints:F2}");
 
-                var avgSeals = TotalSeals / GearCount;
+                var avgSeals = TotalSeals / TotalQuick;
                 ImGui.TableNextColumn();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "GC Seals");
                 ImGui.TableNextColumn();
