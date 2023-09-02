@@ -171,6 +171,10 @@ namespace TrackyTrack
 
         public unsafe void DesynthHandler()
         {
+            // We have to return whenever we see bulk happening
+            if (GameGui.GetAddonByName("SalvageAutoDialog") != nint.Zero)
+                return;
+
             var instance = AgentSalvage.Instance();
             if (instance == null)
             {
