@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,18 +12,29 @@ namespace TrackyTrack;
 // Based on: https://github.com/Penumbra-Sync/client/blob/main/MareSynchronos/MareConfiguration/ConfigurationServiceBase.cs
 public class ConfigurationBase : IDisposable
 {
+    private record SaveObject(ulong ContentId, string FilePath, CharacterConfiguration Character);
+
     private readonly Plugin Plugin;
+    private readonly UiBuilder UiBuilder;
+
     private readonly CancellationTokenSource CancellationToken = new();
-    private readonly Dictionary<ulong, DateTime> LastWriteTimes = new();
+    private readonly ConcurrentDictionary<ulong, DateTime> LastWriteTimes = new();
+    private readonly ConcurrentQueue<SaveObject> SaveQueue = new();
 
     public string ConfigurationDirectory { get; init; }
+    private string MiscFolder { get; init; }
 
     public ConfigurationBase(Plugin plugin)
     {
         Plugin = plugin;
+        UiBuilder = Plugin.PluginInterface.UiBuilder;
+
         ConfigurationDirectory = Plugin.PluginInterface.ConfigDirectory.FullName;
+        MiscFolder = Path.Combine(ConfigurationDirectory, "Misc");
+        Directory.CreateDirectory(MiscFolder);
 
         Task.Run(CheckForConfigChanges, CancellationToken.Token);
+        Task.Run(SaveAndTryMoveConfig, CancellationToken.Token);
     }
 
     public void Dispose()
@@ -39,7 +51,7 @@ public class ConfigurationBase : IDisposable
                 Plugin.CharacterStorage[id] = LoadConfig(id);
     }
 
-    private static string LoadFile(FileSystemInfo fileInfo)
+    private string LoadFile(FileSystemInfo fileInfo)
     {
         for (var i = 0; i < 5; i++)
         {
@@ -50,10 +62,10 @@ public class ConfigurationBase : IDisposable
             }
             catch
             {
-                // Try to read until counter runs out
-                var content = $"Config file read failed {i + 1}/5";
-                Plugin.PluginInterface.UiBuilder.AddNotification(content, "Failed Read", NotificationType.Warning);
-                PluginLog.Warning(content);
+                if (i == 4)
+                    UiBuilder.AddNotification("Failed to read config", "[Tracky Track]", NotificationType.Warning);
+
+                PluginLog.Warning($"Config file read failed {i + 1}/5");
             }
         }
 
@@ -108,61 +120,22 @@ public class ConfigurationBase : IDisposable
 
     private void Save(ulong contentId, CharacterConfiguration savedConfig)
     {
-        var miscFolder = Path.Combine(ConfigurationDirectory, $"Misc");
-        Directory.CreateDirectory(miscFolder);
-
         var filePath = Path.Combine(ConfigurationDirectory, $"{contentId}.json");
-        var existingConfigs = Directory.EnumerateFiles(miscFolder, $"{contentId}.json.bak.*")
-                                       .Select(c => new FileInfo(c)).OrderByDescending(c => c.LastWriteTime).ToList();
-        if (existingConfigs.Skip(5).Any())
-            foreach (var file in existingConfigs.Skip(5).ToList())
-                file.Delete();
-
         try
         {
-            File.Copy(filePath, $"{Path.Combine(miscFolder, $"{contentId}.json")}.bak.{DateTime.Now:yyyyMMddHH}", overwrite: true);
+            var existingConfigs = Directory.EnumerateFiles(MiscFolder, $"{contentId}.json.bak.*")
+                                           .Select(c => new FileInfo(c)).OrderByDescending(c => c.LastWriteTime);
+            foreach (var file in existingConfigs.Skip(5))
+                file.Delete();
+
+            File.Copy(filePath, $"{Path.Combine(MiscFolder, $"{contentId}.json")}.bak.{DateTime.Now:yyyyMMddHH}", overwrite: true);
         }
         catch
         {
             // ignore if file backup couldn't be created once
         }
 
-        Task.Run(() => SaveAndTryMoveConfig(contentId, miscFolder, filePath, savedConfig));
-    }
-
-    private async Task SaveAndTryMoveConfig(ulong contentId, string miscFolder, string filePath, CharacterConfiguration savedConfig)
-    {
-        try
-        {
-            var tmpPath = $"{Path.Combine(miscFolder, $"{contentId}.json.tmp")}";
-            if (File.Exists(tmpPath))
-                File.Delete(tmpPath);
-
-            File.WriteAllText(tmpPath, JsonConvert.SerializeObject(savedConfig, Formatting.Indented));
-
-            for (var i = 0; i < 5; i++)
-            {
-                try
-                {
-                    File.Move(tmpPath, filePath, true);
-                    LastWriteTimes[contentId] = new FileInfo(filePath).LastWriteTimeUtc;
-                    return;
-                }
-                catch
-                {
-                    // Just try again until counter runs out
-                    var content = $"Config file couldn't be moved {i + 1}/5";
-                    Plugin.PluginInterface.UiBuilder.AddNotification(content, "Failed Move", NotificationType.Warning);
-                    PluginLog.Warning(content);
-                    await Task.Delay(50, CancellationToken.Token);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            PluginLog.Error(e.Message);
-            PluginLog.Error(e.StackTrace!);
-        }
+        SaveQueue.Enqueue(new SaveObject(contentId, filePath, savedConfig));
     }
 
     public void DeleteCharacter(ulong id)
@@ -172,7 +145,7 @@ public class ConfigurationBase : IDisposable
 
         try
         {
-            LastWriteTimes.Remove(id);
+            LastWriteTimes.TryRemove(id, out _);
             Plugin.CharacterStorage.Remove(id);
             var file = new FileInfo(Path.Combine(ConfigurationDirectory, $"{id}.json"));
             if (file.Exists)
@@ -182,6 +155,49 @@ public class ConfigurationBase : IDisposable
         {
             PluginLog.Error("Error while deleting character save file.");
             PluginLog.Error(e.Message);
+        }
+    }
+
+    private async Task SaveAndTryMoveConfig()
+    {
+        while (!CancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(100), CancellationToken.Token);
+
+            if (!SaveQueue.TryDequeue(out var queueObject))
+                continue;
+
+            try
+            {
+                var tmpPath = $"{Path.Combine(MiscFolder, $"{queueObject.ContentId}.json.tmp")}";
+                if (File.Exists(tmpPath))
+                    File.Delete(tmpPath);
+
+                File.WriteAllText(tmpPath, JsonConvert.SerializeObject(queueObject.Character, Formatting.Indented));
+                for (var i = 0; i < 5; i++)
+                {
+                    try
+                    {
+                        File.Move(tmpPath, queueObject.FilePath, true);
+                        LastWriteTimes[queueObject.ContentId] = new FileInfo(queueObject.FilePath).LastWriteTimeUtc;
+                        break;
+                    }
+                    catch
+                    {
+                        // Just try again until counter runs out
+                        if (i == 4)
+                            UiBuilder.AddNotification("Failed to move config", "[Tracky Track]", NotificationType.Warning);
+
+                        PluginLog.Warning($"Config file couldn't be moved {i + 1}/5");
+                        await Task.Delay(30, CancellationToken.Token);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                PluginLog.Error(e.Message);
+                PluginLog.Error(e.StackTrace ?? "Null Stacktrace");
+            }
         }
     }
 
