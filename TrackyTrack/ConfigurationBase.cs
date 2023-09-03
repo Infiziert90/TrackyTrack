@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.Internal.Notifications;
@@ -92,6 +93,21 @@ public class ConfigurationBase : IDisposable
         if (!Plugin.CharacterStorage.TryGetValue(contentId, out var savedConfig))
             return;
 
+        Save(contentId, savedConfig);
+    }
+
+    public void SaveAll()
+    {
+        // This saves all characters, only allow calls if only 1 process is running
+        if (Process.GetProcessesByName("ffxiv_dx11").Length > 1)
+            return;
+
+        foreach (var (contentId, savedConfig) in Plugin.CharacterStorage)
+            Save(contentId, savedConfig);
+    }
+
+    private void Save(ulong contentId, CharacterConfiguration savedConfig)
+    {
         var miscFolder = Path.Combine(ConfigurationDirectory, $"Misc");
         Directory.CreateDirectory(miscFolder);
 
@@ -114,7 +130,7 @@ public class ConfigurationBase : IDisposable
         Task.Run(() => SaveAndTryMoveConfig(contentId, miscFolder, filePath, savedConfig));
     }
 
-    public async Task SaveAndTryMoveConfig(ulong contentId, string miscFolder, string filePath, CharacterConfiguration savedConfig)
+    private async Task SaveAndTryMoveConfig(ulong contentId, string miscFolder, string filePath, CharacterConfiguration savedConfig)
     {
         try
         {

@@ -1,7 +1,10 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Dalamud.Interface.Components;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Logging;
 using Lumina.Excel.GeneratedSheets;
 using TrackyTrack.Data;
@@ -71,6 +74,8 @@ public partial class MainWindow
                 RetainerHistory(characters);
 
                 VentureCoffers(characters);
+
+                RetainerAdvanced();
 
                 ImGui.EndTabBar();
             }
@@ -331,6 +336,64 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(10.0f);
         if (ImGui.Button("Export to clipboard"))
             ExportToClipboard(dict);
+    }
+
+    private void RetainerAdvanced()
+    {
+        if (!ImGui.BeginTabItem("Advanced"))
+            return;
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        Helper.WrappedError("This interface is for resetting your retainer history." +
+                            "\nBe careful and read the tooltips before doing anything.");
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.Separator();
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        if (ImGui.Button("Reset Character") && ImGui.GetIO().KeyCtrl)
+        {
+            if (Plugin.CharacterStorage.TryGetValue(Plugin.ClientState.LocalContentId, out var character))
+            {
+                character.VentureStorage = new Retainer();
+
+                Plugin.ConfigurationBase.SaveCharacterConfig();
+                Plugin.PluginInterface.UiBuilder.AddNotification("Deleted the retainer history of your current character", "[Tracky Track]", NotificationType.Success);
+            }
+        }
+
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Deletes the retainer history for your current character." +
+                             "\nThis doesn't touch venture coffer obtained results" +
+                             "\nHold Control to delete");
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        var multipleProcesses = Process.GetProcessesByName("ffxiv_dx11").Length > 1;
+        if (!multipleProcesses)
+        {
+            if (ImGui.Button("Reset All Characters") && ImGui.GetIO().KeyCtrl)
+            {
+                foreach (var character in Plugin.CharacterStorage.Values)
+                    character.VentureStorage = new Retainer();
+
+                Plugin.ConfigurationBase.SaveAll();
+                Plugin.PluginInterface.UiBuilder.AddNotification("Deleted the retainer history of all characters", "[Tracky Track]", NotificationType.Success);
+            }
+
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                ImGui.SetTooltip("Deletes the retainer history for all characters." +
+                                 "\nThis doesn't touch venture coffer obtained results" +
+                                 "\nHold Control to delete");
+        }
+        else
+        {
+            ImGuiComponents.DisabledButton("Reset All Characters");
+            Helper.WrappedError("Detected multiple FFXIV processes." +
+                                "\nPlease close all other processes.");
+        }
+
     }
 
     private void ExportToClipboard(Dictionary<uint, uint> dict)
