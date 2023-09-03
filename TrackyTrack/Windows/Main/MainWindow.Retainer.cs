@@ -390,8 +390,8 @@ public partial class MainWindow
         else
         {
             ImGuiComponents.DisabledButton("Reset All Characters");
-            Helper.WrappedError("Detected multiple FFXIV processes." +
-                                "\nPlease close all other processes.");
+            Helper.WrappedError("Detected multiple FFXIV instances." +
+                                "\nPlease close all other instances of the game.");
         }
 
     }
