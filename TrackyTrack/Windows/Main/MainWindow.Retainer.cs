@@ -331,11 +331,12 @@ public partial class MainWindow
             ImGui.Unindent(10.0f);
             ImGui.EndTable();
         }
-        ImGui.EndTabItem();
 
         ImGuiHelpers.ScaledDummy(10.0f);
         if (ImGui.Button("Export to clipboard"))
             ExportToClipboard(dict);
+
+        ImGui.EndTabItem();
     }
 
     private void RetainerAdvanced()
@@ -394,6 +395,7 @@ public partial class MainWindow
                                 "\nPlease close all other instances of the game.");
         }
 
+        ImGui.EndTabItem();
     }
 
     private void ExportToClipboard(Dictionary<uint, uint> dict)
