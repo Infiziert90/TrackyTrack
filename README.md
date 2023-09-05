@@ -14,6 +14,9 @@ Because tracking stuff is fun~
 + Track rewards for Gacha Coffers
 + Track rewards for Eureka Bunny Coffers
 
+### General Stats
+![stats](TrackyTrack/images/stats.png)
+
 ### Desynthesis Tracker
 ![desynthesis](TrackyTrack/images/desynthesis.png)
 
