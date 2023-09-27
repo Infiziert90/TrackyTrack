@@ -184,7 +184,7 @@ public partial class MainWindow
         }
         else
         {
-            ImGui.TextColored(ImGuiColors.DalamudOrange, "You haven't used teleport yet1");
+            ImGui.TextColored(ImGuiColors.DalamudOrange, "You haven't used teleport yet!");
         }
         ImGui.Unindent(10.0f);
 
