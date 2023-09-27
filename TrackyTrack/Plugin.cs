@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using CriticalCommonLib;
 using CriticalCommonLib.Services;
@@ -55,7 +56,7 @@ namespace TrackyTrack
         private readonly PluginCommandManager<Plugin> CommandManager;
 
         public ConfigurationBase ConfigurationBase;
-        public Dictionary<ulong, CharacterConfiguration> CharacterStorage = new();
+        public ConcurrentDictionary<ulong, CharacterConfiguration> CharacterStorage = new();
 
         public TimerManager TimerManager;
         public FrameworkManager FrameworkManager;

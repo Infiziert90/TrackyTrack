@@ -5,14 +5,15 @@ Because tracking stuff is fun~
 + Track currency increase
 + Track repair costs
 + Track teleport costs
-+ Track result data for Desynthesis
++ Track result data for desynthesis
++ Track retainer ventures
 + Supports multiple characters
 
 ### Advanced  Functions
-+ Track results for Bulk Desynthesis
-+ Track rewards for Venture Coffers
-+ Track rewards for Gacha Coffers
-+ Track rewards for Eureka Bunny Coffers
++ Track results for bulk desynthesis
++ Track rewards for venture coffers
++ Track rewards for gacha coffers
++ Track rewards for eureka bunny coffers
 
 ### General Stats
 ![stats](TrackyTrack/images/stats.png)

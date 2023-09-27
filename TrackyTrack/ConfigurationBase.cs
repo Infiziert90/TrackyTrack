@@ -146,7 +146,7 @@ public class ConfigurationBase : IDisposable
         try
         {
             LastWriteTimes.TryRemove(id, out _);
-            Plugin.CharacterStorage.Remove(id);
+            Plugin.CharacterStorage.Remove(id, out _);
             var file = new FileInfo(Path.Combine(ConfigurationDirectory, $"{id}.json"));
             if (file.Exists)
                 file.Delete();

@@ -2,7 +2,7 @@
     "Author": "Infi",
     "Name": "Tracky Track",
     "Punchline": "Tracking data is fun",
-    "Description": "### Normal Functions \n+ Track currency increase\n+ Track repair costs\n+ Track teleport costs\n+ Track result data for Desynthesis\n+ Supports multiple characters\n\n### Advanced  Functions\n+ Track results for Bulk Desynthesis\n+ Track rewards for Venture Coffers\n+ Track rewards for Gacha Coffers\n+ Track rewards for Eureka Bunny Coffers",
+    "Description": "### Normal Functions \n+ Track currency increase\n+ Track repair costs\n+ Track teleport costs\n+ Track result data for Desynthesis\n+ + Track retainer ventures\n+ Supports multiple characters\n\n### Advanced  Functions\n+ Track results for Bulk Desynthesis\n+ Track rewards for Venture Coffers\n+ Track rewards for Gacha Coffers\n+ Track rewards for Eureka Bunny Coffers",
     "InternalName": "TrackyTrack",
     "ApplicableVersion": "any",
     "Tags": [
@@ -14,6 +14,7 @@
         "Data",
         "Repair",
         "Teleport",
-        "Eureka"
+        "Eureka",
+        "Retainer"
     ]
 }
