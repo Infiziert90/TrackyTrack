@@ -1,5 +1,4 @@
 ﻿using Dalamud.Hooking;
-using Dalamud.Logging;
 
 namespace TrackyTrack.Manager;
 
@@ -20,11 +19,11 @@ public class HookManager
         Plugin = plugin;
 
         var desynthResultPtr = Plugin.SigScanner.ScanText(DesynthResultSig);
-        DesynthResultHook = Hook<DesynthResultDelegate>.FromAddress(desynthResultPtr, DesynthResultPacket);
+        DesynthResultHook = Plugin.Hook.HookFromAddress<DesynthResultDelegate>(desynthResultPtr, DesynthResultPacket);
         DesynthResultHook.Enable();
 
         var actorControlSelfPtr = Plugin.SigScanner.ScanText(ActorControlSig);
-        ActorControlSelfHook = Hook<ActorControlSelfDelegate>.FromAddress(actorControlSelfPtr, ActorControlSelf);
+        ActorControlSelfHook = Plugin.Hook.HookFromAddress<ActorControlSelfDelegate>(actorControlSelfPtr, ActorControlSelf);
         ActorControlSelfHook.Enable();
     }
 
@@ -41,8 +40,8 @@ public class HookManager
         // DesynthResult is triggered by multiple events
         if (param1 != 3735552)
         {
-            PluginLog.Debug("Received param1 that isn't DesynthResult");
-            PluginLog.Debug($"Param1 {param1}");
+            Plugin.Log.Debug("Received param1 that isn't DesynthResult");
+            Plugin.Log.Debug($"Param1 {param1}");
             return;
         }
 
@@ -76,6 +75,6 @@ public class HookManager
                 break;
         }
 
-        PluginLog.Debug($"Cate {category} id {eventId} param1 {param1} param2 {param2} param3 {param3} param4 {param4} param5 {param5} param6 {param6} target {targetId} param7 {param7}");
+        Plugin.Log.Debug($"Cate {category} id {eventId} param1 {param1} param2 {param2} param3 {param3} param4 {param4} param5 {param5} param6 {param6} target {targetId} param7 {param7}");
     }
 }

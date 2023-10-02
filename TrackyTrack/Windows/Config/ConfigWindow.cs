@@ -1,7 +1,4 @@
 using Dalamud.Interface.Windowing;
-using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
-using static TrackyTrack.Utils;
 
 namespace TrackyTrack.Windows.Config;
 
@@ -9,9 +6,8 @@ public partial class ConfigWindow : Window, IDisposable
 {
     private Plugin Plugin;
     private Configuration Configuration;
-    private static ExcelSheet<Item> ItemSheet = null!;
 
-    public ConfigWindow(Plugin plugin) : base("Configuration")
+    public ConfigWindow(Plugin plugin) : base("Configuration###TrackyTrack")
     {
         this.SizeConstraints = new WindowSizeConstraints
         {
@@ -21,7 +17,6 @@ public partial class ConfigWindow : Window, IDisposable
 
         this.Plugin = plugin;
         this.Configuration = plugin.Configuration;
-        ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
     }
 
     public void Dispose() { }

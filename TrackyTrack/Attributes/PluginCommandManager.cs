@@ -1,16 +1,17 @@
 using Dalamud.Game.Command;
 using System.Reflection;
+using Dalamud.Plugin.Services;
 using static Dalamud.Game.Command.CommandInfo;
 
 namespace TrackyTrack.Attributes
 {
     public class PluginCommandManager<THost> : IDisposable
     {
-        private readonly CommandManager commandManager;
+        private readonly ICommandManager commandManager;
         private readonly (string, CommandInfo)[] pluginCommands;
         private readonly THost host;
 
-        public PluginCommandManager(THost host, CommandManager commandManager)
+        public PluginCommandManager(THost host, ICommandManager commandManager)
         {
             this.commandManager = commandManager;
             this.host = host;

@@ -1,4 +1,6 @@
-﻿using Dalamud.Game;
+﻿using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using TrackyTrack.Data;
@@ -55,14 +57,14 @@ public class FrameworkManager
         IsSafe = true;
     }
 
-    public unsafe void RetainerPreChecker(AddonArgs addonInfo)
+    public unsafe void RetainerPreChecker(AddonEvent addonEvent, AddonArgs addonArgs)
     {
         var retainer = RetainerManager.Instance();
         if (retainer != null)
         {
             try
             {
-                if (addonInfo.AddonName == "SelectString")
+                if (addonArgs.AddonName == "SelectString")
                     LastSeenVentureId = retainer->GetActiveRetainer()->VentureID;
             }
             catch
@@ -72,9 +74,9 @@ public class FrameworkManager
         }
     }
 
-    public unsafe void RetainerChecker(AddonArgs addonInfo)
+    public unsafe void RetainerChecker(AddonEvent addonEvent, AddonArgs addonArgs)
     {
-        if (addonInfo.AddonName == "RetainerTaskResult")
+        if (addonArgs.AddonName == "RetainerTaskResult")
         {
             try
             {
@@ -100,7 +102,7 @@ public class FrameworkManager
         }
     }
 
-    public unsafe void CurrencyTracker(Framework _)
+    public unsafe void CurrencyTracker(IFramework _)
     {
         // Only run for real characters
         if (Plugin.ClientState.LocalContentId == 0)
@@ -139,7 +141,7 @@ public class FrameworkManager
         }
     }
 
-    public void CofferTracker(Framework _)
+    public void CofferTracker(IFramework _)
     {
         var local = Plugin.ClientState.LocalPlayer;
         if (local == null || !local.IsCasting)
@@ -175,7 +177,7 @@ public class FrameworkManager
         }
     }
 
-    public void EurekaTracker(Framework _)
+    public void EurekaTracker(IFramework _)
     {
         if (!Plugin.Configuration.EnableEurekaCoffers)
             return;

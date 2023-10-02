@@ -4,15 +4,12 @@ using CriticalCommonLib;
 using CriticalCommonLib.Services;
 using CriticalCommonLib.Services.Ui;
 using CriticalCommonLib.Time;
-using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using Dalamud.Data;
 using Dalamud.Game;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.Gui;
+using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using TrackyTrack.Attributes;
 using TrackyTrack.Data;
@@ -26,23 +23,23 @@ namespace TrackyTrack
 {
     public class Plugin : IDalamudPlugin
     {
-        [PluginService] public static DataManager Data { get; private set; } = null!;
-        [PluginService] public static Framework Framework { get; private set; } = null!;
-        [PluginService] public static CommandManager Commands { get; private set; } = null!;
+        [PluginService] public static IDataManager Data { get; private set; } = null!;
+        [PluginService] public static IFramework Framework { get; private set; } = null!;
+        [PluginService] public static ICommandManager Commands { get; private set; } = null!;
         [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
-        [PluginService] public static ClientState ClientState { get; private set; } = null!;
-        [PluginService] public static ChatGui ChatGui { get; private set; } = null!;
-        [PluginService] public static SigScanner SigScanner { get; private set; } = null!;
-        [PluginService] public static GameGui GameGui { get; private set; } = null!;
+        [PluginService] public static IClientState ClientState { get; private set; } = null!;
+        [PluginService] public static IChatGui ChatGui { get; private set; } = null!;
+        [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
+        [PluginService] public static IGameInteropProvider Hook { get; private set; } = null!;
+        [PluginService] public static IGameGui GameGui { get; private set; } = null!;
+        [PluginService] public static IPluginLog Log { get; private set; } = null!;
+        [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
 
         public static OdrScanner OdrScanner { get; private set; } = null!;
         public static IGameUiManager GameUi { get; private set; } = null!;
         public static IGameInterface GameInterface { get; private set; } = null!;
         public static IInventoryScanner InventoryScanner { get; private set; } = null!;
         public static ICharacterMonitor CharacterMonitor { get; private set; } = null!;
-        public static AddonController AddonController { get; private set; } = null!;
-
-        public string Name => "Tracky Track";
 
         public Configuration Configuration { get; init; }
         public WindowSystem WindowSystem = new("Tracky Track");
@@ -105,9 +102,8 @@ namespace TrackyTrack
 
             ConfigurationBase.Load();
 
-            AddonController = new AddonController();
-            AddonController.AddonFinalize += FrameworkManager.RetainerChecker;
-            AddonController.AddonPostSetup += FrameworkManager.RetainerPreChecker;
+            AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
+            AddonLifecycle.RegisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
 
             InventoryChanged.OnItemAdded += TimerManager.StoreCofferResult;
             InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
@@ -117,8 +113,8 @@ namespace TrackyTrack
 
         public void Dispose()
         {
-            AddonController.AddonFinalize -= FrameworkManager.RetainerChecker;
-            AddonController.AddonPostSetup -= FrameworkManager.RetainerPreChecker;
+            AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
+            AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
 
             InventoryChanged.OnItemAdded -= TimerManager.StoreCofferResult;
             InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
@@ -179,7 +175,7 @@ namespace TrackyTrack
             var instance = AgentSalvage.Instance();
             if (instance == null)
             {
-                PluginLog.Warning("AgentSalvage was null");
+                Log.Warning("AgentSalvage was null");
                 return;
             }
 
@@ -191,7 +187,7 @@ namespace TrackyTrack
             var character = CharacterStorage[ClientState.LocalContentId];
 
             character.Storage.History.Add(DateTime.Now, new DesynthResult(instance));
-            foreach (var result in instance->DesynthResultSpan.ToArray().Where(r => r.ItemId != 0))
+            foreach (var result in instance->DesynthResultsSpan.ToArray().Where(r => r.ItemId != 0))
             {
                 var id  = result.ItemId > 1_000_000 ? result.ItemId - 1_000_000 : result.ItemId;
                 if (!character.Storage.Total.TryAdd(id, (uint) result.Quantity))

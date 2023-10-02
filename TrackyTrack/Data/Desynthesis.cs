@@ -44,16 +44,15 @@ public record DesynthResult(uint Source, ItemResult[] Received)
     {
         var isSourceHQ = result->DesynthItemId > 1_000_000;
         Source = isSourceHQ ? result->DesynthItemId - 1_000_000 : result->DesynthItemId;
-        Received = result->DesynthResultSpan
-                   .ToArray()
-                   .Where(r => r.ItemId > 0)
-                   .Select(r =>
-                   {
-                       // HQ items are Item + 1,000,000
-                       var isHQ = r.ItemId > 1_000_000;
-                       return new ItemResult(isHQ ? r.ItemId - 1_000_000 : r.ItemId, (uint)r.Quantity, isHQ);
-                   })
-                   .ToArray();
+        Received = result->DesynthResultsSpan.ToArray()
+                                             .Where(r => r.ItemId > 0)
+                                             .Select(r =>
+                                             {
+                                                 // HQ items are Item + 1,000,000
+                                                 var isHQ = r.ItemId > 1_000_000;
+                                                 return new ItemResult(isHQ ? r.ItemId - 1_000_000 : r.ItemId, (uint)r.Quantity, isHQ);
+                                             })
+                                             .ToArray();
     }
 
     public DesynthResult(BulkResult result) : this(0, Array.Empty<ItemResult>())

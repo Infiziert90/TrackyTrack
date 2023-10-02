@@ -46,7 +46,7 @@ public class InventoryChanged
     }
 
 
-    public void LoadOnLogin(object? _, EventArgs __) => LoadData();
+    public void LoadOnLogin() => LoadData();
     public void LoadData()
     {
         var characterId = Plugin.ClientState.LocalContentId;

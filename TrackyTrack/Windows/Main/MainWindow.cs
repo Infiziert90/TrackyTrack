@@ -1,3 +1,4 @@
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -13,7 +14,7 @@ public partial class MainWindow : Window, IDisposable
     private static ExcelSheet<GCSupplyDutyReward> GCSupplySheet = null!;
     private static readonly Vector2 IconSize = new(28, 28);
 
-    public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky")
+    public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky###TrackyTrack")
     {
         this.SizeConstraints = new WindowSizeConstraints
         {

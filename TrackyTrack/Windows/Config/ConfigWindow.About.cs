@@ -1,4 +1,6 @@
-﻿namespace TrackyTrack.Windows.Config;
+﻿using Dalamud.Interface.Utility;
+
+namespace TrackyTrack.Windows.Config;
 
 public partial class ConfigWindow
 {

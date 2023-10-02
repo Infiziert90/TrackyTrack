@@ -1,3 +1,4 @@
+using Dalamud.Interface.Internal;
 using Dalamud.Utility;
 using ImGuiScene;
 using Lumina.Data.Files;
@@ -7,9 +8,9 @@ namespace TrackyTrack;
 //From: https://github.com/Tischel/ActionTimeline
 public class TexturesCache : IDisposable
 {
-    private Dictionary<uint, TextureWrap> _cache = new();
+    private Dictionary<uint, IDalamudTextureWrap> _cache = new();
 
-    public TextureWrap GetTextureFromIconId(uint iconId)
+    public IDalamudTextureWrap GetTextureFromIconId(uint iconId)
     {
         if (_cache.TryGetValue(iconId, out var texture))
         {

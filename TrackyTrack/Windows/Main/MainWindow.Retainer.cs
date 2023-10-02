@@ -5,7 +5,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Logging;
+using Dalamud.Interface.Utility;
 using Lumina.Excel.GeneratedSheets;
 using TrackyTrack.Data;
 
@@ -422,7 +422,7 @@ public partial class MainWindow
         }
         catch (Exception e)
         {
-            PluginLog.Error(e.StackTrace ?? "No Stacktrace");
+            Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
         }
     }
 }

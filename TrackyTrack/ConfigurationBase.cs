@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Logging;
 using Newtonsoft.Json;
 
 namespace TrackyTrack;
@@ -65,7 +64,7 @@ public class ConfigurationBase : IDisposable
                 if (i == 4)
                     UiBuilder.AddNotification("Failed to read config", "[Tracky Track]", NotificationType.Warning);
 
-                PluginLog.Warning($"Config file read failed {i + 1}/5");
+                Plugin.Log.Warning($"Config file read failed {i + 1}/5");
             }
         }
 
@@ -82,7 +81,7 @@ public class ConfigurationBase : IDisposable
         }
         catch (Exception e)
         {
-            PluginLog.Warning(e, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
+            Plugin.Log.Warning(e, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
             config = CharacterConfiguration.CreateNew();
         }
 
@@ -98,7 +97,7 @@ public class ConfigurationBase : IDisposable
         var contentId = Plugin.ClientState.LocalContentId;
         if (contentId == 0)
         {
-            PluginLog.Error("ClientId was 0 but something called Save()");
+            Plugin.Log.Error("ClientId was 0 but something called Save()");
             return;
         }
 
@@ -153,8 +152,8 @@ public class ConfigurationBase : IDisposable
         }
         catch (Exception e)
         {
-            PluginLog.Error("Error while deleting character save file.");
-            PluginLog.Error(e.Message);
+            Plugin.Log.Error("Error while deleting character save file.");
+            Plugin.Log.Error(e.Message);
         }
     }
 
@@ -188,15 +187,15 @@ public class ConfigurationBase : IDisposable
                         if (i == 4)
                             UiBuilder.AddNotification("Failed to move config", "[Tracky Track]", NotificationType.Warning);
 
-                        PluginLog.Warning($"Config file couldn't be moved {i + 1}/5");
+                        Plugin.Log.Warning($"Config file couldn't be moved {i + 1}/5");
                         await Task.Delay(30, CancellationToken.Token);
                     }
                 }
             }
             catch (Exception e)
             {
-                PluginLog.Error(e.Message);
-                PluginLog.Error(e.StackTrace ?? "Null Stacktrace");
+                Plugin.Log.Error(e.Message);
+                Plugin.Log.Error(e.StackTrace ?? "Null Stacktrace");
             }
         }
     }
