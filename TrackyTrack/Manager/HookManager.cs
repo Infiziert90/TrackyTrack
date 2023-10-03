@@ -45,11 +45,19 @@ public class HookManager
             return;
         }
 
-        if (Plugin.Configuration.EnableBulkSupport)
-            Plugin.BulkHandler();
+        try
+        {
+            if (Plugin.Configuration.EnableBulkSupport)
+                Plugin.BulkHandler();
 
-        if (Plugin.Configuration.EnableDesynthesis)
-            Plugin.DesynthHandler();
+            if (Plugin.Configuration.EnableDesynthesis)
+                Plugin.DesynthHandler();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning(e.Message);
+            Plugin.Log.Warning(e.StackTrace ?? "Unknown");
+        }
     }
 
     private void ActorControlSelf(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, UInt64 targetId, byte param7) {
@@ -59,20 +67,28 @@ public class HookManager
         if (eventId != 517)
             return;
 
-        switch (param1)
+        try
         {
-            // teleport log handler
-            case 4590:
-                Plugin.TeleportCostHandler(param2);
-                break;
-            // aetheryte ticket log handler
-            case 4591:
-                Plugin.AetheryteTicketHandler();
-                break;
-            // Repair log handler
-            case 1388:
-                Plugin.RepairHandler(param2);
-                break;
+            switch (param1)
+            {
+                // teleport log handler
+                case 4590:
+                    Plugin.TeleportCostHandler(param2);
+                    break;
+                // aetheryte ticket log handler
+                case 4591:
+                    Plugin.AetheryteTicketHandler();
+                    break;
+                // Repair log handler
+                case 1388:
+                    Plugin.RepairHandler(param2);
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning(e.Message);
+            Plugin.Log.Warning(e.StackTrace ?? "Unknown");
         }
 
         Plugin.Log.Debug($"Cate {category} id {eventId} param1 {param1} param2 {param2} param3 {param3} param4 {param4} param5 {param5} param6 {param6} target {targetId} param7 {param7}");
