@@ -7,7 +7,7 @@ public partial class ConfigWindow : Window, IDisposable
     private Plugin Plugin;
     private Configuration Configuration;
 
-    public ConfigWindow(Plugin plugin) : base("Configuration###TrackyTrack")
+    public ConfigWindow(Plugin plugin) : base("Configuration##TrackyTrack")
     {
         this.SizeConstraints = new WindowSizeConstraints
         {

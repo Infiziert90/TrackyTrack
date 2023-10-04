@@ -14,7 +14,7 @@ public partial class MainWindow : Window, IDisposable
     private static ExcelSheet<GCSupplyDutyReward> GCSupplySheet = null!;
     private static readonly Vector2 IconSize = new(28, 28);
 
-    public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky###TrackyTrack")
+    public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky##TrackyTrack")
     {
         this.SizeConstraints = new WindowSizeConstraints
         {

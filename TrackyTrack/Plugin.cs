@@ -75,12 +75,12 @@ namespace TrackyTrack
             Service.ExcelCache = new ExcelCache(Data, false,false,false);
             Service.ExcelCache.PreCacheItemData();
 
-            GameInterface = new GameInterface();
-            CharacterMonitor = new CharacterMonitor();
+            GameInterface = new GameInterface(Hook);
+            CharacterMonitor = new CharacterMonitor(Framework, ClientState, Service.ExcelCache);
 
-            GameUi = new GameUiManager();
+            GameUi = new GameUiManager(Hook);
             OdrScanner = new OdrScanner(CharacterMonitor);
-            InventoryScanner = new InventoryScanner(CharacterMonitor, GameUi, GameInterface, OdrScanner);
+            InventoryScanner = new InventoryScanner(CharacterMonitor, GameUi, GameInterface, OdrScanner, Hook);
             InventoryScanner.Enable();
 
             InventoryChanged = new InventoryChanged();

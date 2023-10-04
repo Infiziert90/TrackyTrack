@@ -1,5 +1,4 @@
 ﻿using Dalamud.Interface.Utility;
-using Dalamud.Logging;
 using TrackyTrack.Data;
 using Lumina.Excel.GeneratedSheets;
 
@@ -599,7 +598,7 @@ public partial class MainWindow
         {
             if (!pair.Value.Received.Any())
             {
-                PluginLog.Error($"Found error entry: {pair.Key}");
+                Plugin.Log.Error($"Found error entry: {pair.Key}");
                 continue;
             }
 
