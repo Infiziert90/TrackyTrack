@@ -34,6 +34,7 @@ namespace TrackyTrack
         [PluginService] public static IGameGui GameGui { get; private set; } = null!;
         [PluginService] public static IPluginLog Log { get; private set; } = null!;
         [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
+        [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
 
         public static OdrScanner OdrScanner { get; private set; } = null!;
         public static IGameUiManager GameUi { get; private set; } = null!;
@@ -66,9 +67,6 @@ namespace TrackyTrack
 
             Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Configuration.Initialize(PluginInterface);
-
-            TexturesCache.Initialize();
-
             PluginInterface.Create<Service>();
 
             Service.SeTime = new SeTime();
@@ -128,8 +126,6 @@ namespace TrackyTrack
             MainWindow.Dispose();
 
             CommandManager.Dispose();
-
-            TexturesCache.Instance?.Dispose();
 
             InventoryScanner.Dispose();
             OdrScanner.Dispose();

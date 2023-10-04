@@ -69,13 +69,25 @@ public partial class MainWindow : Window, IDisposable
     private static void DrawIcon(uint iconId)
     {
         var size = IconSize * ImGuiHelpers.GlobalScale;
-        var texture = TexturesCache.Instance!.GetTextureFromIconId(iconId);
+        var texture = Plugin.Texture.GetIcon(iconId);
+        if (texture == null)
+        {
+            ImGui.Text($"Unknown icon {iconId}");
+            return;
+        }
+
         ImGui.Image(texture.ImGuiHandle, size);
     }
 
     private static void DrawIcon(uint iconId, Vector2 size)
     {
-        var texture = TexturesCache.Instance!.GetTextureFromIconId(iconId);
+        var texture = Plugin.Texture.GetIcon(iconId);
+        if (texture == null)
+        {
+            ImGui.Text($"Unknown icon {iconId}");
+            return;
+        }
+
         ImGui.Image(texture.ImGuiHandle, size);
     }
 }

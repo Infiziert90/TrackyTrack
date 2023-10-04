@@ -2,7 +2,7 @@
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -67,37 +67,43 @@ public class FrameworkManager
                 if (addonArgs.AddonName == "SelectString")
                     LastSeenVentureId = retainer->GetActiveRetainer()->VentureID;
             }
-            catch
+            catch (Exception e)
             {
-                // Do nothing
+                Plugin.Log.Warning(e.Message);
+                Plugin.Log.Warning(e.StackTrace ?? "Unknown");
             }
         }
     }
 
     public unsafe void RetainerChecker(AddonEvent addonEvent, AddonArgs addonArgs)
     {
-        if (addonArgs.AddonName == "RetainerTaskResult")
+        var venture = AgentRetainerTask.Instance();
+        if (venture != null)
         {
-            try
+            if (addonArgs.AddonName == "RetainerTaskResult")
             {
-                    var value = AtkStage.GetSingleton()->AtkArrayDataHolder->NumberArrays[105]->IntArray;
-                    var primary = value[295];
+                try
+                {
+                    var primary = venture->RewardItemIds[0];
                     var primaryHQ = primary > 1_000_000;
                     if (primaryHQ)
                         primary -= 1_000_000;
-                    var primaryCount = (short)(value[297] & 0xffff);
+                    var primaryCount = (short) venture->RewardItemCount[0];
 
-                    var additionalItem = value[298];
+                    var additionalItem = venture->RewardItemIds[1];
                     var additionalHQ = additionalItem > 1_000_000;
                     if (additionalHQ)
                         additionalItem -= 1_000_000;
-                    var additionalCount = (short) (value[300] & 0xffff);
+                    var additionalCount = (short) venture->RewardItemCount[1];
 
-                    Plugin.RetainerHandler(LastSeenVentureId,new VentureItem((uint) primary, primaryCount, primaryHQ),new VentureItem((uint) additionalItem, additionalCount, additionalHQ));
-            }
-            catch
-            {
-                // Do nothing
+                    Plugin.RetainerHandler(LastSeenVentureId, new VentureItem(primary, primaryCount, primaryHQ),
+                                           new VentureItem(additionalItem, additionalCount, additionalHQ));
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.Warning(e.Message);
+                    Plugin.Log.Warning(e.StackTrace ?? "Unknown");
+                }
             }
         }
     }
