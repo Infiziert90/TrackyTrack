@@ -34,3 +34,15 @@ public class GachaFourZero
         23030, 21065, 20545, 23028, 24639, 23036, 24640
     };
 }
+
+public class Sanctuary
+{
+    public int Opened = 0;
+    public Dictionary<uint, uint> Obtained = new();
+
+    [JsonIgnore]
+    public static readonly List<uint> Content = new()
+    {
+        27976, 24804, 33937, 40627, 40393, 13115, 39350, 41138, 41585, 33939, 33922, 20529, 41104, 33926, 41142, 33935
+    };
+}

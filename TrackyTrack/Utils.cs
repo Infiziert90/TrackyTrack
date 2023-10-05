@@ -28,6 +28,14 @@ public static class Utils
         };
     }
 
+    public static SeString SuccessMessage(string success)
+    {
+        return new SeStringBuilder()
+               .AddUiForeground("[Tracky Track] ", 540)
+               .AddUiForeground($"{success}", 43)
+               .BuiltString;
+    }
+
     public static TValue GetOrCreate<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : new()
     {
         if (!dict.TryGetValue(key, out var val))

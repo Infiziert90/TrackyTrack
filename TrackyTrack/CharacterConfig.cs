@@ -40,6 +40,7 @@ public class CharacterConfiguration
     public VentureCoffer Coffer = new();
     public GachaThreeZero GachaThreeZero = new();
     public GachaFourZero GachaFourZero = new();
+    public Sanctuary Sanctuary = new();
     public Retainer VentureStorage = new();
     public EurekaTracker Eureka = new();
 

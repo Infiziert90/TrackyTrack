@@ -29,10 +29,10 @@ public static class Helper
         WrappedError("No data stored for venture coffers\nPlease open a venture coffer.");
     }
 
-    public static void NoGachaData()
+    public static void NoGachaData(string cofferType)
     {
         ImGuiHelpers.ScaledDummy(10.0f);
-        WrappedError("No data stored for gacha coffers\nPlease open a gacha coffer (from GC).");
+        WrappedError($"No data stored for {cofferType} coffers\nPlease open a {cofferType} coffer.");
     }
 
     public static void NoEurekaCofferData()

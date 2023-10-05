@@ -14,6 +14,7 @@ public class TimerManager
 
     private readonly Timer CastTimer = new(3 * 1000);
     private bool OpeningCoffer;
+    private uint CofferId;
 
     public readonly Timer TicketUsedTimer = new(1 * 1000);
 
@@ -52,11 +53,12 @@ public class TimerManager
         AwaitingBulkDesynth.Start();
     }
 
-    public void StartCoffer()
+    public void StartCoffer(uint cofferId)
     {
         CastTimer.Stop();
         CastTimer.Start();
 
+        CofferId = cofferId;
         OpeningCoffer = true;
     }
 
@@ -137,26 +139,41 @@ public class TimerManager
 
         var save = false;
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
-        if (VentureCoffer.Content.Contains(item.ItemId) && Plugin.Configuration.EnableVentureCoffers)
+
+        if (Plugin.Configuration.EnableVentureCoffers)
         {
-            character.Coffer.Opened += 1;
-            if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.Coffer.Obtained[item.ItemId] += (uint) item.Quantity;
-            save = true;
+            if (VentureCoffer.Content.Contains(item.ItemId))
+            {
+                character.Coffer.Opened += 1;
+                if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint)item.Quantity))
+                    character.Coffer.Obtained[item.ItemId] += (uint)item.Quantity;
+                save = true;
+            }
         }
-        else if (GachaThreeZero.Content.Contains(item.ItemId) && Plugin.Configuration.EnableGachaCoffers)
+
+        if (Plugin.Configuration.EnableGachaCoffers)
         {
-            character.GachaThreeZero.Opened += 1;
-            if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
-            save = true;
-        }
-        else if (GachaFourZero.Content.Contains(item.ItemId) && Plugin.Configuration.EnableGachaCoffers)
-        {
-            character.GachaFourZero.Opened += 1;
-            if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
-            save = true;
+            if (GachaThreeZero.Content.Contains(item.ItemId))
+            {
+                character.GachaThreeZero.Opened += 1;
+                if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                    character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
+                save = true;
+            }
+            else if (GachaFourZero.Content.Contains(item.ItemId))
+            {
+                character.GachaFourZero.Opened += 1;
+                if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                    character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
+                save = true;
+            }
+            else if (Sanctuary.Content.Contains(item.ItemId))
+            {
+                character.Sanctuary.Opened += 1;
+                if (!character.Sanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                    character.Sanctuary.Obtained[item.ItemId] += (uint) item.Quantity;
+                save = true;
+            }
         }
 
         if (save)
@@ -166,7 +183,13 @@ public class TimerManager
         }
 
         if (OpeningCoffer)
-            Plugin.ChatGui.Print($"[TrackyTrack] Found an item that is possible from chest {item.ItemId} but in no list");
+        {
+            OpeningCoffer = false;
+
+            Plugin.ChatGui.Print(Utils.SuccessMessage("You've found an unknown coffer drop."));
+            Plugin.ChatGui.Print(Utils.SuccessMessage("Please consider sending the following information to the dev:"));
+            Plugin.ChatGui.Print($"Coffer: {CofferId} Item: {item.ItemId}");
+        }
     }
 
     public void EurekaItemAdded(InventoryMonitor.ItemChangesItem item)

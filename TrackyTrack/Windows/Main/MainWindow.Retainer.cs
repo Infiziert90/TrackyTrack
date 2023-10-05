@@ -418,7 +418,7 @@ public partial class MainWindow
 
             ImGui.SetClipboardText(writer.ToString());
 
-            Plugin.ChatGui.Print("Export to clipboard done.");
+            Plugin.ChatGui.Print(Utils.SuccessMessage("Export to clipboard done."));
         }
         catch (Exception e)
         {

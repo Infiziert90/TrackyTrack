@@ -160,9 +160,10 @@ public class FrameworkManager
             case { CastActionId: 32161, CastActionType: 2 }:
             case { CastActionId: 36635, CastActionType: 2 }:
             case { CastActionId: 36636, CastActionType: 2 }:
+            case { CastActionId: 41667, CastActionType: 2 }:
             {
                 if (Plugin.Configuration.EnableVentureCoffers || Plugin.Configuration.EnableGachaCoffers)
-                    Plugin.TimerManager.StartCoffer();
+                    Plugin.TimerManager.StartCoffer(local.CastActionId);
                 break;
             }
 
