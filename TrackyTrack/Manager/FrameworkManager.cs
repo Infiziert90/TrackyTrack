@@ -59,13 +59,14 @@ public class FrameworkManager
 
     public unsafe void RetainerPreChecker(AddonEvent addonEvent, AddonArgs addonArgs)
     {
-        var retainer = RetainerManager.Instance();
-        if (retainer != null)
+        var manager = RetainerManager.Instance();
+        if (manager != null)
         {
             try
             {
-                if (addonArgs.AddonName == "SelectString")
-                    LastSeenVentureId = retainer->GetActiveRetainer()->VentureID;
+                var retainer = manager->GetActiveRetainer();
+                if (addonArgs.AddonName == "SelectString" && retainer != null)
+                    LastSeenVentureId = retainer->VentureID;
             }
             catch (Exception e)
             {
