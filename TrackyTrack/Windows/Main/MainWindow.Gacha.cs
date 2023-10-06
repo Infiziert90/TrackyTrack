@@ -242,12 +242,12 @@ public partial class MainWindow
         }
 
         var characterGacha = characters.Where(c => c.Sanctuary.Opened > 0).ToList();
-        if (!characterGacha.Any())
-        {
-            Helper.NoGachaData("Sanctuary");
-            ImGui.EndTabItem();
-            return;
-        }
+        // if (!characterGacha.Any())
+        // {
+        //     Helper.NoGachaData("Sanctuary");
+        //     ImGui.EndTabItem();
+        //     return;
+        // }
 
         // fill dict in order
         var dict = new Dictionary<uint, uint>();
@@ -320,7 +320,8 @@ public partial class MainWindow
                 DrawIcon(item.Icon);
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted(item.Name);
+                if (ImGui.Selectable(Utils.ToStr(item.Name)))
+                    ImGui.SetClipboardText(Utils.ToStr(item.Name));
 
                 ImGui.TableNextRow();
             }
