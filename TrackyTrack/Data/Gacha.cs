@@ -9,7 +9,7 @@ public class GachaThreeZero
     public Dictionary<uint, uint> Obtained = new();
 
     [JsonIgnore]
-    public static readonly List<uint> Content = new()
+    public static readonly HashSet<uint> Content = new()
     {
         9350, 12051, 6187, 15441, 6175, 7564, 6186, 6203, 6177, 17525, 15440, 14098, 6003, 12055, 6199, 6205,
         16570, 16568, 6189, 15447, 8193, 9347, 14103, 12054, 8194, 12061, 6191, 12069, 13279, 6179, 12058, 13283,
@@ -26,7 +26,7 @@ public class GachaFourZero
     public Dictionary<uint, uint> Obtained = new();
 
     [JsonIgnore]
-    public static readonly List<uint> Content = new()
+    public static readonly HashSet<uint> Content = new()
     {
         24902, 21921, 21063, 20529, 20530, 21920, 24002, 20524, 24635, 23027, 24001, 23023, 20533, 24219, 24630, 21052,
         20542, 24903, 20538, 21064, 20541, 21058, 20536, 23032, 23998, 20525, 21916, 20531, 21193, 23989, 24634, 21059,
@@ -41,9 +41,10 @@ public class Sanctuary
     public Dictionary<uint, uint> Obtained = new();
 
     [JsonIgnore]
-    public static readonly List<uint> Content = new()
+    public static readonly HashSet<uint> Content = new()
     {
         27976, 24804, 33937, 40627, 40393, 13115, 39350, 41138, 41585, 33939, 33922, 20529, 41104, 33926, 41142, 33935,
-        20528, 41586, 39502, 33940, 33927, 38610, 31091, 20524, 20542, 38540, 41649, 20531
+        20528, 41586, 39502, 33940, 33927, 38610, 31091, 20524, 20542, 38540, 41649, 20531, 40673, 39427, 13116, 40675,
+        16572, 13713, 41501, 40671,
     };
 }
