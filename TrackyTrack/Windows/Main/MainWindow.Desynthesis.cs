@@ -514,7 +514,7 @@ public partial class MainWindow
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
             var percentage = (double) count / desynthesized * 100.0;
-            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         }).OrderByDescending(x => x.Percentage);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, $"Percentages:");

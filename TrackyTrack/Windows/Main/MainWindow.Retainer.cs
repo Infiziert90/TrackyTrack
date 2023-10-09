@@ -295,7 +295,7 @@ public partial class MainWindow
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
             var percentage = (pair.Key != 8841 ? count / 2.0 : count) / opened * 100.0;
-            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");

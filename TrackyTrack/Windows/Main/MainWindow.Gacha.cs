@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Utility;
+﻿using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 
 namespace TrackyTrack.Windows.Main;
 
@@ -15,6 +16,10 @@ public partial class MainWindow
                 GachaFourZero();
 
                 Sanctuary();
+
+                #if DEBUG
+                SancDebug();
+                #endif
 
                 ImGui.EndTabBar();
             }
@@ -58,7 +63,7 @@ public partial class MainWindow
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
-            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
@@ -161,7 +166,7 @@ public partial class MainWindow
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
-            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
@@ -264,7 +269,7 @@ public partial class MainWindow
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
-            return new Utils.SortedEntry(item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
@@ -329,6 +334,151 @@ public partial class MainWindow
             ImGui.Unindent(10.0f);
             ImGui.EndTable();
         }
+        ImGui.EndTabItem();
+    }
+
+    private void SancDebug()
+    {
+        if (!ImGui.BeginTabItem("SancDebug"))
+            return;
+
+        var characters = Plugin.CharacterStorage.Values.ToArray();
+        if (!characters.Any())
+        {
+            Helper.NoVentureCofferData();
+            ImGui.EndTabItem();
+            return;
+        }
+
+        var characterGacha = characters.Where(c => c.Sanctuary.Opened > 0).ToList();
+        // if (!characterGacha.Any())
+        // {
+        //     Helper.NoGachaData("Sanctuary");
+        //     ImGui.EndTabItem();
+        //     return;
+        // }
+
+        // fill dict in order
+        var dict = new Dictionary<uint, uint>();
+        foreach (var item in Data.Sanctuary.Content)
+            dict.Add(item, 0);
+
+        // fill dict with real values
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        foreach (var pair in characterGacha.SelectMany(c => c.Sanctuary.Obtained))
+            dict[pair.Key] += pair.Value;
+
+        var opened = characterGacha.Select(c => c.Sanctuary.Opened).Sum();
+        var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
+        {
+            var item = ItemSheet.GetRow(pair.Key)!;
+            var count = pair.Value;
+            var percentage = (double) count / opened * 100.0;
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
+        });
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Sanctuary.Content.Count} items");
+        if (ImGui.BeginTable($"##SanctuaryTable", 6, ImGuiTableFlags.Sortable))
+        {
+            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
+            ImGui.TableSetupColumn("Item##item");
+            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
+            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
+            ImGui.TableSetupColumn("##Plus", 0, 0.1f);
+            ImGui.TableSetupColumn("##Minus", 0, 0.1f);
+
+            ImGui.TableHeadersRow();
+
+            ImGui.Indent(10.0f);
+            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
+            {
+                ImGui.TableNextColumn();
+                DrawIcon(sortedEntry.Icon);
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted(sortedEntry.Name);
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(sortedEntry.Name);
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"x{sortedEntry.Count}");
+
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
+
+                ImGui.TableNextColumn();
+                if (ImGuiComponents.IconButton((int) sortedEntry.Id, FontAwesomeIcon.Plus))
+                {
+                    character.Sanctuary.Opened += 1;
+                    if (!character.Sanctuary.Obtained.TryAdd(sortedEntry.Id, 1))
+                        character.Sanctuary.Obtained[sortedEntry.Id] += 1;
+
+                    Plugin.ConfigurationBase.SaveCharacterConfig();
+                }
+
+                ImGui.TableNextColumn();
+                if (ImGuiComponents.IconButton((int) sortedEntry.Id, FontAwesomeIcon.Minus))
+                {
+                    character.Sanctuary.Opened -= 1;
+                    if (character.Sanctuary.Obtained[sortedEntry.Id] > 1)
+                        character.Sanctuary.Obtained[sortedEntry.Id] -= 1;
+                    else
+                    {
+                        character.Sanctuary.Obtained.Remove(sortedEntry.Id);
+                    }
+                    Plugin.ConfigurationBase.SaveCharacterConfig();
+                }
+
+                ImGui.TableNextRow();
+            }
+
+            ImGui.Unindent(10.0f);
+            ImGui.EndTable();
+        }
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
+        if (ImGui.BeginTable($"##SanctuaryMissingTable", 3))
+        {
+            ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
+            ImGui.TableSetupColumn("Item##missingItem");
+            ImGui.TableSetupColumn("##Plus");
+
+            ImGui.TableHeadersRow();
+
+            ImGui.Indent(10.0f);
+            foreach (var itemId in Data.Sanctuary.Content.Where(i => dict[i] == 0))
+            {
+                var item = ItemSheet.GetRow(itemId)!;
+
+                ImGui.TableNextColumn();
+                DrawIcon(item.Icon);
+
+                ImGui.TableNextColumn();
+                if (ImGui.Selectable(Utils.ToStr(item.Name)))
+                    ImGui.SetClipboardText(Utils.ToStr(item.Name));
+
+                ImGui.TableNextColumn();
+                if (ImGuiComponents.IconButton((int) itemId, FontAwesomeIcon.Plus))
+                {
+                    character.Sanctuary.Opened += 1;
+                    character.Sanctuary.Obtained.TryAdd(itemId, 1);
+                    Plugin.ConfigurationBase.SaveCharacterConfig();
+                }
+
+                ImGui.TableNextRow();
+            }
+
+            ImGui.Unindent(10.0f);
+            ImGui.EndTable();
+        }
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+        if (ImGui.Button("Export to clipboard"))
+            ExportToClipboard(dict);
+
         ImGui.EndTabItem();
     }
 }

@@ -8,7 +8,7 @@ public static class Utils
     public static string ToStr(SeString content) => content.ToString();
     public static string ToStr(Lumina.Text.SeString content) => content.ToDalamudString().ToString();
 
-    public record SortedEntry(uint Icon, string Name, uint Count, double Percentage);
+    public record SortedEntry(uint Id, uint Icon, string Name, uint Count, double Percentage);
 
     public static IOrderedEnumerable<SortedEntry> SortEntries(IEnumerable<SortedEntry> unsortedList, ImGuiTableColumnSortSpecsPtr sortSpecsPtr)
     {
