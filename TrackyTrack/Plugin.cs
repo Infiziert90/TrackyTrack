@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Threading.Tasks;
 using CriticalCommonLib;
 using CriticalCommonLib.Services;
 using CriticalCommonLib.Services.Ui;
@@ -99,6 +100,7 @@ namespace TrackyTrack
             PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 
             ConfigurationBase.Load();
+            Export.Init();
 
             AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
             AddonLifecycle.RegisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
@@ -107,12 +109,18 @@ namespace TrackyTrack
             InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
             InventoryChanged.OnItemAdded += TimerManager.EurekaItemAdded;
             InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
+
+            ClientState.Login += Login;
+            ClientState.TerritoryChanged += TerritoryChanged;
         }
 
         public void Dispose()
         {
             AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
             AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
+
+            ClientState.Login -= Login;
+            ClientState.TerritoryChanged -= TerritoryChanged;
 
             InventoryChanged.OnItemAdded -= TimerManager.StoreCofferResult;
             InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
@@ -304,6 +312,83 @@ namespace TrackyTrack
         public void DrawConfigUI()
         {
             ConfigWindow.IsOpen = true;
+        }
+        #endregion
+
+        #region Uploads
+        private void Login()
+        {
+            // Notify the user once about upload opt out
+            if (Configuration.UploadNotification)
+            {
+                // User received the notice, so we schedule the first upload 1h after
+                Configuration.UploadNotification = false;
+                Configuration.UploadNotificationReceived = DateTime.Now.AddHours(1);
+                Configuration.Save();
+
+                ChatGui.Print(Utils.SuccessMessage("Important"));
+                ChatGui.Print(Utils.SuccessMessage("This plugin will collect anonymized data. " +
+                                                   "For more information on the exact data collected please see the upload tab in the configuration menu. " +
+                                                   "You can opt out of any and all forms of data collection."));
+            }
+        }
+
+        private void TerritoryChanged(ushort _)
+        {
+            if (!Configuration.UploadPermission)
+                return;
+
+            // Check that the user had enough time to opt out after notification
+            if (Configuration.UploadNotificationReceived > DateTime.Now)
+                return;
+
+            try
+            {
+                var character = CharacterStorage[ClientState.LocalContentId];
+                if (character.HadBulkUpload)
+                {
+                    ClientState.TerritoryChanged -= TerritoryChanged;
+                    return;
+                }
+
+                character.HadBulkUpload = true;
+                ConfigurationBase.SaveCharacterConfig();
+
+                // 32161 Venture Coffers
+                Task.Run(() => Export.UploadAll(32161, character.Coffer.Obtained));
+
+                // 36635 Gacha 3.0
+                Task.Run(() => Export.UploadAll(36635, character.GachaThreeZero.Obtained));
+
+                // 36636 Gacha 4.0
+                Task.Run(() => Export.UploadAll(36636, character.GachaFourZero.Obtained));
+
+                // 41667 Sanctuary
+                Task.Run(() => Export.UploadAll(41667, character.Sanctuary.Obtained));
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Upload went wrong, just cancel it");
+            }
+        }
+
+        public void EntryUpload(uint coffer, uint itemId, uint amount)
+        {
+            if (Configuration.UploadPermission)
+            {
+                // Check that the user had enough time to opt out after notification
+                if (Configuration.UploadNotificationReceived > DateTime.Now)
+                    return;
+
+                try
+                {
+                    Task.Run(() => Export.UploadEntry(coffer, itemId, amount));
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Upload went wrong, just throw it away");
+                }
+            }
         }
         #endregion
     }

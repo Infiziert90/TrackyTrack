@@ -11,6 +11,7 @@ public class CharacterConfiguration
     public int Version { get; set; } = 1;
 
     public ulong LocalContentId;
+    public bool HadBulkUpload = false;
 
     public string CharacterName = "";
     public string World = "Unknown";

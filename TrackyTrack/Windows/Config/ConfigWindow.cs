@@ -27,6 +27,8 @@ public partial class ConfigWindow : Window, IDisposable
         {
             Modules();
 
+            Upload();
+
             About();
         }
         ImGui.EndTabBar();

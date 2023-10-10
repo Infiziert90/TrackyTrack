@@ -142,7 +142,7 @@ public class TimerManager
 
         if (Plugin.Configuration.EnableVentureCoffers)
         {
-            if (VentureCoffer.Content.Contains(item.ItemId))
+            if (CofferId == 32161 && VentureCoffer.Content.Contains(item.ItemId))
             {
                 character.Coffer.Opened += 1;
                 if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint)item.Quantity))
@@ -153,21 +153,21 @@ public class TimerManager
 
         if (Plugin.Configuration.EnableGachaCoffers)
         {
-            if (GachaThreeZero.Content.Contains(item.ItemId))
+            if (CofferId == 36635 && GachaThreeZero.Content.Contains(item.ItemId))
             {
                 character.GachaThreeZero.Opened += 1;
                 if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
                     character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
                 save = true;
             }
-            else if (GachaFourZero.Content.Contains(item.ItemId))
+            else if (CofferId == 36636 && GachaFourZero.Content.Contains(item.ItemId))
             {
                 character.GachaFourZero.Opened += 1;
                 if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
                     character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
                 save = true;
             }
-            else if (Sanctuary.Content.Contains(item.ItemId))
+            else if (CofferId == 41667 && Sanctuary.Content.Contains(item.ItemId))
             {
                 character.Sanctuary.Opened += 1;
                 if (!character.Sanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
@@ -180,6 +180,8 @@ public class TimerManager
         {
             OpeningCoffer = false;
             Plugin.ConfigurationBase.SaveCharacterConfig();
+
+            Plugin.EntryUpload(CofferId, item.ItemId, (uint) item.Quantity);
         }
 
         if (OpeningCoffer)

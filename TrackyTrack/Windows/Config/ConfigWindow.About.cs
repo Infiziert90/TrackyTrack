@@ -1,4 +1,6 @@
-﻿using Dalamud.Interface.Utility;
+﻿using System.Threading.Tasks;
+using Dalamud.Interface.Utility;
+using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Config;
 
@@ -24,6 +26,16 @@ public partial class ConfigWindow
                 ImGui.TextUnformatted("Version:");
                 ImGui.SameLine();
                 ImGui.TextColored(ImGuiColors.ParsedOrange, Plugin.Version);
+
+                #if DEBUG
+                ImGuiHelpers.ScaledDummy(10.0f);
+
+                ImGui.TextUnformatted("Debug:");
+                ImGui.Indent(10.0f);
+                if (ImGui.Button("Test Entry Upload"))
+                    Task.Run(() => Export.UploadEntry(1, 200, 1));
+                ImGui.Unindent(10.0f);
+                #endif
             }
             ImGui.EndChild();
 

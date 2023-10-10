@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
 
@@ -437,47 +438,51 @@ public partial class MainWindow
             ImGui.EndTable();
         }
 
-        ImGuiHelpers.ScaledDummy(10.0f);
-
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
-        if (ImGui.BeginTable($"##SanctuaryMissingTable", 3))
+        var missing = Data.Sanctuary.Content.Where(i => dict[i] == 0).ToArray();
+        if (missing.Any())
         {
-            ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
-            ImGui.TableSetupColumn("Item##missingItem");
-            ImGui.TableSetupColumn("##Plus");
+            ImGuiHelpers.ScaledDummy(10.0f);
 
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var itemId in Data.Sanctuary.Content.Where(i => dict[i] == 0))
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
+            if (ImGui.BeginTable($"##SanctuaryMissingTable", 3))
             {
-                var item = ItemSheet.GetRow(itemId)!;
+                ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
+                ImGui.TableSetupColumn("Item##missingItem");
+                ImGui.TableSetupColumn("##Plus");
 
-                ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
+                ImGui.TableHeadersRow();
 
-                ImGui.TableNextColumn();
-                if (ImGui.Selectable(Utils.ToStr(item.Name)))
-                    ImGui.SetClipboardText(Utils.ToStr(item.Name));
-
-                ImGui.TableNextColumn();
-                if (ImGuiComponents.IconButton((int) itemId, FontAwesomeIcon.Plus))
+                ImGui.Indent(10.0f);
+                foreach (var itemId in missing)
                 {
-                    character.Sanctuary.Opened += 1;
-                    character.Sanctuary.Obtained.TryAdd(itemId, 1);
-                    Plugin.ConfigurationBase.SaveCharacterConfig();
+                    var item = ItemSheet.GetRow(itemId)!;
+
+                    ImGui.TableNextColumn();
+                    DrawIcon(item.Icon);
+
+                    ImGui.TableNextColumn();
+                    if (ImGui.Selectable(Utils.ToStr(item.Name)))
+                        ImGui.SetClipboardText(Utils.ToStr(item.Name));
+
+                    ImGui.TableNextColumn();
+                    if (ImGuiComponents.IconButton((int) itemId, FontAwesomeIcon.Plus))
+                    {
+                        character.Sanctuary.Opened += 1;
+                        character.Sanctuary.Obtained.TryAdd(itemId, 1);
+                        Plugin.ConfigurationBase.SaveCharacterConfig();
+                    }
+
+                    ImGui.TableNextRow();
                 }
 
-                ImGui.TableNextRow();
+                ImGui.Unindent(10.0f);
+                ImGui.EndTable();
             }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
         }
 
         ImGuiHelpers.ScaledDummy(10.0f);
         if (ImGui.Button("Export to clipboard"))
-            ExportToClipboard(dict);
+            Export.ExportToClipboard(dict);
 
         ImGui.EndTabItem();
     }

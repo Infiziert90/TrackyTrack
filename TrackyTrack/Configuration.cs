@@ -19,6 +19,10 @@ namespace TrackyTrack
         public bool EnableGachaCoffers = true;
         public bool EnableEurekaCoffers = true;
 
+        public bool UploadNotification = true;
+        public DateTime UploadNotificationReceived = DateTime.MaxValue;
+        public bool UploadPermission = true;
+
         [NonSerialized]
         private DalamudPluginInterface? PluginInterface;
 
