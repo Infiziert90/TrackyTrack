@@ -318,6 +318,10 @@ namespace TrackyTrack
         #region Uploads
         private void Login()
         {
+            // There is a chance that we logged into a different character, so we try to deregister and register it a new
+            ClientState.TerritoryChanged -= TerritoryChanged;
+            ClientState.TerritoryChanged += TerritoryChanged;
+
             // Notify the user once about upload opt out
             if (Configuration.UploadNotification)
             {
