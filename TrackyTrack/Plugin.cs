@@ -372,7 +372,7 @@ namespace TrackyTrack
             }
             catch (Exception e)
             {
-                Log.Error(e, "Upload went wrong, just cancel it");
+                Log.Error(e, "Upload went wrong, just throw it away");
             }
         }
 
@@ -386,6 +386,10 @@ namespace TrackyTrack
 
                 try
                 {
+                    // check if this character had a full upload yet
+                    if (!CharacterStorage[ClientState.LocalContentId].HadBulkUpload)
+                        return;
+
                     Task.Run(() => Export.UploadEntry(coffer, itemId, amount));
                 }
                 catch (Exception e)
