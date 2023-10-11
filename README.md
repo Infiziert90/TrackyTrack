@@ -3,17 +3,18 @@ Because tracking stuff is fun~
 
 ### Normal Functions 
 + Track currency increase
-+ Track repair costs
-+ Track teleport costs
-+ Track result data for desynthesis
++ Track teleport and npc repair costs
++ Track desynthesis results
 + Track retainer ventures
-+ Supports multiple characters
 
 ### Advanced  Functions
-+ Track results for bulk desynthesis
-+ Track rewards for venture coffers
-+ Track rewards for gacha coffers
-+ Track rewards for eureka bunny coffers
++ Track different coffer rewards
+  - Venture Coffer
+  - Materiel Container 3.0
+  - Materiel Container 4.0
+  - Sanctuary Materiel Container
++ Track Eureka bunny rewards
++ Track Eureka/Bozja lockboxes
 
 ### General Stats
 ![stats](TrackyTrack/images/stats.png)

@@ -247,7 +247,7 @@ public partial class MainWindow
             return;
         }
 
-        var characterGacha = characters.Where(c => c.Sanctuary.Opened > 0).ToList();
+        var characterGacha = characters.Where(c => c.GachaSanctuary.Opened > 0).ToList();
         // if (!characterGacha.Any())
         // {
         //     Helper.NoGachaData("Sanctuary");
@@ -261,10 +261,10 @@ public partial class MainWindow
             dict.Add(item, 0);
 
         // fill dict with real values
-        foreach (var pair in characterGacha.SelectMany(c => c.Sanctuary.Obtained))
+        foreach (var pair in characterGacha.SelectMany(c => c.GachaSanctuary.Obtained))
             dict[pair.Key] += pair.Value;
 
-        var opened = characterGacha.Select(c => c.Sanctuary.Opened).Sum();
+        var opened = characterGacha.Select(c => c.GachaSanctuary.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
             var item = ItemSheet.GetRow(pair.Key)!;

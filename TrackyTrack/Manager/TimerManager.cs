@@ -169,9 +169,9 @@ public class TimerManager
             }
             else if (CofferId == 41667 && Sanctuary.Content.Contains(item.ItemId))
             {
-                character.Sanctuary.Opened += 1;
-                if (!character.Sanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                    character.Sanctuary.Obtained[item.ItemId] += (uint) item.Quantity;
+                character.GachaSanctuary.Opened += 1;
+                if (!character.GachaSanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                    character.GachaSanctuary.Obtained[item.ItemId] += (uint) item.Quantity;
                 save = true;
             }
         }

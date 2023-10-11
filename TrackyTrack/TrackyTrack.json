@@ -2,7 +2,7 @@
     "Author": "Infi",
     "Name": "Tracky Track",
     "Punchline": "Tracking data is fun",
-    "Description": "### Normal Functions \n+ Track currency increase\n+ Track repair costs\n+ Track teleport costs\n+ Track result data for Desynthesis\n+ + Track retainer ventures\n+ Supports multiple characters\n\n### Advanced  Functions\n+ Track results for Bulk Desynthesis\n+ Track rewards for Venture Coffers\n+ Track rewards for Gacha Coffers\n+ Track rewards for Eureka Bunny Coffers",
+    "Description": "### Normal Functions \n+ Track currency increase\n+ Track teleport and npc repair costs\n+ Track desynthesis results\n+ Track retainer ventures\n\n### Advanced  Functions\n+ Track different coffer rewards\n  - Venture Coffer\n  - Materiel Container 3.0\n  - Materiel Container 4.0\n  - Sanctuary Materiel Container\n+ Track Eureka bunny rewards\n+ Track Eureka/Bozja lockboxes",
     "InternalName": "TrackyTrack",
     "ApplicableVersion": "any",
     "Tags": [

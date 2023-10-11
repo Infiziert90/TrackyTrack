@@ -368,7 +368,7 @@ namespace TrackyTrack
                 Task.Run(() => Export.UploadAll(36636, character.GachaFourZero.Obtained));
 
                 // 41667 Sanctuary
-                Task.Run(() => Export.UploadAll(41667, character.Sanctuary.Obtained));
+                Task.Run(() => Export.UploadAll(41667, character.GachaSanctuary.Obtained));
             }
             catch (Exception e)
             {

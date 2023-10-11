@@ -41,9 +41,11 @@ public class CharacterConfiguration
     public VentureCoffer Coffer = new();
     public GachaThreeZero GachaThreeZero = new();
     public GachaFourZero GachaFourZero = new();
-    public Sanctuary Sanctuary = new();
+    [Obsolete("Only used internally, bugged", false)] public Sanctuary Sanctuary = new();
+    public Sanctuary GachaSanctuary = new();
     public Retainer VentureStorage = new();
     public EurekaTracker Eureka = new();
+    public Lockboxes Lockbox = new();
 
     public CharacterConfiguration() { }
 
