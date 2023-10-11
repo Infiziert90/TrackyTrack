@@ -51,6 +51,8 @@ public partial class MainWindow : Window, IDisposable
 
                 BunnyTab();
 
+                LockboxTab();
+
                 ImGui.EndTabBar();
             }
         }

@@ -84,6 +84,10 @@ public class HookManager
                 case 1388:
                     Plugin.RepairHandler(param2);
                     break;
+                // Lockbox handler
+                case 1948:
+                    Plugin.LockboxHandler(param2, param4, param5);
+                    break;
             }
         }
         catch (Exception e)

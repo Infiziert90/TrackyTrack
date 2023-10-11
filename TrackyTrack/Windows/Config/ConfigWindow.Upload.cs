@@ -19,6 +19,7 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Grand Company 3.0");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Grand Company 4.0");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Sanctuary Gacha");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Lockboxes");
             ImGuiHelpers.ScaledIndent(-10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);

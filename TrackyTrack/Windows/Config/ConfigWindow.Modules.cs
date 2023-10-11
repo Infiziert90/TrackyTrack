@@ -45,6 +45,7 @@ public partial class ConfigWindow
             changed |= ImGui.Checkbox("Venture Coffer Tracking", ref Configuration.EnableVentureCoffers);
             changed |= ImGui.Checkbox("Gacha Coffer Tracking", ref Configuration.EnableGachaCoffers);
             changed |= ImGui.Checkbox("Bunny Coffer Tracking", ref Configuration.EnableEurekaCoffers);
+            changed |= ImGui.Checkbox("Lockbox Tracking", ref Configuration.EnableLockboxes);
             ImGui.Unindent(10.0f);
 
             if (changed)

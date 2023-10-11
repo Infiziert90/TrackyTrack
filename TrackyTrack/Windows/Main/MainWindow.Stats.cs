@@ -15,9 +15,10 @@ public partial class MainWindow
 
     private void StatsTab()
     {
-        if (ImGui.BeginTabItem("Stats##GeneralStats"))
+        if (ImGui.BeginTabItem("Common##GeneralStats"))
         {
             Stats();
+
             ImGui.EndTabItem();
         }
     }

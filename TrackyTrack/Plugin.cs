@@ -303,6 +303,30 @@ namespace TrackyTrack
             TimerManager.StartRepair();
         }
 
+        public void LockboxHandler(uint lockbox, uint itemId, uint amount)
+        {
+            if (!Configuration.EnableLockboxes)
+                return;
+
+            CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
+            var character = CharacterStorage[ClientState.LocalContentId];
+
+            if (!character.Lockbox.History.ContainsKey((LockboxTypes)lockbox))
+            {
+                ChatGui.Print(Utils.SuccessMessage("Found lockbox that isn't known to the plugin."));
+                ChatGui.Print(Utils.SuccessMessage($"Please report this to the developer: Lockbox {lockbox} Item {itemId}"));
+                return;
+            }
+
+            character.Lockbox.Opened += 1;
+            var lockboxHistory = character.Lockbox.History[(LockboxTypes)lockbox];
+            if (!lockboxHistory.TryAdd(itemId, amount))
+                lockboxHistory[itemId] += amount;
+
+            ConfigurationBase.SaveCharacterConfig();
+            EntryUpload(lockbox, itemId, amount);
+        }
+
         #region Draws
         private void DrawUI()
         {
