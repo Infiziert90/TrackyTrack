@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
 
 namespace TrackyTrack.Data;
 
@@ -40,6 +42,12 @@ public enum LockboxTypes : uint
 
 public static class LockboxExtensions
 {
+    private static readonly ExcelSheet<Item> ItemSheet;
+    static LockboxExtensions()
+    {
+        ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
+    }
+
     public static readonly LockboxTypes[] AsArray =
     {
         LockboxTypes.Anemos,
@@ -79,7 +87,7 @@ public static class LockboxExtensions
             LockboxTypes.MoistureWarped => "Moisture-Warped",
             LockboxTypes.SouthernFront => "Southern Front",
             LockboxTypes.Zadnor => "Zadnor",
-            _ => "Unknown"
+            _ => Utils.ToStr(ItemSheet.GetRow((uint) type)!.Name),
         };
     }
 

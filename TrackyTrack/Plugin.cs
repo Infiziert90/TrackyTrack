@@ -311,15 +311,13 @@ namespace TrackyTrack
             CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
             var character = CharacterStorage[ClientState.LocalContentId];
 
-            if (!character.Lockbox.History.ContainsKey((LockboxTypes)lockbox))
-            {
-                ChatGui.Print(Utils.SuccessMessage("Found lockbox that isn't known to the plugin."));
-                ChatGui.Print(Utils.SuccessMessage($"Please report this to the developer: Lockbox {lockbox} Item {itemId}"));
-                return;
-            }
+            // Multiple other items use this handler, like the deep dungeon treasures, so we just add them as we go
+            var type = (LockboxTypes) lockbox;
+            if (!character.Lockbox.History.ContainsKey(type))
+                character.Lockbox.History.Add(type, new Dictionary<uint, uint>());
 
             character.Lockbox.Opened += 1;
-            var lockboxHistory = character.Lockbox.History[(LockboxTypes)lockbox];
+            var lockboxHistory = character.Lockbox.History[type];
             if (!lockboxHistory.TryAdd(itemId, amount))
                 lockboxHistory[itemId] += amount;
 
