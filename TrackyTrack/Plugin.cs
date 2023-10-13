@@ -361,6 +361,10 @@ namespace TrackyTrack
 
         private void TerritoryChanged(ushort _)
         {
+            // trigger the warning also for people that just installed it
+            if (Configuration.UploadNotification)
+                Login();
+
             if (!Configuration.UploadPermission)
                 return;
 
