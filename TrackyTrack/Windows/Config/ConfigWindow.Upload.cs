@@ -23,6 +23,12 @@ public partial class ConfigWindow
             ImGuiHelpers.ScaledIndent(-10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);
+
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Can i see the results?");
+            if (ImGui.Button("Yes, click me"))
+                Dalamud.Utility.Util.OpenLink("https://docs.google.com/spreadsheets/d/1VfncSL5gf9E7ehgND5nZgguUyUAmZiAMbQllLKcoxTQ/edit?usp=sharing");
+
+            ImGuiHelpers.ScaledDummy(5.0f);
             ImGui.Separator();
             ImGuiHelpers.ScaledDummy(5.0f);
 

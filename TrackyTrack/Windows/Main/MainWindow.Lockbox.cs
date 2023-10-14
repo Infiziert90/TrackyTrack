@@ -72,14 +72,14 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
         if (ImGui.BeginTable($"##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
         {
-            ImGui.TableSetupColumn("##stat", 0, 0.4f);
+            ImGui.TableSetupColumn("##stat", 0, 0.6f);
             ImGui.TableSetupColumn("##opened");
 
             ImGui.TableNextColumn();
             ImGui.Indent(10.0f);
             ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{totalNumber:N0} Lockboxes{(totalNumber > 1 ? "s" : "")}");
+            ImGui.TextUnformatted($"{totalNumber:N0} Lockboxe{(totalNumber > 1 ? "s" : "")}");
 
             // We set zadnor because it is last in list
             var lastType = string.Empty;
