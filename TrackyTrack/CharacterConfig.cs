@@ -13,6 +13,9 @@ public class CharacterConfiguration
     public ulong LocalContentId;
     public bool HadBulkUpload = false;
 
+    // TODO Just temp to fix sanctuary mistake
+    public bool NeedsCheck = true;
+
     public string CharacterName = "";
     public string World = "Unknown";
 

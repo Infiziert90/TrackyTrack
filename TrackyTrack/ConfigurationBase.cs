@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.Internal.Notifications;
 using Newtonsoft.Json;
+using TrackyTrack.Data;
 
 namespace TrackyTrack;
 
@@ -86,6 +87,42 @@ public class ConfigurationBase : IDisposable
         }
 
         config ??= CharacterConfiguration.CreateNew();
+
+        // TODO: Remove at some point, just cleanup for sanctuary mistake
+        if (config.NeedsCheck)
+        {
+            config.NeedsCheck = false;
+
+            foreach (var (key, value) in config.Coffer.Obtained.ToArray())
+            {
+                if (key != 8841 && value % 2 == 1)
+                {
+                    config.Coffer.Opened -= 1;
+                    config.Coffer.Obtained[key] = value - 1;
+                }
+            }
+
+            foreach (var (key, value) in config.Sanctuary.Obtained)
+            {
+                if (GachaThreeZero.Content.Contains(key))
+                {
+                    config.GachaThreeZero.Opened -= (int) value;
+                    if (config.GachaThreeZero.Obtained[key] > value)
+                        config.GachaThreeZero.Obtained[key] -= value;
+                    else
+                        config.GachaThreeZero.Obtained.Remove(key);
+                }
+
+                if (GachaFourZero.Content.Contains(key))
+                {
+                    config.GachaFourZero.Opened -= (int) value;
+                    if (config.GachaFourZero.Obtained[key] > value)
+                        config.GachaFourZero.Obtained[key] -= value;
+                    else
+                        config.GachaFourZero.Obtained.Remove(key);
+                }
+            }
+        }
 
         LastWriteTimes[contentId] = GetConfigLastWriteTime(contentId);
         return config;

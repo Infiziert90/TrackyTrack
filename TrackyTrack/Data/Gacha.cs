@@ -49,4 +49,7 @@ public class Sanctuary
         13712, 13716, 13708, 13114, 38589, 20525, 20528, 40676, 13283, 13714, 33936, 33923, 13715, 39425, 39428, 20530,
         41139, 13279
     };
+
+    [JsonIgnore]
+    public static readonly uint[] MultiRewardItems = { 38540, 39502, 40393, 41501 };
 }

@@ -248,12 +248,6 @@ public partial class MainWindow
         }
 
         var characterGacha = characters.Where(c => c.GachaSanctuary.Opened > 0).ToList();
-        // if (!characterGacha.Any())
-        // {
-        //     Helper.NoGachaData("Sanctuary");
-        //     ImGui.EndTabItem();
-        //     return;
-        // }
 
         // fill dict in order
         var dict = new Dictionary<uint, uint>();
@@ -269,7 +263,7 @@ public partial class MainWindow
         {
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
-            var percentage = (double) count / opened * 100.0;
+            var percentage = (Data.Sanctuary.MultiRewardItems.Contains(pair.Key) ? count / 5.0 : count ) / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
@@ -352,12 +346,6 @@ public partial class MainWindow
         }
 
         var characterGacha = characters.Where(c => c.Sanctuary.Opened > 0).ToList();
-        // if (!characterGacha.Any())
-        // {
-        //     Helper.NoGachaData("Sanctuary");
-        //     ImGui.EndTabItem();
-        //     return;
-        // }
 
         // fill dict in order
         var dict = new Dictionary<uint, uint>();
