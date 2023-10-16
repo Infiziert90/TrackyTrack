@@ -91,8 +91,6 @@ public class ConfigurationBase : IDisposable
         // TODO: Remove at some point, just cleanup for sanctuary mistake
         if (config.NeedsCheck)
         {
-            config.NeedsCheck = false;
-
             foreach (var (key, value) in config.Coffer.Obtained.ToArray())
             {
                 if (key != 8841 && value % 2 == 1)
@@ -104,7 +102,7 @@ public class ConfigurationBase : IDisposable
 
             foreach (var (key, value) in config.Sanctuary.Obtained)
             {
-                if (GachaThreeZero.Content.Contains(key))
+                if (GachaThreeZero.Content.Contains(key) && config.GachaThreeZero.Obtained.ContainsKey(key))
                 {
                     config.GachaThreeZero.Opened -= (int) value;
                     if (config.GachaThreeZero.Obtained[key] > value)
@@ -113,7 +111,7 @@ public class ConfigurationBase : IDisposable
                         config.GachaThreeZero.Obtained.Remove(key);
                 }
 
-                if (GachaFourZero.Content.Contains(key))
+                if (GachaFourZero.Content.Contains(key) && config.GachaFourZero.Obtained.ContainsKey(key))
                 {
                     config.GachaFourZero.Opened -= (int) value;
                     if (config.GachaFourZero.Obtained[key] > value)
@@ -122,6 +120,9 @@ public class ConfigurationBase : IDisposable
                         config.GachaFourZero.Obtained.Remove(key);
                 }
             }
+
+            config.NeedsCheck = false;
+            config.Sanctuary = new Sanctuary();
         }
 
         LastWriteTimes[contentId] = GetConfigLastWriteTime(contentId);
