@@ -86,6 +86,7 @@ public class HookManager
                     break;
                 // Lockbox handler
                 case 1948:
+                case 3980:
                     Plugin.LockboxHandler(param2, param4, param5);
                     break;
             }
