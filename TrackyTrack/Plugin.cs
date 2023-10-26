@@ -112,6 +112,8 @@ namespace TrackyTrack
 
             ClientState.Login += Login;
             ClientState.TerritoryChanged += TerritoryChanged;
+
+            Login();
         }
 
         public void Dispose()

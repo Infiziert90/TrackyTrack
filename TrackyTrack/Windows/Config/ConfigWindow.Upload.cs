@@ -24,8 +24,8 @@ public partial class ConfigWindow
 
             ImGuiHelpers.ScaledDummy(5.0f);
 
-            ImGui.TextColored(ImGuiColors.DalamudViolet, "Can i see the results?");
-            if (ImGui.Button("Yes, click me"))
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "If you'd like to see the results");
+            if (ImGui.Button("Click Me"))
                 Dalamud.Utility.Util.OpenLink("https://docs.google.com/spreadsheets/d/1VfncSL5gf9E7ehgND5nZgguUyUAmZiAMbQllLKcoxTQ/edit?usp=sharing");
 
             ImGuiHelpers.ScaledDummy(5.0f);

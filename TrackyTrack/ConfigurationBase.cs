@@ -82,7 +82,8 @@ public class ConfigurationBase : IDisposable
         }
         catch (Exception e)
         {
-            Plugin.Log.Warning(e, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
+            Plugin.Log.Error(e, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
+            Plugin.PluginInterface.UiBuilder.AddNotification("Exception during config load, pls check /xllog", "[Tracky Track]", NotificationType.Error);
             config = CharacterConfiguration.CreateNew();
         }
 
