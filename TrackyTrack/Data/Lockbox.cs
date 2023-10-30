@@ -102,7 +102,7 @@ public static class LockboxExtensions
             LockboxTypes.HeatWarped => "Heat-Warped",
             LockboxTypes.Hydatos => "Hydatos",
             LockboxTypes.MoistureWarped => "Moisture-Warped",
-            LockboxTypes.SouthernFront => "Southern Front",
+            LockboxTypes.SouthernFront => "Bozja",
             LockboxTypes.Zadnor => "Zadnor",
             _ => Utils.ToStr(ItemSheet.GetRow((uint) type)!.Name),
         };
