@@ -147,26 +147,25 @@ public partial class MainWindow
 
         // fill dict with real values
         var selectedType = (LockboxTypes) SelectedType;
-        var dict = new Dictionary<LockboxTypes, Dictionary<uint, uint>>();
-        foreach (var (type, lockboxDict) in characters.SelectMany(c => c.Lockbox.History).Where(pair => pair.Key == selectedType))
+        var dict = new Dictionary<uint, uint>();
+        foreach (var (_, lockboxDict) in characters.SelectMany(c => c.Lockbox.History).Where(pair => pair.Key == selectedType))
         {
-            dict[type] = new Dictionary<uint, uint>();
             foreach (var (itemId, amount) in lockboxDict)
             {
-                if (!dict[type].TryAdd(itemId, amount))
-                    dict[type][itemId] += amount;
+                if (!dict.TryAdd(itemId, amount))
+                    dict[itemId] += amount;
             }
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
-        if (!dict[selectedType].Any())
+        if (!dict.Any())
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {selectedType.ToName()} Lockboxes.");
             return;
         }
 
-        var opened = dict[selectedType].Values.Sum(s => s);
-        var unsortedList = dict[selectedType].Select(pair =>
+        var opened = dict.Values.Sum(s => s);
+        var unsortedList = dict.Select(pair =>
         {
             var item = ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
