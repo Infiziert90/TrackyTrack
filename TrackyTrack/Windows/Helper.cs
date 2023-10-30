@@ -85,4 +85,11 @@ public static class Helper
         if (ImGuiComponents.IconButton(id+1, FontAwesomeIcon.ArrowRight)) selected++;
         if (selected + 1 == length) ImGui.EndDisabled();
     }
+
+    public static void RightAlignedText(string text, float indent = 0.0f)
+    {
+        var width = ImGui.CalcTextSize(text).X;
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X - width + indent);
+        ImGui.TextUnformatted(text);
+    }
 }

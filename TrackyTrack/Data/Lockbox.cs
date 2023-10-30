@@ -65,9 +65,26 @@ public static class LockboxExtensions
             LockboxTypes.Pagos => "Pagos",
             LockboxTypes.ColdWarped => "Pagos",
             LockboxTypes.Pyros => "Pyros",
-            LockboxTypes.HeatWarped => "HeatWarped",
+            LockboxTypes.HeatWarped => "Pyros",
             LockboxTypes.Hydatos => "Hydatos",
-            LockboxTypes.MoistureWarped => "MoistureWarped",
+            LockboxTypes.MoistureWarped => "Hydatos",
+            LockboxTypes.SouthernFront => "Bozja",
+            LockboxTypes.Zadnor => "Bozja",
+            _ => "Unknown"
+        };
+    }
+
+    public static string ToTerritory(this LockboxTypes type)
+    {
+        return (type) switch
+        {
+            LockboxTypes.Anemos => "Eureka",
+            LockboxTypes.Pagos => "Eureka",
+            LockboxTypes.ColdWarped => "Eureka",
+            LockboxTypes.Pyros => "Eureka",
+            LockboxTypes.HeatWarped => "Eureka",
+            LockboxTypes.Hydatos => "Eureka",
+            LockboxTypes.MoistureWarped => "Eureka",
             LockboxTypes.SouthernFront => "Bozja",
             LockboxTypes.Zadnor => "Bozja",
             _ => "Unknown"
@@ -106,6 +123,16 @@ public static class LockboxExtensions
     public static bool HasMultiple(this LockboxTypes type)
     {
         return type != LockboxTypes.Anemos;
+    }
+
+    public static string TerritoryToContainerName(string territory)
+    {
+        return (territory) switch
+        {
+            "Eureka" => "Boxes",
+            "Bozja" => "Boxes",
+            _ => "Things"
+        };
     }
 }
 

@@ -6,6 +6,7 @@ namespace TrackyTrack.Windows.Main;
 public partial class MainWindow
 {
     private int SelectedType;
+    private static readonly string[] Territories = { "Eureka", "Bozja", "Unknown" };
 
     private void LockboxTab()
     {
@@ -55,60 +56,73 @@ public partial class MainWindow
         if (!ImGui.BeginTabItem("Stats"))
             return;
 
+        var longest = 0;
         var totalNumber = 0u;
-        var openedTypes = new Dictionary<LockboxTypes, uint>();
+        var openedTypes = new Dictionary<string, Dictionary<LockboxTypes, uint>>
+        {
+            { "Eureka", new Dictionary<LockboxTypes, uint>() },
+            { "Bozja", new Dictionary<LockboxTypes, uint>() },
+            { "Unknown", new Dictionary<LockboxTypes, uint>() },
+        };
+
         foreach (var (type, dict) in characters.SelectMany(c => c.Lockbox.History))
         {
             foreach (var amount in dict.Values)
             {
                 totalNumber += amount;
-                if (!openedTypes.TryAdd(type, amount))
-                    openedTypes[type] += amount;
-            }
+                if (!openedTypes[type.ToTerritory()].TryAdd(type, amount))
+                    openedTypes[type.ToTerritory()][type] += amount;
 
+                if (type.ToName().Length > longest)
+                    longest = type.ToName().Length;
+            }
         }
+        var width = ImGui.CalcTextSize(new string('W', longest)).X;
+        var totalWidth = ImGui.CalcTextSize("99999 Treasures").X + width;
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
-        if (ImGui.BeginTable($"##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
+        if (ImGui.BeginTable($"##TotalStatsTable", 2, 0, new Vector2(totalWidth, 0)))
         {
-            ImGui.TableSetupColumn("##stat", 0, 0.6f);
+            ImGui.TableSetupColumn("##stat", ImGuiTableColumnFlags.WidthFixed, width);
             ImGui.TableSetupColumn("##opened");
 
             ImGui.TableNextColumn();
             ImGui.Indent(10.0f);
             ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{totalNumber:N0} Lockboxe{(totalNumber > 1 ? "s" : "")}");
+            Helper.RightAlignedText($"{totalNumber:N0} Treasure{(totalNumber > 1 ? "s" : "")}");
 
-            // We set zadnor because it is last in list
-            var lastType = string.Empty;
-            foreach (var (type, amount) in openedTypes)
+            foreach (var territory in Territories)
             {
-                var area = type.ToArea();
-                if (lastType != area)
-                {
-                    lastType = area;
+                if (!openedTypes[territory].Any())
+                    continue;
 
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    ImGuiHelpers.ScaledDummy(5.0f);
+                ImGuiHelpers.ScaledDummy(5.0f);
 
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    ImGui.TextColored(ImGuiColors.HealerGreen, area);
-                }
-
-                ImGui.Indent(10.0f);
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, type.ToName());
+                ImGui.TextColored(ImGuiColors.HealerGreen, territory);
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{amount:N0} opened");
+                var opened = openedTypes[territory].Values.Sum(a => a);
+                var containerName = LockboxExtensions.TerritoryToContainerName(territory);
+                Helper.RightAlignedText($"{opened:N0} {containerName}");
+
+                ImGui.Indent(10.0f);
+                foreach (var (type, amount) in openedTypes[territory])
+                {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.TextColored(ImGuiColors.HealerGreen, type.ToName());
+
+                    ImGui.TableNextColumn();
+                    Helper.RightAlignedText($"x{amount:N0}", 10.0f);
+                }
                 ImGui.Unindent(10.0f);
             }
             ImGui.Unindent(10.0f);
+
             ImGui.EndTable();
         }
         ImGui.EndTabItem();
