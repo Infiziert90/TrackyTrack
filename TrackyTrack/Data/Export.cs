@@ -108,25 +108,25 @@ public static class Export
         }
     }
 
-    public static async void UploadAll(uint coffer, Dictionary<uint, uint> dict)
+    public static async void UploadAll(Dictionary<CofferRarity, Dictionary<DateTime, EurekaResult>> dict)
     {
-        foreach (var (id, amount) in dict)
+        foreach (var (rarity, results) in dict)
         {
-            try
+            foreach (var result in results.Values.SelectMany(v => v.Items))
             {
-                var content = new StringContent(JsonConvert.SerializeObject(new ExportLoot(coffer, id, amount)), Encoding.UTF8, "application/json");
-                var response = await Client.PostAsync(SupabaseUrl, content);
+                try
+                {
+                    var content = new StringContent(JsonConvert.SerializeObject(new ExportLoot((uint) rarity, result.Item, 1)), Encoding.UTF8, "application/json");
+                    await Client.PostAsync(SupabaseUrl, content);
 
-                Plugin.Log.Debug($"Item {id} | Response: {response.StatusCode}");
-                Plugin.Log.Debug($"Item {id} | Content: {response.Content.ReadAsStringAsync().Result}");
-
-                // Delay to prevent too many uploads in a short time
-                await Task.Delay(30);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.Error(e.Message);
-                Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
+                    // Delay to prevent too many uploads in a short time
+                    await Task.Delay(30);
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.Error(e.Message);
+                    Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
+                }
             }
         }
     }

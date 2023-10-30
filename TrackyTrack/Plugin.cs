@@ -377,26 +377,21 @@ namespace TrackyTrack
             try
             {
                 var character = CharacterStorage[ClientState.LocalContentId];
-                if (character.HadBulkUpload)
+                if (character.HadEurekaUpload)
                 {
                     ClientState.TerritoryChanged -= TerritoryChanged;
                     return;
                 }
 
-                character.HadBulkUpload = true;
+                character.HadEurekaUpload = true;
                 ConfigurationBase.SaveCharacterConfig();
 
-                // 32161 Venture Coffers
-                Task.Run(() => Export.UploadAll(32161, character.Coffer.Obtained));
-
-                // 36635 Gacha 3.0
-                Task.Run(() => Export.UploadAll(36635, character.GachaThreeZero.Obtained));
-
-                // 36636 Gacha 4.0
-                Task.Run(() => Export.UploadAll(36636, character.GachaFourZero.Obtained));
-
-                // 41667 Sanctuary
-                Task.Run(() => Export.UploadAll(41667, character.GachaSanctuary.Obtained));
+                // Eureka Bunny Coffers
+                Task.Run(() =>
+                {
+                    foreach (var rarity in character.Eureka.History.Values)
+                        Export.UploadAll(rarity);
+                });
             }
             catch (Exception e)
             {
@@ -414,10 +409,6 @@ namespace TrackyTrack
 
                 try
                 {
-                    // check if this character had a full upload yet
-                    if (!CharacterStorage[ClientState.LocalContentId].HadBulkUpload)
-                        return;
-
                     Task.Run(() => Export.UploadEntry(coffer, itemId, amount));
                 }
                 catch (Exception e)

@@ -16,10 +16,10 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "What data?");
             ImGuiHelpers.ScaledIndent(10.0f);
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Coffer");
-            ImGui.TextColored(ImGuiColors.DalamudViolet, "Grand Company 3.0");
-            ImGui.TextColored(ImGuiColors.DalamudViolet, "Grand Company 4.0");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Grand Company Gacha");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Sanctuary Gacha");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Lockboxes");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Bunny Coffers");
             ImGuiHelpers.ScaledIndent(-10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);

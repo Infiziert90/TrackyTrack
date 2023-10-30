@@ -76,8 +76,10 @@ public class TimerManager
     {
         EurekaTerritory = (Territory) Plugin.ClientState.TerritoryType;
         EurekaRarity = (CofferRarity) rarity;
-        EurekaResult = new();
+        EurekaResult = new EurekaResult();
         AwaitingEurekaResult.Start();
+
+        Plugin.Log.Debug($"Waiting for items to be received ...");
     }
 
     public void RepairResult(int gilDifference)
@@ -199,18 +201,25 @@ public class TimerManager
         if (!AwaitingEurekaResult.Enabled)
             return;
 
+        Plugin.Log.Debug($"Received item {item.ItemId}");
         EurekaResult.AddItem(item.ItemId, (uint) item.Quantity);
     }
 
     public void StoreEurekaResult(object? _, ElapsedEventArgs __)
     {
         if (!EurekaResult.IsValid)
+        {
+            Plugin.Log.Debug($"No items received, invalid result");
             return;
+        }
 
+        Plugin.Log.Debug($"All items received, storing result");
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
         character.Eureka.History[EurekaTerritory][EurekaRarity].Add(DateTime.Now, EurekaResult);
         character.Eureka.Opened += 1;
-
         Plugin.ConfigurationBase.SaveCharacterConfig();
+
+        foreach (var item in EurekaResult.Items)
+            Plugin.EntryUpload((uint) EurekaRarity, item.Item, 1);
     }
 }
