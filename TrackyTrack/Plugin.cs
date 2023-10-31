@@ -373,13 +373,13 @@ namespace TrackyTrack
             try
             {
                 var character = CharacterStorage[ClientState.LocalContentId];
-                if (character.HadEurekaUpload)
+                if (character.HadBunnyUpload)
                 {
                     ClientState.TerritoryChanged -= TerritoryChanged;
                     return;
                 }
 
-                character.HadEurekaUpload = true;
+                character.HadBunnyUpload = true;
                 ConfigurationBase.SaveCharacterConfig();
 
                 // Eureka Bunny Coffers
