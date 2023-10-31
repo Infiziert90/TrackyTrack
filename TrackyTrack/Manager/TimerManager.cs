@@ -183,7 +183,7 @@ public class TimerManager
             OpeningCoffer = false;
             Plugin.ConfigurationBase.SaveCharacterConfig();
 
-            Plugin.EntryUpload(CofferId, item.ItemId, (uint) item.Quantity);
+            Plugin.GachaEntryUpload(CofferId, item.ItemId, (uint) item.Quantity);
         }
 
         if (OpeningCoffer)
@@ -220,6 +220,6 @@ public class TimerManager
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
         foreach (var item in EurekaResult.Items)
-            Plugin.EntryUpload((uint) EurekaRarity, item.Item, 1);
+            Plugin.BunnyEntryUpload((uint) EurekaRarity, item.Item, 1, (uint) EurekaTerritory);
     }
 }

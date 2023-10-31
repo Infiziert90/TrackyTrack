@@ -324,7 +324,7 @@ namespace TrackyTrack
                 lockboxHistory[itemId] += amount;
 
             ConfigurationBase.SaveCharacterConfig();
-            EntryUpload(lockbox, itemId, amount);
+            GachaEntryUpload(lockbox, itemId, amount);
         }
 
         #region Draws
@@ -367,11 +367,7 @@ namespace TrackyTrack
             if (Configuration.UploadNotification)
                 Login();
 
-            if (!Configuration.UploadPermission)
-                return;
-
-            // Check that the user had enough time to opt out after notification
-            if (Configuration.UploadNotificationReceived > DateTime.Now)
+            if (!CheckUploadPermissions())
                 return;
 
             try
@@ -389,8 +385,9 @@ namespace TrackyTrack
                 // Eureka Bunny Coffers
                 Task.Run(() =>
                 {
-                    foreach (var rarity in character.Eureka.History.Values)
-                        Export.UploadAll(rarity);
+                    foreach (var (territory, rarities) in character.Eureka.History)
+                        foreach (var (rarity, results) in rarities)
+                            Export.UploadAllBunny((uint) rarity, (uint) territory, results);
                 });
             }
             catch (Exception e)
@@ -399,23 +396,40 @@ namespace TrackyTrack
             }
         }
 
-        public void EntryUpload(uint coffer, uint itemId, uint amount)
+        public void GachaEntryUpload(uint coffer, uint itemId, uint amount)
         {
-            if (Configuration.UploadPermission)
-            {
-                // Check that the user had enough time to opt out after notification
-                if (Configuration.UploadNotificationReceived > DateTime.Now)
-                    return;
+            if (!CheckUploadPermissions())
+                return;
 
-                try
-                {
-                    Task.Run(() => Export.UploadEntry(coffer, itemId, amount));
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Upload went wrong, just throw it away");
-                }
+            try
+            {
+                Task.Run(() => Export.UploadGachaEntry(coffer, itemId, amount));
             }
+            catch (Exception e)
+            {
+                Log.Error(e, "Gacha upload went wrong, just throw it away");
+            }
+        }
+
+        public void BunnyEntryUpload(uint rarity, uint itemId, uint amount, uint territory)
+        {
+            if (!CheckUploadPermissions())
+                return;
+
+            try
+            {
+                Task.Run(() => Export.UploadBunnyEntry(rarity, itemId, amount, territory));
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Bunny upload went wrong, just throw it away");
+            }
+        }
+
+        public bool CheckUploadPermissions()
+        {
+            // Check that the user had enough time to opt out after notification
+            return Configuration.UploadPermission && Configuration.UploadNotificationReceived < DateTime.Now;
         }
         #endregion
     }

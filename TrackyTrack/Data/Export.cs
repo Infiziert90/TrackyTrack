@@ -15,7 +15,8 @@ namespace TrackyTrack.Data;
 
 public static class Export
 {
-    private const string SupabaseUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Gacha";
+    private const string GachaUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Gacha";
+    private const string BunnyUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Bunny";
     private const string SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6d252d2p4Z21hcXRyeGV3bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk3NzcwMDIsImV4cCI6MjAwNTM1MzAwMn0.aNYTnhY_Sagi9DyH5Q9tCz9lwaRCYzMC12SZ7q7jZBc";
     private static readonly HttpClient Client = new();
 
@@ -32,7 +33,7 @@ public static class Export
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
     }
 
-    public class ExportLoot
+    public class GachaLoot
     {
         [JsonProperty("coffer")]
         public uint Coffer { get; set; }
@@ -49,7 +50,7 @@ public static class Export
         [JsonProperty("version")]
         public string Version { get; set; } = Plugin.Version;
 
-        public ExportLoot(uint id, uint amount)
+        public GachaLoot(uint id, uint amount)
         {
             Coffer = 0;
             ItemId = id;
@@ -57,7 +58,7 @@ public static class Export
             Amount = amount;
         }
 
-        public ExportLoot(uint coffer, uint id, uint amount)
+        public GachaLoot(uint coffer, uint id, uint amount)
         {
             Coffer = coffer;
             ItemId = id;
@@ -66,7 +67,33 @@ public static class Export
         }
     }
 
-    public sealed class ExportMap : ClassMap<ExportLoot>
+    public class BunnyLoot
+    {
+        [JsonProperty("coffer")]
+        public uint Rarity { get; set; }
+
+        [JsonProperty("item_id")]
+        public uint ItemId { get; set; }
+
+        [JsonProperty("amount")]
+        public uint Amount { get; set; }
+
+        [JsonProperty("territory")]
+        public uint Territory { get; set; }
+
+        [JsonProperty("version")]
+        public string Version { get; set; } = Plugin.Version;
+
+        public BunnyLoot(uint rarity, uint id, uint amount, uint territory)
+        {
+            Rarity = rarity;
+            ItemId = id;
+            Territory = territory;
+            Amount = amount;
+        }
+    }
+
+    public sealed class ExportMap : ClassMap<GachaLoot>
     {
         public ExportMap()
         {
@@ -89,10 +116,10 @@ public static class Export
 
             csv.Context.RegisterClassMap(new ExportMap());
 
-            csv.WriteHeader<ExportLoot>();
+            csv.WriteHeader<GachaLoot>();
             csv.NextRecord();
 
-            foreach (var detailedLoot in dict.Select(pair => new ExportLoot(pair.Key, pair.Value)))
+            foreach (var detailedLoot in dict.Select(pair => new GachaLoot(pair.Key, pair.Value)))
             {
                 csv.WriteRecord(detailedLoot);
                 csv.NextRecord();
@@ -108,35 +135,49 @@ public static class Export
         }
     }
 
-    public static async void UploadAll(Dictionary<CofferRarity, Dictionary<DateTime, EurekaResult>> dict)
+    public static async void UploadAllBunny(uint rarity, uint territory, Dictionary<DateTime, EurekaResult> results)
     {
-        foreach (var (rarity, results) in dict)
+        foreach (var result in results.Values.SelectMany(v => v.Items))
         {
-            foreach (var result in results.Values.SelectMany(v => v.Items))
+            try
             {
-                try
-                {
-                    var content = new StringContent(JsonConvert.SerializeObject(new ExportLoot((uint) rarity, result.Item, 1)), Encoding.UTF8, "application/json");
-                    await Client.PostAsync(SupabaseUrl, content);
+                var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, result.Item, 1, territory)), Encoding.UTF8, "application/json");
+                await Client.PostAsync(BunnyUrl, content);
 
-                    // Delay to prevent too many uploads in a short time
-                    await Task.Delay(30);
-                }
-                catch (Exception e)
-                {
-                    Plugin.Log.Error(e.Message);
-                    Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
-                }
+                // Delay to prevent too many uploads in a short time
+                await Task.Delay(30);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.Error(e.Message);
+                Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
             }
         }
     }
 
-    public static async void UploadEntry(uint coffer, uint id, uint amount)
+    public static async void UploadGachaEntry(uint coffer, uint id, uint amount)
     {
         try
         {
-            var content = new StringContent(JsonConvert.SerializeObject(new ExportLoot(coffer, id, amount)), Encoding.UTF8, "application/json");
-            var response = await Client.PostAsync(SupabaseUrl, content);
+            var content = new StringContent(JsonConvert.SerializeObject(new GachaLoot(coffer, id, amount)), Encoding.UTF8, "application/json");
+            var response = await Client.PostAsync(GachaUrl, content);
+
+            Plugin.Log.Debug($"Item {id} | Response: {response.StatusCode}");
+            Plugin.Log.Debug($"Item {id} | Content: {response.Content.ReadAsStringAsync().Result}");
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Error(e.Message);
+            Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
+        }
+    }
+
+    public static async void UploadBunnyEntry(uint rarity, uint id, uint amount, uint territory)
+    {
+        try
+        {
+            var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, id, amount, territory)), Encoding.UTF8, "application/json");
+            var response = await Client.PostAsync(BunnyUrl, content);
 
             Plugin.Log.Debug($"Item {id} | Response: {response.StatusCode}");
             Plugin.Log.Debug($"Item {id} | Content: {response.Content.ReadAsStringAsync().Result}");

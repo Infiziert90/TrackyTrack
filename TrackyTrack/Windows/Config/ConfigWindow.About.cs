@@ -33,7 +33,7 @@ public partial class ConfigWindow
                 ImGui.TextUnformatted("Debug:");
                 ImGui.Indent(10.0f);
                 if (ImGui.Button("Test Entry Upload"))
-                    Task.Run(() => Export.UploadEntry(1, 200, 1));
+                    Task.Run(() => Export.UploadGachaEntry(1, 200, 1));
                 ImGui.Unindent(10.0f);
                 #endif
             }
