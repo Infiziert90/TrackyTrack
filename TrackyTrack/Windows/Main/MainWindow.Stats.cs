@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility;
+using Microsoft.VisualBasic;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
@@ -103,6 +104,17 @@ public partial class MainWindow
         var teleportsWithout = teleports - aetheryteTickets - gcTickets - vesperTickets;
         if (teleportsWithout == 0)
             teleportsWithout = 1;
+        
+        var buffed = new Dictionary<TeleportBuff, (long, long)>();
+        foreach (var buff in (TeleportBuff[]) Enum.GetValues(typeof(TeleportBuff)))
+        {
+            var count = characters.Sum(c => c.TeleportsWithBuffs.TryGetValue(buff, out var value) ? value : 0);
+            var savings = characters.Sum(c => c.TeleportSavingsWithBuffs.TryGetValue(buff, out var value) ? value : 0);
+            if (count == 0)
+                continue;
+
+            buffed[buff] = (count, savings);
+        }
 
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Teleport:");
         ImGui.Indent(10.0f);
@@ -110,7 +122,7 @@ public partial class MainWindow
         {
             if (ImGui.BeginTable($"##TeleportStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
             {
-                ImGui.TableSetupColumn("##TeleportStat", 0, 0.6f);
+                ImGui.TableSetupColumn("##TeleportStat", 0, 1.1f);
                 ImGui.TableSetupColumn("##TeleportNum");
 
                 ImGui.TableNextColumn();
@@ -136,8 +148,37 @@ public partial class MainWindow
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGuiHelpers.ScaledDummy(5.0f);
 
+                #region Saving buffs
+                if (buffed.Count > 0)
+                {
+                    ImGuiHelpers.ScaledDummy(5.0f);
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.TextColored(ImGuiColors.HealerGreen, "Savings Buffs");
+                    ImGui.Indent(10.0f);
+
+                    foreach (var (buff, (count, savings)) in buffed)
+                    {
+                        ImGui.TableNextRow();
+                        ImGui.TableNextColumn();
+
+                        ImGui.TextColored(ImGuiColors.HealerGreen, buff.ToName().Replace("%", "%%"));
+                        ImGui.TableNextColumn();
+
+                        var stat = $"{count} times";
+                        if (savings > 0)
+                        {
+                            stat += $" (saved {savings:N0} gil)";
+                        }
+                        ImGui.TextUnformatted(stat);
+                    }
+
+                    ImGui.Unindent(10.0f);
+                }
+                #endregion
+
+                ImGuiHelpers.ScaledDummy(5.0f);
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Tickets");

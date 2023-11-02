@@ -1,4 +1,5 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
+using System.Collections.Concurrent;
 using TrackyTrack.Data;
 
 namespace TrackyTrack;
@@ -21,6 +22,9 @@ public class CharacterConfiguration
 
     public uint Teleports = 0;
     public uint TeleportCost = 0;
+    public ConcurrentDictionary<TeleportBuff, uint> TeleportsWithBuffs = new();
+    // Teleport savings (original cost - discounted cost) for each buff type
+    public ConcurrentDictionary<TeleportBuff, uint> TeleportSavingsWithBuffs = new();
     // Tickets
     public uint TeleportsAetheryte = 0;
     public uint TeleportsGC = 0;
