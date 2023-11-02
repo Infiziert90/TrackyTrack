@@ -219,7 +219,6 @@ public class TimerManager
         character.Eureka.Opened += 1;
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
-        foreach (var item in EurekaResult.Items)
-            Plugin.BunnyEntryUpload((uint) EurekaRarity, item.Item, 1, (uint) EurekaTerritory);
+        Plugin.BunnyEntryUpload((uint) EurekaRarity, (uint) EurekaTerritory, EurekaResult.Items);
     }
 }

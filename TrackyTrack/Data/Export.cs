@@ -16,7 +16,7 @@ namespace TrackyTrack.Data;
 public static class Export
 {
     private const string GachaUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Gacha";
-    private const string BunnyUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Bunny";
+    private const string BunnyUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Bnuuy";
     private const string SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6d252d2p4Z21hcXRyeGV3bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk3NzcwMDIsImV4cCI6MjAwNTM1MzAwMn0.aNYTnhY_Sagi9DyH5Q9tCz9lwaRCYzMC12SZ7q7jZBc";
     private static readonly HttpClient Client = new();
 
@@ -72,24 +72,20 @@ public static class Export
         [JsonProperty("coffer")]
         public uint Rarity { get; set; }
 
-        [JsonProperty("item_id")]
-        public uint ItemId { get; set; }
-
-        [JsonProperty("amount")]
-        public uint Amount { get; set; }
-
         [JsonProperty("territory")]
         public uint Territory { get; set; }
+
+        [JsonProperty("items")]
+        public uint[] Items { get; set; }
 
         [JsonProperty("version")]
         public string Version { get; set; } = Plugin.Version;
 
-        public BunnyLoot(uint rarity, uint id, uint amount, uint territory)
+        public BunnyLoot(uint rarity, uint territory, List<EurekaItem> items)
         {
             Rarity = rarity;
-            ItemId = id;
             Territory = territory;
-            Amount = amount;
+            Items = items.Select(i => i.Item).ToArray();
         }
     }
 
@@ -137,11 +133,11 @@ public static class Export
 
     public static async void UploadAllBunny(uint rarity, uint territory, Dictionary<DateTime, EurekaResult> results)
     {
-        foreach (var result in results.Values.SelectMany(v => v.Items))
+        foreach (var result in results.Values.Select(v => v.Items))
         {
             try
             {
-                var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, result.Item, 1, territory)), Encoding.UTF8, "application/json");
+                var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, territory, result)), Encoding.UTF8, "application/json");
                 await Client.PostAsync(BunnyUrl, content);
 
                 // Delay to prevent too many uploads in a short time
@@ -172,15 +168,15 @@ public static class Export
         }
     }
 
-    public static async void UploadBunnyEntry(uint rarity, uint id, uint amount, uint territory)
+    public static async void UploadBunnyEntry(uint rarity, uint territory, List<EurekaItem> items)
     {
         try
         {
-            var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, id, amount, territory)), Encoding.UTF8, "application/json");
+            var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, territory, items)), Encoding.UTF8, "application/json");
             var response = await Client.PostAsync(BunnyUrl, content);
 
-            Plugin.Log.Debug($"Item {id} | Response: {response.StatusCode}");
-            Plugin.Log.Debug($"Item {id} | Content: {response.Content.ReadAsStringAsync().Result}");
+            Plugin.Log.Debug($"Coffer {rarity} | Response: {response.StatusCode}");
+            Plugin.Log.Debug($"Coffer {rarity} | Content: {response.Content.ReadAsStringAsync().Result}");
         }
         catch (Exception e)
         {

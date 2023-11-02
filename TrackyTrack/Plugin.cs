@@ -373,13 +373,13 @@ namespace TrackyTrack
             try
             {
                 var character = CharacterStorage[ClientState.LocalContentId];
-                if (character.HadBunnyUpload)
+                if (character.HadBunnyUploadV2)
                 {
                     ClientState.TerritoryChanged -= TerritoryChanged;
                     return;
                 }
 
-                character.HadBunnyUpload = true;
+                character.HadBunnyUploadV2 = true;
                 ConfigurationBase.SaveCharacterConfig();
 
                 // Eureka Bunny Coffers
@@ -411,14 +411,14 @@ namespace TrackyTrack
             }
         }
 
-        public void BunnyEntryUpload(uint rarity, uint itemId, uint amount, uint territory)
+        public void BunnyEntryUpload(uint rarity, uint territory, List<EurekaItem> items)
         {
             if (!CheckUploadPermissions())
                 return;
 
             try
             {
-                Task.Run(() => Export.UploadBunnyEntry(rarity, itemId, amount, territory));
+                Task.Run(() => Export.UploadBunnyEntry(rarity, territory, items));
             }
             catch (Exception e)
             {

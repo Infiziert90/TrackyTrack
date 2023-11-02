@@ -11,7 +11,7 @@ public class CharacterConfiguration
     public int Version { get; set; } = 1;
 
     public ulong LocalContentId;
-    public bool HadBunnyUpload = false;
+    public bool HadBunnyUploadV2 = false;
 
     // TODO Just temp to fix sanctuary mistake
     public bool NeedsCheck = true;
