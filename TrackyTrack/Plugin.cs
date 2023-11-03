@@ -258,12 +258,8 @@ namespace TrackyTrack
 
         public static TeleportBuff GetCurrentTeleportBuff()
         {
-            if (ClientState.LocalPlayer == null)
-            {
-                Log.Warning("No LocalPlayer when trying to retrieve current TeleportBuff");
-                return TeleportBuff.None;
-            }
-            return TeleportBuffExtension.FromStatusList(ClientState.LocalPlayer.StatusList);
+            // LocalPlayer can be null in some cases, like loading screens
+            return ClientState.LocalPlayer == null ? TeleportBuff.None : TeleportBuffExtension.FromStatusList(ClientState.LocalPlayer.StatusList);
         }
 
         public void TeleportCostHandler(uint cost)
@@ -279,9 +275,7 @@ namespace TrackyTrack
             character.TeleportSavingsWithBuffs.TryAdd(buff, 0);
             character.TeleportsWithBuffs[buff] += 1;
             if (savings > 0)
-            {
                 character.TeleportSavingsWithBuffs[buff] += savings;
-            }
 
             character.TeleportCost += cost;
             character.Teleports += 1;
@@ -289,9 +283,6 @@ namespace TrackyTrack
 
             Log.Debug($"Teleported for {cost} gil (saved {savings} gil) with savings buff {buff.ToName()}");
             Log.Debug($"Teleported {character.Teleports} times with a total cost of {character.TeleportCost} gil");
-            foreach (var (key, value) in character.TeleportsWithBuffs) {
-                Log.Debug($"Teleportation with buff {key.ToName()} has happened {value} times with total savings of {character.TeleportSavingsWithBuffs[key]} gil");
-            }
         }
 
         public void AetheryteTicketHandler()

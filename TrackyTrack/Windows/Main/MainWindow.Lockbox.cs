@@ -77,8 +77,10 @@ public partial class MainWindow
                     longest = type.ToName().Length;
             }
         }
+
+        // Give 10.0f extra space because people have cut off text issues in rare cases
         var width = ImGui.CalcTextSize(new string('W', longest)).X;
-        var totalWidth = ImGui.CalcTextSize("99999 Treasures").X + width;
+        var totalWidth = ImGui.CalcTextSize("999,999 Treasures").X + width + (10.0f * ImGuiHelpers.GlobalScale);
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
