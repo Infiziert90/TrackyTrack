@@ -11,6 +11,9 @@ public enum TeleportBuff : uint
     ReducedRatesI = 1,   // 20% discount
     ReducedRatesII = 2,  // 30% discount
     ReducedRatesIII = 3, // 40% discount
+
+    // Squadron ticket
+    PriorityPass = 4, // 40% discount
 }
 
 public static class TeleportBuffExtension
@@ -23,18 +26,23 @@ public static class TeleportBuffExtension
             TeleportBuff.ReducedRatesI => "Reduced Rates (20%)",
             TeleportBuff.ReducedRatesII => "Reduced Rates II (30%)",
             TeleportBuff.ReducedRatesIII => "Reduced Rates III (40%)",
+            TeleportBuff.PriorityPass => "Priority Pass (40%)",
             _ => "Unknown"
         };
     }
 
     public static TeleportBuff FromStatusList(StatusList statusList)
     {
-        foreach (var item in statusList)
+        // Squadron buff has higher priority
+        if (statusList.Any(s => s.StatusId == 1061))
+            return TeleportBuff.PriorityPass;
+
+        foreach (var status in statusList)
         {
             // "Reduced Rates"
-            if (item.StatusId == 364)
+            if (status.StatusId == 364)
             {
-                switch (item.StackCount)
+                switch (status.StackCount)
                 {
                     case 40:
                         return TeleportBuff.ReducedRatesIII;
@@ -58,6 +66,7 @@ public static class TeleportBuffExtension
             TeleportBuff.ReducedRatesI => (uint)Math.Ceiling(discountedCost / 0.8),
             TeleportBuff.ReducedRatesII => (uint)Math.Ceiling(discountedCost / 0.7),
             TeleportBuff.ReducedRatesIII => (uint)Math.Ceiling(discountedCost / 0.6),
+            TeleportBuff.PriorityPass => (uint)Math.Ceiling(discountedCost / 0.6),
             _ => discountedCost
         };
     }
