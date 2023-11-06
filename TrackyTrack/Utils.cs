@@ -31,7 +31,7 @@ public static class Utils
     public static SeString SuccessMessage(string success)
     {
         return new SeStringBuilder()
-               .AddUiForeground("[Tracky Track] ", 540)
+               .AddUiForeground("[Tracky] ", 540)
                .AddUiForeground($"{success}", 43)
                .BuiltString;
     }

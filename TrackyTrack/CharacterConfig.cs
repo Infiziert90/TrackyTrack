@@ -12,10 +12,7 @@ public class CharacterConfiguration
     public int Version { get; set; } = 1;
 
     public ulong LocalContentId;
-    public bool HadBunnyUploadV2 = false;
-
-    // TODO Just temp to fix sanctuary mistake
-    public bool NeedsCheck = true;
+    public bool HadDesynthUpload = false;
 
     public string CharacterName = "";
     public string World = "Unknown";
@@ -48,7 +45,6 @@ public class CharacterConfiguration
     public VentureCoffer Coffer = new();
     public GachaThreeZero GachaThreeZero = new();
     public GachaFourZero GachaFourZero = new();
-    [Obsolete("Only used internally, bugged", false)] public Sanctuary Sanctuary = new();
     public Sanctuary GachaSanctuary = new();
     public Retainer VentureStorage = new();
     public EurekaTracker Eureka = new();

@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.Internal.Notifications;
 using Newtonsoft.Json;
-using TrackyTrack.Data;
 
 namespace TrackyTrack;
 
@@ -63,7 +62,7 @@ public class ConfigurationBase : IDisposable
             catch
             {
                 if (i == 4)
-                    UiBuilder.AddNotification("Failed to read config", "[Tracky Track]", NotificationType.Warning);
+                    UiBuilder.AddNotification("Failed to read config", "[Tracky]", NotificationType.Warning);
 
                 Plugin.Log.Warning($"Config file read failed {i + 1}/5");
             }
@@ -83,48 +82,11 @@ public class ConfigurationBase : IDisposable
         catch (Exception e)
         {
             Plugin.Log.Error(e, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
-            Plugin.PluginInterface.UiBuilder.AddNotification("Exception during config load, pls check /xllog", "[Tracky Track]", NotificationType.Error);
+            Plugin.PluginInterface.UiBuilder.AddNotification("Exception during config load, pls check /xllog", "[Tracky]", NotificationType.Error);
             config = CharacterConfiguration.CreateNew();
         }
 
         config ??= CharacterConfiguration.CreateNew();
-
-        // TODO: Remove at some point, just cleanup for sanctuary mistake
-        if (config.NeedsCheck)
-        {
-            foreach (var (key, value) in config.Coffer.Obtained.ToArray())
-            {
-                if (key != 8841 && value % 2 == 1)
-                {
-                    config.Coffer.Opened -= 1;
-                    config.Coffer.Obtained[key] = value - 1;
-                }
-            }
-
-            foreach (var (key, value) in config.Sanctuary.Obtained)
-            {
-                if (GachaThreeZero.Content.Contains(key) && config.GachaThreeZero.Obtained.ContainsKey(key))
-                {
-                    config.GachaThreeZero.Opened -= (int) value;
-                    if (config.GachaThreeZero.Obtained[key] > value)
-                        config.GachaThreeZero.Obtained[key] -= value;
-                    else
-                        config.GachaThreeZero.Obtained.Remove(key);
-                }
-
-                if (GachaFourZero.Content.Contains(key) && config.GachaFourZero.Obtained.ContainsKey(key))
-                {
-                    config.GachaFourZero.Opened -= (int) value;
-                    if (config.GachaFourZero.Obtained[key] > value)
-                        config.GachaFourZero.Obtained[key] -= value;
-                    else
-                        config.GachaFourZero.Obtained.Remove(key);
-                }
-            }
-
-            config.NeedsCheck = false;
-            config.Sanctuary = new Sanctuary();
-        }
 
         LastWriteTimes[contentId] = GetConfigLastWriteTime(contentId);
         return config;
@@ -224,7 +186,7 @@ public class ConfigurationBase : IDisposable
                     {
                         // Just try again until counter runs out
                         if (i == 4)
-                            UiBuilder.AddNotification("Failed to move config", "[Tracky Track]", NotificationType.Warning);
+                            UiBuilder.AddNotification("Failed to move config", "[Tracky]", NotificationType.Warning);
 
                         Plugin.Log.Warning($"Config file couldn't be moved {i + 1}/5");
                         await Task.Delay(30, CancellationToken.Token);

@@ -330,7 +330,7 @@ public partial class MainWindow
                 character.VentureStorage = new Retainer();
 
                 Plugin.ConfigurationBase.SaveCharacterConfig();
-                Plugin.PluginInterface.UiBuilder.AddNotification("Deleted the retainer history of your current character", "[Tracky Track]", NotificationType.Success);
+                Plugin.PluginInterface.UiBuilder.AddNotification("Deleted the retainer history of your current character", "[Tracky]", NotificationType.Success);
             }
         }
 
@@ -350,7 +350,7 @@ public partial class MainWindow
                     character.VentureStorage = new Retainer();
 
                 Plugin.ConfigurationBase.SaveAll();
-                Plugin.PluginInterface.UiBuilder.AddNotification("Deleted the retainer history of all characters", "[Tracky Track]", NotificationType.Success);
+                Plugin.PluginInterface.UiBuilder.AddNotification("Deleted the retainer history of all characters", "[Tracky]", NotificationType.Success);
             }
 
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))

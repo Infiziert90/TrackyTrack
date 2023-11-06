@@ -62,7 +62,10 @@ public record DesynthResult(uint Source, ItemResult[] Received)
     }
 }
 
-public record ItemResult(uint Item, uint Count, bool HQ);
+public record ItemResult(uint Item, uint Count, bool HQ)
+{
+    public uint[] ItemCountArray() => new[] { Item, Count };
+}
 
 public struct BulkResult
 {

@@ -20,6 +20,7 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Sanctuary Gacha");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Lockboxes");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Bunny Coffers");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Desynthesis");
             ImGuiHelpers.ScaledIndent(-10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);

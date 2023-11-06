@@ -44,7 +44,7 @@ namespace TrackyTrack
         public static ICharacterMonitor CharacterMonitor { get; private set; } = null!;
 
         public Configuration Configuration { get; init; }
-        public WindowSystem WindowSystem = new("Tracky Track");
+        public WindowSystem WindowSystem = new("Tracky");
 
         private ConfigWindow ConfigWindow { get; init; }
         private MainWindow MainWindow { get; init; }
@@ -192,15 +192,16 @@ namespace TrackyTrack
             CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
             var character = CharacterStorage[ClientState.LocalContentId];
 
-            character.Storage.History.Add(DateTime.Now, new DesynthResult(instance));
-            foreach (var result in instance->DesynthResultsSpan.ToArray().Where(r => r.ItemId != 0))
+            var desynthResult = new DesynthResult(instance);
+            character.Storage.History.Add(DateTime.Now, desynthResult);
+            foreach (var result in desynthResult.Received)
             {
-                var id  = result.ItemId > 1_000_000 ? result.ItemId - 1_000_000 : result.ItemId;
-                if (!character.Storage.Total.TryAdd(id, (uint) result.Quantity))
-                    character.Storage.Total[id] += (uint) result.Quantity;
+                if (!character.Storage.Total.TryAdd(result.Item, result.Count))
+                    character.Storage.Total[result.Item] += result.Count;
             }
 
             ConfigurationBase.SaveCharacterConfig();
+            UploadEntry(new Export.DesynthesisResult(desynthResult));
         }
 
         public unsafe void RetainerHandler(uint venture, VentureItem primary, VentureItem additional)
@@ -343,7 +344,7 @@ namespace TrackyTrack
                 lockboxHistory[itemId] += amount;
 
             ConfigurationBase.SaveCharacterConfig();
-            GachaEntryUpload(lockbox, itemId, amount);
+            UploadEntry(new Export.GachaLoot(lockbox, itemId, amount));
         }
 
         #region Draws
@@ -392,21 +393,29 @@ namespace TrackyTrack
             try
             {
                 var character = CharacterStorage[ClientState.LocalContentId];
-                if (character.HadBunnyUploadV2)
+                if (character.HadDesynthUpload)
                 {
                     ClientState.TerritoryChanged -= TerritoryChanged;
                     return;
                 }
 
-                character.HadBunnyUploadV2 = true;
+                character.HadDesynthUpload = true;
                 ConfigurationBase.SaveCharacterConfig();
 
-                // Eureka Bunny Coffers
-                Task.Run(() =>
+                // Desynthesis
+                Task.Run(async () =>
                 {
-                    foreach (var (territory, rarities) in character.Eureka.History)
-                        foreach (var (rarity, results) in rarities)
-                            Export.UploadAllBunny((uint) rarity, (uint) territory, results);
+                    foreach (var (source, rewards) in character.Storage.History.Values)
+                    {
+                        // Delay to prevent too many uploads in a short time
+                        await Task.Delay(30);
+
+                        var r = new List<uint>();
+                        foreach (var reward in rewards)
+                            r.AddRange(reward.ItemCountArray());
+
+                        Export.UploadEntry(new Export.DesynthesisResult(source, r.ToArray()));
+                    }
                 });
             }
             catch (Exception e)
@@ -415,34 +424,12 @@ namespace TrackyTrack
             }
         }
 
-        public void GachaEntryUpload(uint coffer, uint itemId, uint amount)
+        public void UploadEntry(Export.Upload entry)
         {
             if (!CheckUploadPermissions())
                 return;
 
-            try
-            {
-                Task.Run(() => Export.UploadGachaEntry(coffer, itemId, amount));
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Gacha upload went wrong, just throw it away");
-            }
-        }
-
-        public void BunnyEntryUpload(uint rarity, uint territory, List<EurekaItem> items)
-        {
-            if (!CheckUploadPermissions())
-                return;
-
-            try
-            {
-                Task.Run(() => Export.UploadBunnyEntry(rarity, territory, items));
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Bunny upload went wrong, just throw it away");
-            }
+            Task.Run(() => Export.UploadEntry(entry));
         }
 
         public bool CheckUploadPermissions()

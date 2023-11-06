@@ -2,9 +2,9 @@
 
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Lumina.Excel;
@@ -15,8 +15,7 @@ namespace TrackyTrack.Data;
 
 public static class Export
 {
-    private const string GachaUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Gacha";
-    private const string BunnyUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/Bnuuy";
+    private const string BaseUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/";
     private const string SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6d252d2p4Z21hcXRyeGV3bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk3NzcwMDIsImV4cCI6MjAwNTM1MzAwMn0.aNYTnhY_Sagi9DyH5Q9tCz9lwaRCYzMC12SZ7q7jZBc";
     private static readonly HttpClient Client = new();
 
@@ -33,59 +32,86 @@ public static class Export
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
     }
 
-    public class GachaLoot
+    public class Upload
     {
-        [JsonProperty("coffer")]
-        public uint Coffer { get; set; }
-
-        [JsonProperty("item_id")]
-        public uint ItemId { get; set; }
-
         [JsonIgnore]
-        public string Name { get; set; }
-
-        [JsonProperty("amount")]
-        public uint Amount { get; set; }
+        public string Table;
 
         [JsonProperty("version")]
-        public string Version { get; set; } = Plugin.Version;
+        public string Version = Plugin.Version;
 
-        public GachaLoot(uint id, uint amount)
+        public Upload(string table)
         {
-            Coffer = 0;
-            ItemId = id;
-            Name = Utils.ToStr(ItemSheet.GetRow(id)!.Name);
-            Amount = amount;
-        }
-
-        public GachaLoot(uint coffer, uint id, uint amount)
-        {
-            Coffer = coffer;
-            ItemId = id;
-            Name = Utils.ToStr(ItemSheet.GetRow(id)!.Name);
-            Amount = amount;
+            Table = table;
         }
     }
 
-    public class BunnyLoot
+    public class GachaLoot : Upload
     {
         [JsonProperty("coffer")]
-        public uint Rarity { get; set; }
+        public uint Coffer;
+
+        [JsonProperty("item_id")]
+        public uint ItemId;
+
+        [JsonProperty("amount")]
+        public uint Amount;
+
+        [JsonIgnore]
+        public readonly string Name;
+
+        public GachaLoot(uint id, uint amount) : this(0, id, amount) { }
+
+        public GachaLoot(uint coffer, uint id, uint amount) : base("Gacha")
+        {
+            Coffer = coffer;
+            ItemId = id;
+            Amount = amount;
+            Name = Utils.ToStr(ItemSheet.GetRow(ItemId)!.Name);
+        }
+    }
+
+    public class BunnyLoot : Upload
+    {
+        [JsonProperty("coffer")]
+        public uint Rarity;
 
         [JsonProperty("territory")]
-        public uint Territory { get; set; }
+        public uint Territory;
 
         [JsonProperty("items")]
-        public uint[] Items { get; set; }
+        public uint[] Items;
 
-        [JsonProperty("version")]
-        public string Version { get; set; } = Plugin.Version;
 
-        public BunnyLoot(uint rarity, uint territory, List<EurekaItem> items)
+        public BunnyLoot(uint rarity, uint territory, List<EurekaItem> items) : base("Bnuuy")
         {
             Rarity = rarity;
             Territory = territory;
             Items = items.Select(i => i.Item).ToArray();
+        }
+    }
+
+    public class DesynthesisResult : Upload
+    {
+        [JsonProperty("source")]
+        public uint Source;
+
+        [JsonProperty("rewards")]
+        public uint[] Rewards;
+
+        public DesynthesisResult(uint source, uint[] rewards) : base("Desynthesis")
+        {
+            Source = source;
+            Rewards = rewards;
+        }
+
+        public DesynthesisResult(DesynthResult result) : base("Desynthesis")
+        {
+            Source = result.Source;
+            var r = new List<uint>();
+            foreach (var reward in result.Received)
+                r.AddRange(reward.ItemCountArray());
+            Rewards = r.ToArray();
         }
     }
 
@@ -131,57 +157,19 @@ public static class Export
         }
     }
 
-    public static async void UploadAllBunny(uint rarity, uint territory, Dictionary<DateTime, EurekaResult> results)
-    {
-        foreach (var result in results.Values.Select(v => v.Items))
-        {
-            try
-            {
-                var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, territory, result)), Encoding.UTF8, "application/json");
-                await Client.PostAsync(BunnyUrl, content);
-
-                // Delay to prevent too many uploads in a short time
-                await Task.Delay(30);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.Error(e.Message);
-                Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
-            }
-        }
-    }
-
-    public static async void UploadGachaEntry(uint coffer, uint id, uint amount)
+    public static async void UploadEntry(Upload entry)
     {
         try
         {
-            var content = new StringContent(JsonConvert.SerializeObject(new GachaLoot(coffer, id, amount)), Encoding.UTF8, "application/json");
-            var response = await Client.PostAsync(GachaUrl, content);
+            var content = new StringContent(JsonConvert.SerializeObject(entry), Encoding.UTF8, "application/json");
+            var response = await Client.PostAsync($"{BaseUrl}{entry.Table}", content);
 
-            Plugin.Log.Debug($"Item {id} | Response: {response.StatusCode}");
-            Plugin.Log.Debug($"Item {id} | Content: {response.Content.ReadAsStringAsync().Result}");
+            if (response.StatusCode != HttpStatusCode.Created)
+                Plugin.Log.Debug($"Table {entry.Table} | Content: {response.Content.ReadAsStringAsync().Result}");
         }
         catch (Exception e)
         {
-            Plugin.Log.Error(e.Message);
-            Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
-        }
-    }
-
-    public static async void UploadBunnyEntry(uint rarity, uint territory, List<EurekaItem> items)
-    {
-        try
-        {
-            var content = new StringContent(JsonConvert.SerializeObject(new BunnyLoot(rarity, territory, items)), Encoding.UTF8, "application/json");
-            var response = await Client.PostAsync(BunnyUrl, content);
-
-            Plugin.Log.Debug($"Coffer {rarity} | Response: {response.StatusCode}");
-            Plugin.Log.Debug($"Coffer {rarity} | Content: {response.Content.ReadAsStringAsync().Result}");
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.Error(e.Message);
-            Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
+            Plugin.Log.Error(e, "Upload failed");
         }
     }
 }

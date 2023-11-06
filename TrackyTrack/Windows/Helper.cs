@@ -73,17 +73,29 @@ public static class Helper
             ImGui.SetTooltip("Open the config menu");
     }
 
-    public static void DrawArrows(ref int selected, int length, int id = 0)
+    public static bool DrawArrows(ref int selected, int length, int id = 0)
     {
+        var changed = false;
+
         ImGui.SameLine();
         if (selected == 0) ImGui.BeginDisabled();
-        if (ImGuiComponents.IconButton(id, FontAwesomeIcon.ArrowLeft)) selected--;
+        if (ImGuiComponents.IconButton(id, FontAwesomeIcon.ArrowLeft))
+        {
+            selected--;
+            changed = true;
+        }
         if (selected == 0) ImGui.EndDisabled();
 
         ImGui.SameLine();
         if (selected + 1 == length) ImGui.BeginDisabled();
-        if (ImGuiComponents.IconButton(id+1, FontAwesomeIcon.ArrowRight)) selected++;
+        if (ImGuiComponents.IconButton(id + 1, FontAwesomeIcon.ArrowRight))
+        {
+            selected++;
+            changed = true;
+        }
         if (selected + 1 == length) ImGui.EndDisabled();
+
+        return changed;
     }
 
     public static void RightAlignedText(string text, float indent = 0.0f)

@@ -675,12 +675,13 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesizable source");
 
         var changed = false;
-        if (ImGui.SliderInt("##ilvlInput", ref ILvLSearchResult, 1, HighestILvL, "iLvL %d"))
+        if (ImGui.SliderInt("##ilvlInput", ref ILvLSearchResult, 1, HighestILvL, "ilvl %d"))
         {
             ILvLSearchResult = (int) Math.Round(ILvLSearchResult / 5.0) * 5;
             changed = true;
         }
         changed |= ImGui.Combo("##jobSelection", ref SelectedJob, Jobs, Jobs.Length);
+        changed |= Helper.DrawArrows(ref SelectedJob, Jobs.Length);
         changed |= ImGui.Checkbox("Exclude Gear", ref ExcludeGear);
         changed |= ImGui.Checkbox("Exclude Marketboard Prohibited", ref ExcludeNonMB);
 
@@ -701,7 +702,7 @@ public partial class MainWindow
 
         if (!SearchCache.Any())
         {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this job and iLvL ...");
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this job and ilvl ...");
 
             ImGui.EndTabItem();
             return;
@@ -726,9 +727,11 @@ public partial class MainWindow
                     var name = Utils.ToStr(item.Name);
                     if (ImGui.Selectable(name))
                         ImGui.SetClipboardText(name);
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip("Click to copy");
 
                     ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"iLvL {item.LevelItem.Row}");
+                    ImGui.TextUnformatted($"ilvl {item.LevelItem.Row}");
                     ImGui.TableNextRow();
                 }
 

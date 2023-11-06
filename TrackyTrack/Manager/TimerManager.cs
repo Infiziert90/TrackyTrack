@@ -123,15 +123,15 @@ public class TimerManager
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
 
-        character.Storage.History.Add(DateTime.Now, new DesynthResult(LastBulkResult));
+        var desynthResult = new DesynthResult(LastBulkResult);
+        character.Storage.History.Add(DateTime.Now, desynthResult);
         foreach (var result in LastBulkResult.Received.Where(r => r.Item != 0))
         {
-            var id = result.Item > 1_000_000 ? result.Item - 1_000_000 : result.Item;
-            if (!character.Storage.Total.TryAdd(id, result.Count))
-                character.Storage.Total[id] += result.Count;
+            if (!character.Storage.Total.TryAdd(result.Item, result.Count))
+                character.Storage.Total[result.Item] += result.Count;
         }
-
         Plugin.ConfigurationBase.SaveCharacterConfig();
+        Plugin.UploadEntry(new Export.DesynthesisResult(desynthResult));
     }
 
     public void StoreCofferResult(InventoryMonitor.ItemChangesItem item)
@@ -183,7 +183,7 @@ public class TimerManager
             OpeningCoffer = false;
             Plugin.ConfigurationBase.SaveCharacterConfig();
 
-            Plugin.GachaEntryUpload(CofferId, item.ItemId, (uint) item.Quantity);
+            Plugin.UploadEntry(new Export.GachaLoot(CofferId, item.ItemId, (uint) item.Quantity));
         }
 
         if (OpeningCoffer)
@@ -219,6 +219,6 @@ public class TimerManager
         character.Eureka.Opened += 1;
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
-        Plugin.BunnyEntryUpload((uint) EurekaRarity, (uint) EurekaTerritory, EurekaResult.Items);
+        Plugin.UploadEntry(new Export.BunnyLoot((uint) EurekaRarity, (uint) EurekaTerritory, EurekaResult.Items));
     }
 }
