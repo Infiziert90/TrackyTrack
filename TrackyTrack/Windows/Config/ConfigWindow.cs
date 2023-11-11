@@ -23,6 +23,8 @@ public partial class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
+        Plugin.FileDialogManager.Draw();
+
         if (ImGui.BeginTabBar("##ConfigTabBar"))
         {
             Modules();

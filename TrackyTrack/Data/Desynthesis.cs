@@ -82,5 +82,5 @@ public struct BulkResult
     public void AddItem(uint item, uint count, bool isHQ) => Received[0] = new ItemResult(item, count, isHQ);
     public void AddCrystal(uint item, uint count) => Received.Add(new ItemResult(item, count, false));
 
-    public bool IsValid => Source > 0 && Received[0].Item > 0;
+    public bool IsValid => Source > 0 && Received[0].Item > 0 && Received.Count <= 3;
 }

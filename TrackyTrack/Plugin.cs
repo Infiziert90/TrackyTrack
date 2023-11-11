@@ -9,6 +9,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game;
 using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -37,6 +38,8 @@ namespace TrackyTrack
         [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
         [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
 
+        public static FileDialogManager FileDialogManager { get; private set; } = null!;
+
         public static OdrScanner OdrScanner { get; private set; } = null!;
         public static IGameUiManager GameUi { get; private set; } = null!;
         public static IGameInterface GameInterface { get; private set; } = null!;
@@ -62,6 +65,8 @@ namespace TrackyTrack
         private HookManager HookManager;
         private InventoryChanged InventoryChanged;
 
+        public readonly Importer Importer;
+
         public Plugin()
         {
             ConfigurationBase = new ConfigurationBase(this);
@@ -69,6 +74,11 @@ namespace TrackyTrack
             Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Configuration.Initialize(PluginInterface);
             PluginInterface.Create<Service>();
+
+            FileDialogManager = new FileDialogManager();
+
+            Importer = new Importer();
+            Importer.Load();
 
             Service.SeTime = new SeTime();
             Service.ExcelCache = new ExcelCache(Data, false,false,false);
@@ -375,7 +385,7 @@ namespace TrackyTrack
                 Configuration.Save();
 
                 ChatGui.Print(Utils.SuccessMessage("Important"));
-                ChatGui.Print(Utils.SuccessMessage("This plugin will collect anonymized data. " +
+                ChatGui.Print(Utils.SuccessMessage("This plugin will collect and upload anonymized data. " +
                                                    "For more information on the exact data collected please see the upload tab in the configuration menu. " +
                                                    "You can opt out of any and all forms of data collection."));
             }
