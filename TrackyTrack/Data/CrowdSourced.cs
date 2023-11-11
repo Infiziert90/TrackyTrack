@@ -144,8 +144,8 @@ public class Importer
                         var h = SourcedData.Rewards[reward];
                         h.Records += minMax.Records;
                         h.Results = h.Results.Append(new Result(source, minMax.Min, minMax.Max, minMax.Records)).ToArray();
+                        SourcedData.Rewards[reward] = h;
                     }
-
                 }
 
                 SourcedData.Sources.Add(source, new History {
