@@ -1,8 +1,11 @@
 ﻿using System.Threading.Tasks;
+using CriticalCommonLib;
 using CriticalCommonLib.Enums;
 using CriticalCommonLib.Extensions;
 using CriticalCommonLib.Models;
 using CriticalCommonLib.Services;
+using CriticalCommonLib.Services.Ui;
+using CriticalCommonLib.Time;
 using static CriticalCommonLib.Services.InventoryMonitor;
 using static FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
 
@@ -11,6 +14,12 @@ namespace TrackyTrack.Lib;
 // Extracted from CriticalLib->InventoryMonitor with just specific inventory type scanning
 public class InventoryChanged
 {
+    public OdrScanner OdrScanner { get; private set; } = null!;
+    public IGameUiManager GameUi { get; private set; } = null!;
+    public IGameInterface GameInterface { get; private set; } = null!;
+    public IInventoryScanner InventoryScanner { get; private set; } = null!;
+    public ICharacterMonitor CharacterMonitor { get; private set; } = null!;
+
     private readonly Dictionary<ulong, Inventory> CachedInventories = new();
     private Dictionary<(uint, ItemFlags, ulong), int> ItemCounts = new();
 
@@ -20,10 +29,24 @@ public class InventoryChanged
     public event ItemRemovedEvent? OnItemRemoved;
     public delegate void ItemRemovedEvent(ItemChangesItem changedItem);
 
-    public InventoryChanged()
+    public void Initialize()
     {
-        Plugin.InventoryScanner.BagsChanged += BagsChangedTrigger;
-        Plugin.CharacterMonitor.OnCharacterRemoved += OnCharacterRemoved;
+        Plugin.PluginInterface.Create<Service>();
+        Service.SeTime = new SeTime();
+        Service.ExcelCache = new ExcelCache(Plugin.Data, false, false, false);
+        Service.ExcelCache.PreCacheItemData();
+
+        GameInterface = new GameInterface(Plugin.Hook);
+        CharacterMonitor = new CharacterMonitor(Plugin.Framework, Plugin.ClientState, Service.ExcelCache);
+
+        GameUi = new GameUiManager(Plugin.Hook);
+        OdrScanner = new OdrScanner(CharacterMonitor);
+
+        InventoryScanner = new InventoryScanner(CharacterMonitor, GameUi, GameInterface, OdrScanner, Plugin.Hook);
+        InventoryScanner.Enable();
+
+        InventoryScanner.BagsChanged += BagsChangedTrigger;
+        CharacterMonitor.OnCharacterRemoved += OnCharacterRemoved;
         Plugin.ClientState.Login += LoadOnLogin;
 
         if (Plugin.ClientState.IsLoggedIn)
@@ -40,7 +63,7 @@ public class InventoryChanged
     {
         if (CachedInventories.TryGetValue(characterId, out var inventory))
         {
-            Plugin.InventoryScanner.ClearRetainerCache(characterId);
+            InventoryScanner.ClearRetainerCache(characterId);
             inventory.ClearInventories();
         }
     }
@@ -124,17 +147,17 @@ public class InventoryChanged
         ItemCounts = retainerItemCounts;
     }
 
-    private static void GenerateCharacterInventories(Inventory inventory, List<InventoryChange> inventoryChanges)
+    private void GenerateCharacterInventories(Inventory inventory, List<InventoryChange> inventoryChanges)
     {
-        if (Plugin.InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory2) &&
-            Plugin.InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory3) &&
-            Plugin.InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory1) &&
-            Plugin.InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory4))
+        if (InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory2) &&
+            InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory3) &&
+            InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory1) &&
+            InventoryScanner.InMemory.Contains(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Inventory4))
         {
-            var bag1 = Plugin.InventoryScanner.CharacterBag1;
-            var bag2 = Plugin.InventoryScanner.CharacterBag2;
-            var bag3 = Plugin.InventoryScanner.CharacterBag3;
-            var bag4 = Plugin.InventoryScanner.CharacterBag4;
+            var bag1 = InventoryScanner.CharacterBag1;
+            var bag2 = InventoryScanner.CharacterBag2;
+            var bag3 = InventoryScanner.CharacterBag3;
+            var bag4 = InventoryScanner.CharacterBag4;
             inventory.LoadGameItems(bag1, InventoryType.Bag0, InventoryCategory.CharacterBags, false, inventoryChanges);
             inventory.LoadGameItems(bag2, InventoryType.Bag1, InventoryCategory.CharacterBags, false, inventoryChanges);
             inventory.LoadGameItems(bag3, InventoryType.Bag2, InventoryCategory.CharacterBags, false, inventoryChanges);
@@ -142,7 +165,7 @@ public class InventoryChanged
         }
     }
 
-    private static void GenerateArmouryChestInventories(Inventory inventory, List<InventoryChange> inventoryChanges)
+    private void GenerateArmouryChestInventories(Inventory inventory, List<InventoryChange> inventoryChanges)
     {
         var inventoryTypes = new HashSet<FFXIVClientStructs.FFXIV.Client.Game.InventoryType>();
         inventoryTypes.Add( FFXIVClientStructs.FFXIV.Client.Game.InventoryType.ArmoryMainHand);
@@ -159,20 +182,20 @@ public class InventoryChanged
         inventoryTypes.Add(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.ArmorySoulCrystal);
         foreach (var inventoryType in inventoryTypes)
         {
-            if (!Plugin.InventoryScanner.InMemory.Contains(inventoryType))
+            if (!InventoryScanner.InMemory.Contains(inventoryType))
             {
                 return;
             }
         }
 
-        var gearSets = Plugin.InventoryScanner.GetGearSets();
+        var gearSets = InventoryScanner.GetGearSets();
         foreach (var inventoryType in inventoryTypes)
         {
-            if (!Plugin.InventoryScanner.InMemory.Contains(inventoryType))
+            if (!InventoryScanner.InMemory.Contains(inventoryType))
             {
                 continue;
             }
-            var armoryItems = Plugin.InventoryScanner.GetInventoryByType(inventoryType);
+            var armoryItems = InventoryScanner.GetInventoryByType(inventoryType);
             inventory.LoadGameItems(armoryItems, inventoryType.Convert(), InventoryCategory.CharacterArmoryChest, false, inventoryChanges,
                 (newItem,_) =>
             {
@@ -194,13 +217,13 @@ public class InventoryChanged
         }
     }
 
-    private static void GenerateCrystalInventories(Inventory inventory, List<InventoryChange> inventoryChanges)
+    private void GenerateCrystalInventories(Inventory inventory, List<InventoryChange> inventoryChanges)
     {
         var inventoryTypes = new HashSet<FFXIVClientStructs.FFXIV.Client.Game.InventoryType>();
         inventoryTypes.Add( FFXIVClientStructs.FFXIV.Client.Game.InventoryType.Crystals);
         foreach (var inventoryType in inventoryTypes)
         {
-            if (!Plugin.InventoryScanner.InMemory.Contains(inventoryType))
+            if (!InventoryScanner.InMemory.Contains(inventoryType))
             {
                 return;
             }
@@ -208,7 +231,7 @@ public class InventoryChanged
 
         foreach (var inventoryType in inventoryTypes)
         {
-            var items = Plugin.InventoryScanner.GetInventoryByType(inventoryType);
+            var items = InventoryScanner.GetInventoryByType(inventoryType);
             var inventoryCategory = inventoryType.Convert().ToInventoryCategory();
             inventory.LoadGameItems(items, inventoryType.Convert(), inventoryCategory, false, inventoryChanges);
         }
@@ -286,8 +309,22 @@ public class InventoryChanged
 
     public void Dispose()
     {
-        Plugin.InventoryScanner.BagsChanged -= BagsChangedTrigger;
-        Plugin.CharacterMonitor.OnCharacterRemoved -= OnCharacterRemoved;
-        Plugin.ClientState.Login -= LoadOnLogin;
+        try
+        {
+            InventoryScanner.BagsChanged -= BagsChangedTrigger;
+            CharacterMonitor.OnCharacterRemoved -= OnCharacterRemoved;
+            Plugin.ClientState.Login -= LoadOnLogin;
+
+            InventoryScanner.Dispose();
+            OdrScanner.Dispose();
+            GameUi.Dispose();
+            CharacterMonitor.Dispose();
+            GameInterface.Dispose();
+            Service.Dereference();
+        }
+        catch (Exception)
+        {
+            // Init went wrong, we disposed what was possible
+        }
     }
 }

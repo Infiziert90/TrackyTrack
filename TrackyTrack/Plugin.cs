@@ -1,10 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading.Tasks;
-using CriticalCommonLib;
-using CriticalCommonLib.Services;
-using CriticalCommonLib.Services.Ui;
-using CriticalCommonLib.Time;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game;
@@ -40,19 +36,13 @@ namespace TrackyTrack
 
         public static FileDialogManager FileDialogManager { get; private set; } = null!;
 
-        public static OdrScanner OdrScanner { get; private set; } = null!;
-        public static IGameUiManager GameUi { get; private set; } = null!;
-        public static IGameInterface GameInterface { get; private set; } = null!;
-        public static IInventoryScanner InventoryScanner { get; private set; } = null!;
-        public static ICharacterMonitor CharacterMonitor { get; private set; } = null!;
-
         public Configuration Configuration { get; init; }
-        public WindowSystem WindowSystem = new("Tracky");
 
+        public readonly WindowSystem WindowSystem = new("Tracky");
         private ConfigWindow ConfigWindow { get; init; }
         private MainWindow MainWindow { get; init; }
 
-        public static readonly string Authors = "Infi";
+        public const string Authors = "Infi";
         public static readonly string Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
 
         private readonly PluginCommandManager<Plugin> CommandManager;
@@ -60,10 +50,10 @@ namespace TrackyTrack
         public ConfigurationBase ConfigurationBase;
         public ConcurrentDictionary<ulong, CharacterConfiguration> CharacterStorage = new();
 
-        public TimerManager TimerManager;
-        public FrameworkManager FrameworkManager;
-        private HookManager HookManager;
-        private InventoryChanged InventoryChanged;
+        public readonly TimerManager TimerManager;
+        public readonly FrameworkManager FrameworkManager;
+        private readonly HookManager HookManager;
+        private readonly InventoryChanged InventoryChanged;
 
         public readonly Importer Importer;
 
@@ -73,30 +63,33 @@ namespace TrackyTrack
 
             Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Configuration.Initialize(PluginInterface);
-            PluginInterface.Create<Service>();
 
             FileDialogManager = new FileDialogManager();
 
             Importer = new Importer();
             Importer.Load();
 
-            Service.SeTime = new SeTime();
-            Service.ExcelCache = new ExcelCache(Data, false,false,false);
-            Service.ExcelCache.PreCacheItemData();
-
-            GameInterface = new GameInterface(Hook);
-            CharacterMonitor = new CharacterMonitor(Framework, ClientState, Service.ExcelCache);
-
-            GameUi = new GameUiManager(Hook);
-            OdrScanner = new OdrScanner(CharacterMonitor);
-            InventoryScanner = new InventoryScanner(CharacterMonitor, GameUi, GameInterface, OdrScanner, Hook);
-            InventoryScanner.Enable();
-
-            InventoryChanged = new InventoryChanged();
-
             TimerManager = new TimerManager(this);
             HookManager = new HookManager(this);
             FrameworkManager = new FrameworkManager(this);
+
+            InventoryChanged = new InventoryChanged();
+            Task.Run(() =>
+            {
+                try
+                {
+                    InventoryChanged.Initialize();
+
+                    InventoryChanged.OnItemAdded += TimerManager.StoreCofferResult;
+                    InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
+                    InventoryChanged.OnItemAdded += TimerManager.EurekaItemAdded;
+                    InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error loading critical common functions, tracking of inventory is disabled.");
+                }
+            });
 
             ConfigWindow = new ConfigWindow(this);
             MainWindow = new MainWindow(this, Configuration);
@@ -115,15 +108,13 @@ namespace TrackyTrack
             AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
             AddonLifecycle.RegisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
 
-            InventoryChanged.OnItemAdded += TimerManager.StoreCofferResult;
-            InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
-            InventoryChanged.OnItemAdded += TimerManager.EurekaItemAdded;
-            InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
-
             ClientState.Login += Login;
             ClientState.TerritoryChanged += TerritoryChanged;
 
             Login();
+
+            // Delay load and save tasks, ensuring that everything has loaded
+            ConfigurationBase.StartTasks();
         }
 
         public void Dispose()
@@ -146,13 +137,6 @@ namespace TrackyTrack
             MainWindow.Dispose();
 
             CommandManager.Dispose();
-
-            InventoryScanner.Dispose();
-            OdrScanner.Dispose();
-            GameUi.Dispose();
-            CharacterMonitor.Dispose();
-            GameInterface.Dispose();
-            Service.Dereference();
 
             InventoryChanged.Dispose();
 

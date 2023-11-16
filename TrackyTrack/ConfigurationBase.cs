@@ -31,7 +31,10 @@ public class ConfigurationBase : IDisposable
         ConfigurationDirectory = Plugin.PluginInterface.ConfigDirectory.FullName;
         MiscFolder = Path.Combine(ConfigurationDirectory, "Misc");
         Directory.CreateDirectory(MiscFolder);
+    }
 
+    public void StartTasks()
+    {
         Task.Run(CheckForConfigChanges, CancellationToken.Token);
         Task.Run(SaveAndTryMoveConfig, CancellationToken.Token);
     }
@@ -62,7 +65,7 @@ public class ConfigurationBase : IDisposable
             catch
             {
                 if (i == 4)
-                    UiBuilder.AddNotification("Failed to read config", "[Tracky]", NotificationType.Warning);
+                    UiBuilder.AddNotification("Failed to read config", "[Tracky]", NotificationType.Error);
 
                 Plugin.Log.Warning($"Config file read failed {i + 1}/5");
             }
@@ -110,7 +113,7 @@ public class ConfigurationBase : IDisposable
 
     public void SaveAll()
     {
-        // This saves all characters, only allow calls if only 1 process is running
+        // This saves all characters, only allow calls if one process is running
         if (Process.GetProcessesByName("ffxiv_dx11").Length > 1)
             return;
 
@@ -123,8 +126,7 @@ public class ConfigurationBase : IDisposable
         var filePath = Path.Combine(ConfigurationDirectory, $"{contentId}.json");
         try
         {
-            var existingConfigs = Directory.EnumerateFiles(MiscFolder, $"{contentId}.json.bak.*")
-                                           .Select(c => new FileInfo(c)).OrderByDescending(c => c.LastWriteTime);
+            var existingConfigs = Directory.EnumerateFiles(MiscFolder, $"{contentId}.json.bak.*").Select(c => new FileInfo(c)).OrderByDescending(c => c.LastWriteTime);
             foreach (var file in existingConfigs.Skip(5))
                 file.Delete();
 

@@ -64,6 +64,7 @@ public class Importer
         catch (Exception e)
         {
             Plugin.Log.Error(e, "Failed loading crowd source data.");
+            SourcedData = new CrowdSourced();
         }
     }
 
