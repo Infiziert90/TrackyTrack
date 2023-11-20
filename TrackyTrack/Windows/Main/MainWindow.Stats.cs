@@ -79,7 +79,7 @@ public partial class MainWindow
                 ImGui.AlignTextToFramePadding();
                 ImGui.TextColored(ImGuiColors.HealerGreen, currency.ToName());
                 ImGui.TableNextColumn();
-                DrawIcon(IconList[currency], iconSize);
+                Helper.DrawIcon(IconList[currency], iconSize);
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"x{count:N0}");
             }
@@ -103,7 +103,7 @@ public partial class MainWindow
         var teleportsWithout = teleports - aetheryteTickets - gcTickets - vesperTickets;
         if (teleportsWithout == 0)
             teleportsWithout = 1;
-        
+
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Teleport:");
         ImGui.Indent(10.0f);
         if (teleports > 0)

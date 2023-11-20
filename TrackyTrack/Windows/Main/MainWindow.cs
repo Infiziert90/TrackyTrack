@@ -12,7 +12,6 @@ public partial class MainWindow : Window, IDisposable
 
     private static ExcelSheet<Item> ItemSheet = null!;
     private static ExcelSheet<GCSupplyDutyReward> GCSupplySheet = null!;
-    private static readonly Vector2 IconSize = new(28, 28);
 
     public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky##TrackyTrack")
     {
@@ -66,30 +65,5 @@ public partial class MainWindow : Window, IDisposable
             Helper.MainMenuIcon(Plugin);
         }
         ImGui.EndChild();
-    }
-
-    private static void DrawIcon(uint iconId)
-    {
-        var size = IconSize * ImGuiHelpers.GlobalScale;
-        var texture = Plugin.Texture.GetIcon(iconId);
-        if (texture == null)
-        {
-            ImGui.Text($"Unknown icon {iconId}");
-            return;
-        }
-
-        ImGui.Image(texture.ImGuiHandle, size);
-    }
-
-    private static void DrawIcon(uint iconId, Vector2 size)
-    {
-        var texture = Plugin.Texture.GetIcon(iconId);
-        if (texture == null)
-        {
-            ImGui.Text($"Unknown icon {iconId}");
-            return;
-        }
-
-        ImGui.Image(texture.ImGuiHandle, size);
     }
 }

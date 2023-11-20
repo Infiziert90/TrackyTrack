@@ -220,7 +220,7 @@ public partial class MainWindow
                 var item = ItemSheet.GetRow(ventureItem.Item)!;
 
                 ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
+                Helper.DrawIcon(item.Icon);
                 ImGui.TableNextColumn();
 
                 var name = Utils.ToStr(item.Name);
@@ -283,7 +283,7 @@ public partial class MainWindow
             foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
             {
                 ImGui.TableNextColumn();
-                DrawIcon(sortedEntry.Icon);
+                Helper.DrawIcon(sortedEntry.Icon);
                 ImGui.TableNextColumn();
 
                 ImGui.TextUnformatted(sortedEntry.Name);

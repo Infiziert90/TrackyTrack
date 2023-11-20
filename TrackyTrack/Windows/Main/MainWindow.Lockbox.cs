@@ -189,7 +189,7 @@ public partial class MainWindow
             foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
             {
                 ImGui.TableNextColumn();
-                DrawIcon(sortedEntry.Icon);
+                Helper.DrawIcon(sortedEntry.Icon);
                 ImGui.TableNextColumn();
 
                 ImGui.TextUnformatted(sortedEntry.Name);

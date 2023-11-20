@@ -322,8 +322,9 @@ public class InventoryChanged
             GameInterface.Dispose();
             Service.Dereference();
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Plugin.Log.Error(e, "Dispose wasn't possible");
             // Init went wrong, we disposed what was possible
         }
     }

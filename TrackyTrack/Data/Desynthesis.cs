@@ -42,15 +42,22 @@ public record DesynthResult(uint Source, ItemResult[] Received)
 
     public unsafe DesynthResult(AgentSalvage* result) : this(0, Array.Empty<ItemResult>())
     {
-        var isSourceHQ = result->DesynthItemId > 1_000_000;
-        Source = isSourceHQ ? result->DesynthItemId - 1_000_000 : result->DesynthItemId;
+        var desynthItemId = result->DesynthItemId;
+        var isSourceCol = desynthItemId > 500_000;
+        var isSourceHQ = desynthItemId> 1_000_000;
+        var sourceId = isSourceHQ ? desynthItemId - 1_000_000 : isSourceCol ? desynthItemId - 500_000 : desynthItemId;
+
+        Source = sourceId;
         Received = result->DesynthResultsSpan.ToArray()
                                              .Where(r => r.ItemId > 0)
                                              .Select(r =>
                                              {
+                                                 // Collectable are Item + 500,000
                                                  // HQ items are Item + 1,000,000
+                                                 var isCol = r.ItemId > 500_000;
                                                  var isHQ = r.ItemId > 1_000_000;
-                                                 return new ItemResult(isHQ ? r.ItemId - 1_000_000 : r.ItemId, (uint)r.Quantity, isHQ);
+                                                 var rewardId = isHQ ? r.ItemId - 1_000_000 : isCol ? r.ItemId - 500_000 : r.ItemId;
+                                                 return new ItemResult(rewardId, (uint)r.Quantity, isHQ);
                                              })
                                              .ToArray();
     }

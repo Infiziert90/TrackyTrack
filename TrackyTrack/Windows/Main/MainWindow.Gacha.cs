@@ -76,7 +76,7 @@ public partial class MainWindow
             foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
             {
                 ImGui.TableNextColumn();
-                DrawIcon(sortedEntry.Icon);
+                Helper.DrawIcon(sortedEntry.Icon);
                 ImGui.TableNextColumn();
 
                 ImGui.TextUnformatted(sortedEntry.Name);
@@ -111,7 +111,7 @@ public partial class MainWindow
                 var item = ItemSheet.GetRow(itemId)!;
 
                 ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
+                Helper.DrawIcon(item.Icon);
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.Name);
@@ -179,7 +179,7 @@ public partial class MainWindow
             foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
             {
                 ImGui.TableNextColumn();
-                DrawIcon(sortedEntry.Icon);
+                Helper.DrawIcon(sortedEntry.Icon);
                 ImGui.TableNextColumn();
 
                 ImGui.TextUnformatted(sortedEntry.Name);
@@ -214,7 +214,7 @@ public partial class MainWindow
                 var item = ItemSheet.GetRow(itemId)!;
 
                 ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
+                Helper.DrawIcon(item.Icon);
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.Name);
@@ -276,7 +276,7 @@ public partial class MainWindow
             foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
             {
                 ImGui.TableNextColumn();
-                DrawIcon(sortedEntry.Icon);
+                Helper.DrawIcon(sortedEntry.Icon);
                 ImGui.TableNextColumn();
 
                 ImGui.TextUnformatted(sortedEntry.Name);
@@ -311,7 +311,7 @@ public partial class MainWindow
                 var item = ItemSheet.GetRow(itemId)!;
 
                 ImGui.TableNextColumn();
-                DrawIcon(item.Icon);
+                Helper.DrawIcon(item.Icon);
 
                 ImGui.TableNextColumn();
                 if (ImGui.Selectable(Utils.ToStr(item.Name)))

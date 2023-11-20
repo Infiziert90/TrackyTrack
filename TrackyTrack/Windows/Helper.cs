@@ -5,6 +5,8 @@ namespace TrackyTrack.Windows;
 
 public static class Helper
 {
+    public static readonly Vector2 IconSize = new(28, 28);
+
     public static void NoCharacters()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
@@ -98,10 +100,100 @@ public static class Helper
         return changed;
     }
 
+    public static void IconHeader(uint icon, Vector2 iconSize, string text, Vector4 textColor)
+    {
+        iconSize *= ImGuiHelpers.GlobalScale;
+
+        DrawIcon(icon, iconSize);
+        ImGui.SameLine();
+
+        var textY = ImGui.CalcTextSize(text).Y;
+        var cursorY = ImGui.GetCursorPosY();
+        ImGui.SetCursorPosY(cursorY + iconSize.Y - textY);
+        ImGui.TextColored(textColor, text);
+
+        ImGui.Separator();
+        ImGuiHelpers.ScaledDummy(5.0f);
+    }
+
     public static void RightAlignedText(string text, float indent = 0.0f)
     {
-        var width = ImGui.CalcTextSize(text).X;
-        ImGui.SameLine(ImGui.GetContentRegionAvail().X - width + indent);
+        indent *= ImGuiHelpers.GlobalScale;
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize(text).X + indent);
         ImGui.TextUnformatted(text);
+    }
+
+    public static void CenterText(string text, float indent = 0.0f)
+    {
+        indent *= ImGuiHelpers.GlobalScale;
+        ImGui.SameLine(((ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize(text).X) * 0.5f) + indent);
+        ImGui.TextUnformatted(text);
+    }
+
+    public static void DrawIcon(uint iconId)
+    {
+        var size = IconSize * ImGuiHelpers.GlobalScale;
+        var texture = Plugin.Texture.GetIcon(iconId);
+        if (texture == null)
+        {
+            ImGui.Text($"Unknown icon {iconId}");
+            return;
+        }
+
+        ImGui.Image(texture.ImGuiHandle, size);
+    }
+
+    public static void DrawIcon(uint iconId, Vector2 size)
+    {
+        var texture = Plugin.Texture.GetIcon(iconId);
+        if (texture == null)
+        {
+            ImGui.Text($"Unknown icon {iconId}");
+            return;
+        }
+
+        ImGui.Image(texture.ImGuiHandle, size);
+    }
+
+    public static void ToggleButton(string leftOption, string rightOption, ref int selected, float predefinedSize = 0.0f)
+    {
+        if (predefinedSize == 0.0f)
+        {
+            var leftSize = ImGui.CalcTextSize(leftOption);
+            var rightSize = ImGui.CalcTextSize(rightOption);
+
+            predefinedSize = Math.Max(leftSize.X, rightSize.X) + (50.0f * ImGuiHelpers.GlobalScale);
+        }
+        var size = new Vector2(predefinedSize, 0.0f);
+
+        var pos = ImGui.GetCursorPos();
+        ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0.0f);
+        ActivatedButton(leftOption, size, ref selected, 0);
+        ImGui.SetCursorPos(pos with { X = pos.X + predefinedSize });
+        ActivatedButton(rightOption, size, ref selected, 1);
+        ImGui.PopStyleVar();
+    }
+
+    public static void ActivatedButton(string buttonText, Vector2 size, ref int selected, int number)
+    {
+        var pressed = false;
+        var colors = ImGui.GetStyle().Colors;
+
+        if (selected == number)
+        {
+            ImGui.PushStyleColor(ImGuiCol.Button, colors[(int) ImGuiCol.ButtonActive]);
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int) ImGuiCol.ButtonActive]);
+        }
+        else
+        {
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f });
+        }
+
+        pressed |= ImGui.Button(buttonText, size);
+
+        ImGui.PopStyleColor(selected == number ? 2 : 1);
+
+        if (pressed)
+            selected = number;
     }
 }
