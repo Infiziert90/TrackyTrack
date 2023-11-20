@@ -49,6 +49,8 @@ public struct Result
 
 public class Importer
 {
+    public record struct Stats(uint Min, uint Max, uint Records = 1);
+
     private const string Filename = "CrowdSourcedData.msgpack";
     private readonly string FullPath = Plugin.PluginInterface.AssemblyLocation.DirectoryName!;
 
@@ -77,8 +79,6 @@ public class Importer
         [Name("source")] public uint Source { get; set; }
         [Name("rewards")] public string Rewards { get; set; }
     }
-
-    public record struct Stats(uint Min, uint Max, uint Records = 1);
 
     public void Import(string inputFile)
     {
