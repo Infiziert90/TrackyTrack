@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LuminaSupplemental.Excel", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DalaMock.Shared", "DalaMock\DalaMock.Shared\DalaMock.Shared.csproj", "{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OtterGui", "OtterGui\OtterGui.csproj", "{4672EF74-F237-44EA-AD08-CA4AC943D5DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -37,6 +39,10 @@ Global
 		{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}.Debug|x64.Build.0 = Debug|Any CPU
 		{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}.Release|x64.ActiveCfg = Release|Any CPU
 		{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}.Release|x64.Build.0 = Release|Any CPU
+		{4672EF74-F237-44EA-AD08-CA4AC943D5DE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4672EF74-F237-44EA-AD08-CA4AC943D5DE}.Debug|x64.Build.0 = Debug|Any CPU
+		{4672EF74-F237-44EA-AD08-CA4AC943D5DE}.Release|x64.ActiveCfg = Release|Any CPU
+		{4672EF74-F237-44EA-AD08-CA4AC943D5DE}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -412,10 +412,12 @@ public partial class MainWindow
         ImGui.SameLine(width);
         Helper.ToggleButton("Crowd Sourced", "Local", ref DataSourceSelection, definedSize);
 
+        ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Search For");
         ImGui.SameLine(width);
         Helper.ToggleButton("Source", "Reward", ref SearchForSelection, definedSize);
 
+        ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Search");
         ImGui.SameLine(width);
         ImGui.PushFont(UiBuilder.IconFont);

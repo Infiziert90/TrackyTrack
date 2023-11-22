@@ -1,6 +1,8 @@
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 
+using static OtterGui.Classes.ToggleButton;
+
 namespace TrackyTrack.Windows;
 
 public static class Helper
@@ -155,6 +157,29 @@ public static class Helper
         ImGui.Image(texture.ImGuiHandle, size);
     }
 
+    public static void ToggleButton(ref int selected, params string[] labels)
+    {
+        var width = 0.0f;
+        foreach (var label in labels)
+            width = Math.Max(width, ImGui.CalcTextSize(label).X);
+
+        var padding = 50.0f * ImGuiHelpers.GlobalScale;
+        var size = new Vector2(width + padding, 0.0f);
+
+        var pos = ImGui.GetCursorPos();
+        for (var i = 0; i < labels.Length; i++)
+        {
+            var flags = i == 0 ? ImDrawFlags.RoundCornersLeft : i == labels.Length - 1 ? ImDrawFlags.RoundCornersRight : ImDrawFlags.RoundCornersNone;
+            if (i > 0)
+            {
+                ImGui.SetCursorPos(pos with { X = pos.X + width + padding });
+                pos = ImGui.GetCursorPos();
+            }
+
+            ActivatedButton(labels[i], size, ref selected, i, flags);
+        }
+    }
+
     public static void ToggleButton(string leftOption, string rightOption, ref int selected, float predefinedSize = 0.0f)
     {
         if (predefinedSize == 0.0f)
@@ -167,14 +192,12 @@ public static class Helper
         var size = new Vector2(predefinedSize, 0.0f);
 
         var pos = ImGui.GetCursorPos();
-        ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0.0f);
-        ActivatedButton(leftOption, size, ref selected, 0);
+        ActivatedButton(leftOption, size, ref selected, 0, ImDrawFlags.RoundCornersLeft);
         ImGui.SetCursorPos(pos with { X = pos.X + predefinedSize });
-        ActivatedButton(rightOption, size, ref selected, 1);
-        ImGui.PopStyleVar();
+        ActivatedButton(rightOption, size, ref selected, 1, ImDrawFlags.RoundCornersRight);
     }
 
-    public static void ActivatedButton(string buttonText, Vector2 size, ref int selected, int number)
+    public static void ActivatedButton(string buttonText, Vector2 size, ref int selected, int number, ImDrawFlags corners)
     {
         var pressed = false;
         var colors = ImGui.GetStyle().Colors;
@@ -189,7 +212,7 @@ public static class Helper
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f });
         }
 
-        pressed |= ImGui.Button(buttonText, size);
+        pressed |= ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners);
 
         ImGui.PopStyleColor(selected == number ? 2 : 1);
 
