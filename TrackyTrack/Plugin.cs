@@ -80,10 +80,10 @@ namespace TrackyTrack
                 {
                     InventoryChanged.Initialize();
 
-                    InventoryChanged.OnItemAdded += TimerManager.StoreCofferResult;
                     InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
                     InventoryChanged.OnItemAdded += TimerManager.EurekaItemAdded;
                     InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
+                    InventoryChanged.OnItemChanged += TimerManager.StoreCofferResult;
                 }
                 catch (Exception e)
                 {
@@ -125,10 +125,10 @@ namespace TrackyTrack
             ClientState.Login -= Login;
             ClientState.TerritoryChanged -= TerritoryChanged;
 
-            InventoryChanged.OnItemAdded -= TimerManager.StoreCofferResult;
             InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
             InventoryChanged.OnItemAdded -= TimerManager.EurekaItemAdded;
             InventoryChanged.OnItemRemoved -= TimerManager.DesynthItemRemoved;
+            InventoryChanged.OnItemChanged -= TimerManager.StoreCofferResult;
 
             ConfigurationBase.Dispose();
             WindowSystem.RemoveAllWindows();

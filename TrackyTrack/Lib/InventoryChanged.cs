@@ -29,6 +29,9 @@ public class InventoryChanged
     public event ItemRemovedEvent? OnItemRemoved;
     public delegate void ItemRemovedEvent(ItemChangesItem changedItem);
 
+    public event ItemChangedEvent? OnItemChanged;
+    public delegate void ItemChangedEvent(ItemChanges changedItems);
+
     public void Initialize()
     {
         Plugin.PluginInterface.Create<Service>();
@@ -297,6 +300,9 @@ public class InventoryChanged
     {
         if (changedItems != null)
         {
+            // Coffer checks added and removed
+            OnItemChanged?.Invoke(changedItems);
+
             foreach (var changedItem in changedItems.NewItems)
                 if (changedItem.ItemId != 1)
                     OnItemAdded?.Invoke(changedItem);

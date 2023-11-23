@@ -12,10 +12,6 @@ public class TimerManager
     private BulkResult LastBulkResult = new();
     private readonly Timer AwaitingBulkDesynth = new(1 * 1000);
 
-    private readonly Timer CastTimer = new(3 * 1000);
-    private bool OpeningCoffer;
-    private uint CofferId;
-
     public readonly Timer TicketUsedTimer = new(1 * 1000);
 
     private readonly Timer RepairTimer = new(0.5 * 1000);
@@ -33,9 +29,6 @@ public class TimerManager
         AwaitingBulkDesynth.AutoReset = false;
         AwaitingBulkDesynth.Elapsed += StoreBulkResult;
 
-        CastTimer.AutoReset = false;
-        CastTimer.Elapsed += (_, _) => OpeningCoffer = false;
-
         TicketUsedTimer.AutoReset = false;
 
         RepairTimer.AutoReset = false;
@@ -51,15 +44,6 @@ public class TimerManager
     {
         LastBulkResult = new();
         AwaitingBulkDesynth.Start();
-    }
-
-    public void StartCoffer(uint cofferId)
-    {
-        CastTimer.Stop();
-        CastTimer.Start();
-
-        CofferId = cofferId;
-        OpeningCoffer = true;
     }
 
     public void StartTicketUsed()
@@ -134,17 +118,24 @@ public class TimerManager
         Plugin.UploadEntry(new Export.DesynthesisResult(desynthResult));
     }
 
-    public void StoreCofferResult(InventoryMonitor.ItemChangesItem item)
+    public static readonly uint[] TrackedCoffers = { 32161u, 36635u, 36636u, 41667u };
+    public void StoreCofferResult(InventoryMonitor.ItemChanges changedItems)
     {
-        if (!OpeningCoffer)
+        if (changedItems.NewItems.Count != 1 || changedItems.RemovedItems.Count != 1)
+            return;
+
+        var item = changedItems.NewItems.First();
+        var coffer = changedItems.RemovedItems.First().ItemId;
+
+        var isCoffer = TrackedCoffers.Contains(coffer);
+        if (!isCoffer)
             return;
 
         var save = false;
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
-
         if (Plugin.Configuration.EnableVentureCoffers)
         {
-            if (CofferId == 32161 && VentureCoffer.Content.Contains(item.ItemId))
+            if (coffer == 32161 && VentureCoffer.Content.Contains(item.ItemId))
             {
                 character.Coffer.Opened += 1;
                 if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint)item.Quantity))
@@ -155,21 +146,21 @@ public class TimerManager
 
         if (Plugin.Configuration.EnableGachaCoffers)
         {
-            if (CofferId == 36635 && GachaThreeZero.Content.Contains(item.ItemId))
+            if (coffer == 36635 && GachaThreeZero.Content.Contains(item.ItemId))
             {
                 character.GachaThreeZero.Opened += 1;
                 if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
                     character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
                 save = true;
             }
-            else if (CofferId == 36636 && GachaFourZero.Content.Contains(item.ItemId))
+            else if (coffer == 36636 && GachaFourZero.Content.Contains(item.ItemId))
             {
                 character.GachaFourZero.Opened += 1;
                 if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
                     character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
                 save = true;
             }
-            else if (CofferId == 41667 && Sanctuary.Content.Contains(item.ItemId))
+            else if (coffer == 41667 && Sanctuary.Content.Contains(item.ItemId))
             {
                 character.GachaSanctuary.Opened += 1;
                 if (!character.GachaSanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
@@ -180,19 +171,14 @@ public class TimerManager
 
         if (save)
         {
-            OpeningCoffer = false;
             Plugin.ConfigurationBase.SaveCharacterConfig();
-
-            Plugin.UploadEntry(new Export.GachaLoot(CofferId, item.ItemId, (uint) item.Quantity));
+            Plugin.UploadEntry(new Export.GachaLoot(coffer, item.ItemId, (uint) item.Quantity));
         }
-
-        if (OpeningCoffer)
+        else if (isCoffer)
         {
-            OpeningCoffer = false;
-
             Plugin.ChatGui.Print(Utils.SuccessMessage("You've found an unknown coffer drop."));
             Plugin.ChatGui.Print(Utils.SuccessMessage("Please consider sending the following information to the dev:"));
-            Plugin.ChatGui.Print($"Coffer: {CofferId} Item: {item.ItemId}");
+            Plugin.ChatGui.Print($"Coffer: {coffer} Item: {item.ItemId}");
         }
     }
 

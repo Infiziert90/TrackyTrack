@@ -34,14 +34,14 @@ public class FrameworkManager
     {
         Plugin = plugin;
 
-        Plugin.Framework.Update += CofferTracker;
+        Plugin.Framework.Update += TicketTracker;
         Plugin.Framework.Update += CurrencyTracker;
         Plugin.Framework.Update += EurekaTracker;
     }
 
     public void Dispose()
     {
-        Plugin.Framework.Update -= CofferTracker;
+        Plugin.Framework.Update -= TicketTracker;
         Plugin.Framework.Update -= CurrencyTracker;
         Plugin.Framework.Update -= EurekaTracker;
     }
@@ -148,7 +148,7 @@ public class FrameworkManager
         }
     }
 
-    public void CofferTracker(IFramework _)
+    public void TicketTracker(IFramework _)
     {
         var local = Plugin.ClientState.LocalPlayer;
         if (local == null || !local.IsCasting)
@@ -156,17 +156,6 @@ public class FrameworkManager
 
         switch (local)
         {
-            // Coffers
-            case { CastActionId: 32161, CastActionType: 2 }:
-            case { CastActionId: 36635, CastActionType: 2 }:
-            case { CastActionId: 36636, CastActionType: 2 }:
-            case { CastActionId: 41667, CastActionType: 2 }:
-            {
-                if (Plugin.Configuration.EnableVentureCoffers || Plugin.Configuration.EnableGachaCoffers)
-                    Plugin.TimerManager.StartCoffer(local.CastActionId);
-                break;
-            }
-
             // Tickets
             case { CastActionId: 21069, CastActionType: 2 }:
             case { CastActionId: 21070, CastActionType: 2 }:
@@ -177,8 +166,8 @@ public class FrameworkManager
                 if (Plugin.TimerManager.TicketUsedTimer.Enabled)
                     return;
 
-                // 100ms before cast finish is when cast counts as successful
-                if (local.CurrentCastTime + 0.100 > local.TotalCastTime)
+                // 300ms before cast finish is when cast counts as successful
+                if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
                     Plugin.CastedTicketHandler(local.CastActionId);
                 break;
             }
