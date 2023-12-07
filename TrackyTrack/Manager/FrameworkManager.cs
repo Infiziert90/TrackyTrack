@@ -195,9 +195,9 @@ public class FrameworkManager
             if (local.TargetObject == null)
                 return;
 
-            // 500ms before cast finish is when cast counts as successful
-            // Increased from 100 to 500 because people with high ping having issues
-            if (local.CurrentCastTime + 0.500 > local.TotalCastTime)
+            // 800ms before cast finish is when cast counts as successful
+            // Increased from 100 to 800 because people with high ping having issues
+            if (local.CurrentCastTime + 0.800 > local.TotalCastTime)
             {
                 Plugin.Log.Debug($"Successful opening {((CofferRarity) local.TargetObject.DataId).ToName()}");
                 Plugin.TimerManager.StartEureka(local.TargetObject.DataId);

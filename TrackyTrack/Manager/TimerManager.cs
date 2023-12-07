@@ -20,7 +20,7 @@ public class TimerManager
     private Territory EurekaTerritory;
     private CofferRarity EurekaRarity;
     private EurekaResult EurekaResult = new();
-    public readonly Timer AwaitingEurekaResult = new(1 * 800);
+    public readonly Timer AwaitingEurekaResult = new(1 * 1500);
 
     public TimerManager(Plugin plugin)
     {
