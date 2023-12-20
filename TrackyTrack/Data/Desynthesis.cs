@@ -44,7 +44,7 @@ public record DesynthResult(uint Source, ItemResult[] Received)
     {
         var desynthItemId = result->DesynthItemId;
         var isSourceCol = desynthItemId > 500_000;
-        var isSourceHQ = desynthItemId> 1_000_000;
+        var isSourceHQ = desynthItemId > 1_000_000;
         var sourceId = isSourceHQ ? desynthItemId - 1_000_000 : isSourceCol ? desynthItemId - 500_000 : desynthItemId;
 
         Source = sourceId;

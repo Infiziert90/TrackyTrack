@@ -97,6 +97,10 @@ public class TimerManager
         if (!AwaitingBulkDesynth.Enabled)
             return;
 
+        // Impossible to bulk desynth collectables
+        if (item.Flags == InventoryItem.ItemFlags.Collectable)
+            return;
+
         LastBulkResult.AddSource(item.ItemId);
     }
 
