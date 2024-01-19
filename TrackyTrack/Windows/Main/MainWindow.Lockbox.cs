@@ -78,22 +78,18 @@ public partial class MainWindow
             }
         }
 
-        // Give 10.0f extra space because people have cut off text issues in rare cases
-        var width = ImGui.CalcTextSize(new string('W', longest)).X;
-        var totalWidth = ImGui.CalcTextSize("999,999 Treasures").X + width + (10.0f * ImGuiHelpers.GlobalScale);
-
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
-        if (ImGui.BeginTable($"##TotalStatsTable", 2, 0, new Vector2(totalWidth, 0)))
+        if (ImGui.BeginTable($"##TotalStatsTable", 2))
         {
-            ImGui.TableSetupColumn("##stat", ImGuiTableColumnFlags.WidthFixed, width);
+            ImGui.TableSetupColumn("##stat", 0, 2.0f);
             ImGui.TableSetupColumn("##opened");
 
             ImGui.TableNextColumn();
             ImGui.Indent(10.0f);
             ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
             ImGui.TableNextColumn();
-            Helper.RightAlignedText($"{totalNumber:N0} Treasure{(totalNumber > 1 ? "s" : "")}");
+            Helper.RightTextColored(ImGuiColors.HealerGreen, $"{totalNumber:N0} Treasure{(totalNumber > 1 ? "s" : "")}");
 
             foreach (var territory in Territories)
             {
@@ -109,14 +105,14 @@ public partial class MainWindow
                 ImGui.TableNextColumn();
                 var opened = openedTypes[territory].Values.Sum(a => a);
                 var containerName = LockboxExtensions.TerritoryToContainerName(territory);
-                Helper.RightAlignedText($"{opened:N0} {containerName}");
+                Helper.RightTextColored(ImGuiColors.HealerGreen, $"{opened:N0} {containerName}");
 
                 ImGui.Indent(10.0f);
-                foreach (var (type, amount) in openedTypes[territory])
+                foreach (var (type, amount) in openedTypes[territory].OrderBy(pair => pair.Key))
                 {
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
-                    ImGui.TextColored(ImGuiColors.HealerGreen, type.ToName());
+                    ImGui.TextUnformatted(type.ToName());
 
                     ImGui.TableNextColumn();
                     Helper.RightAlignedText($"x{amount:N0}", 10.0f);

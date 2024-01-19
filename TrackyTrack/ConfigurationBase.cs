@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.Internal.Notifications;
 using Newtonsoft.Json;
+using TrackyTrack.Data;
 
 namespace TrackyTrack;
 
@@ -90,6 +91,22 @@ public class ConfigurationBase : IDisposable
         }
 
         config ??= CharacterConfiguration.CreateNew();
+
+
+        if (config.Version < 3)
+        {
+            config.Version = 3;
+
+            // Wipe the fragment overflow from older versions
+            foreach (var (key, dict) in config.Lockbox.History)
+                if (Lockboxes.Fragments.Contains((uint)key))
+                {
+                    config.Lockbox.Opened -= dict.Count;
+                    dict.Clear();
+                }
+
+            Save(contentId, config);
+        }
 
         LastWriteTimes[contentId] = GetConfigLastWriteTime(contentId);
         return config;

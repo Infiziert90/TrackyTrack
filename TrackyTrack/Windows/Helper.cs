@@ -125,6 +125,15 @@ public static class Helper
         ImGui.TextUnformatted(text);
     }
 
+    public static void RightTextColored(Vector4 color, string text, float indent = 0.0f)
+    {
+        indent *= ImGuiHelpers.GlobalScale;
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize(text).X + indent);
+        ImGui.PushStyleColor(ImGuiCol.Text, color);
+        ImGui.TextUnformatted(text);
+        ImGui.PopStyleColor();
+    }
+
     public static void CenterText(string text, float indent = 0.0f)
     {
         indent *= ImGuiHelpers.GlobalScale;

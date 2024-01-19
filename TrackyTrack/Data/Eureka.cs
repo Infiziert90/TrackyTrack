@@ -63,7 +63,7 @@ public static class EurekaExtensions
 
     public static string ToName(this Territory territory)
     {
-        return (territory) switch
+        return territory switch
         {
             Territory.Pagos => "Pagos",
             Territory.Pyros => "Pyros",
@@ -74,7 +74,7 @@ public static class EurekaExtensions
 
     public static string ToName(this CofferRarity rarity)
     {
-        return (rarity) switch
+        return rarity switch
         {
             CofferRarity.Bronze => "Bronze",
             CofferRarity.Silver => "Silver",
@@ -90,6 +90,17 @@ public static class EurekaExtensions
             CofferRarity.Gold => 100_000,
             CofferRarity.Silver => 25_000,
             CofferRarity.Bronze => 10_000,
+            _ => 0
+        };
+    }
+
+    public static CofferRarity FromWorth(long worth)
+    {
+        return worth switch
+        {
+            100_000 => CofferRarity.Gold,
+            25_000 => CofferRarity.Silver,
+            10_000 => CofferRarity.Bronze,
             _ => 0
         };
     }

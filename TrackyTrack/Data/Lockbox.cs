@@ -22,6 +22,24 @@ public class Lockboxes
         { LockboxTypes.SouthernFront, new() },
         { LockboxTypes.Zadnor, new() },
     };
+
+    // Bozja Fragments
+    public static readonly uint[] Fragments =
+    {
+        30884, 30885, 30886, 30887, 30888, 30889, 30890, 30891,
+        30892, 30893, 30894, 30895, 30896, 30897, 30898, 30899,
+        32162, 32163, 32164, 32165, 32831, 32832, 32833, 32834,
+        33768, 33769, 33770, 33771, 33772, 33773, 33774, 33775,
+        33776, 33777, 33778, 33779
+    };
+
+    // Triple Triad Card Packs
+    public static readonly uint[] CardPacks =
+    {
+        10077, 10128, 10129, 10130, 13380, 17690, 17691, 17692,
+        17693, 17694, 17695, 17696, 17697, 17698, 17699, 17700,
+        17701, 17702, 28652
+    };
 }
 
 public enum LockboxTypes : uint
@@ -43,6 +61,7 @@ public enum LockboxTypes : uint
 public static class LockboxExtensions
 {
     private static readonly ExcelSheet<Item> ItemSheet;
+
     static LockboxExtensions()
     {
         ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
@@ -59,7 +78,7 @@ public static class LockboxExtensions
 
     public static string ToArea(this LockboxTypes type)
     {
-        return (type) switch
+        return type switch
         {
             LockboxTypes.Anemos => "Anemos",
             LockboxTypes.Pagos => "Pagos",
@@ -76,7 +95,7 @@ public static class LockboxExtensions
 
     public static string ToTerritory(this LockboxTypes type)
     {
-        return (type) switch
+        return type switch
         {
             LockboxTypes.Anemos => "Eureka",
             LockboxTypes.Pagos => "Eureka",
@@ -93,7 +112,7 @@ public static class LockboxExtensions
 
     public static string ToName(this LockboxTypes type)
     {
-        return (type) switch
+        return type switch
         {
             LockboxTypes.Anemos => "Anemos",
             LockboxTypes.Pagos => "Pagos",
@@ -110,7 +129,7 @@ public static class LockboxExtensions
 
     public static (LockboxTypes Main, LockboxTypes Secondary) ToMultiple(this LockboxTypes type)
     {
-        return (type) switch
+        return type switch
         {
             LockboxTypes.Pagos => (LockboxTypes.Pagos, LockboxTypes.ColdWarped),
             LockboxTypes.Pyros => (LockboxTypes.Pyros, LockboxTypes.HeatWarped),
@@ -127,7 +146,7 @@ public static class LockboxExtensions
 
     public static string TerritoryToContainerName(string territory)
     {
-        return (territory) switch
+        return territory switch
         {
             "Eureka" => "Boxes",
             "Bozja" => "Boxes",

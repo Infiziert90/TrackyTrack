@@ -1,10 +1,12 @@
 ﻿using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
 
-public class HookManager
+public unsafe class HookManager
 {
-    private Plugin Plugin;
+    private readonly Plugin Plugin;
 
     private const string DesynthResultSig = "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 44 0F B6 43 ?? 4C 8D 4B 17";
     private delegate void DesynthResultDelegate(uint param1, ushort param2, sbyte param3, Int64 param4, char param5);
@@ -13,6 +15,12 @@ public class HookManager
     private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
     private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, UInt64 targetId, byte param7);
     private Hook<ActorControlSelfDelegate> ActorControlSelfHook;
+
+    private const string OpenInspectSig = "E8 ?? ?? ?? ?? EB ?? 44 8B C1";
+    private delegate void OpenInspectThingy(nint inspectAgent, int something, InventoryItem* item);
+    private Hook<OpenInspectThingy> OpenInspectHook;
+
+    public uint LastSeenItemId;
 
     public HookManager(Plugin plugin)
     {
@@ -25,12 +33,44 @@ public class HookManager
         var actorControlSelfPtr = Plugin.SigScanner.ScanText(ActorControlSig);
         ActorControlSelfHook = Plugin.Hook.HookFromAddress<ActorControlSelfDelegate>(actorControlSelfPtr, ActorControlSelf);
         ActorControlSelfHook.Enable();
+
+        var openInspectPtr = Plugin.SigScanner.ScanText(OpenInspectSig);
+        OpenInspectHook = Plugin.Hook.HookFromAddress<OpenInspectThingy>(openInspectPtr, OpenInspect);
+        OpenInspectHook.Enable();
     }
 
     public void Dispose()
     {
         DesynthResultHook.Dispose();
         ActorControlSelfHook.Dispose();
+        OpenInspectHook.Dispose();
+    }
+
+    private void OpenInspect(nint inspectAgent, int something, InventoryItem* item)
+    {
+        OpenInspectHook.Original(inspectAgent, something, item);
+
+        try
+        {
+            if (LastSeenItemId == uint.MaxValue)
+            {
+                Plugin.Log.Warning("ItemID for fragment inspect wasn't read correctly");
+                return;
+            }
+
+            var lostAction = item->ItemID;
+            if (lostAction is < 30900 or > 33795)
+            {
+                Plugin.Log.Warning($"{lostAction} exceeds the allowed item range");
+                return;
+            }
+
+            Plugin.LockboxHandler(LastSeenItemId, lostAction, 1);
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Error(e, "OpenInspection failed");
+        }
     }
 
     private void DesynthResultPacket(uint param1, ushort param2, sbyte param3, Int64 param4, char param5)
@@ -87,7 +127,9 @@ public class HookManager
                 // Lockbox handler
                 case 1948:
                 case 3980:
-                    Plugin.LockboxHandler(param2, param4, param5);
+                    // Sort out the overflow from fragments
+                    if (!Lockboxes.Fragments.Contains(param2))
+                        Plugin.LockboxHandler(param2, param4, param5);
                     break;
             }
         }

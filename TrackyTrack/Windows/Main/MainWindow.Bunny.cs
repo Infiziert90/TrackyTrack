@@ -57,12 +57,14 @@ public partial class MainWindow
         var territoryCoffers = new Dictionary<Territory, Dictionary<CofferRarity, int>>();
         foreach (var (territory, rarityDictionary) in characters.SelectMany(c => c.Eureka.History))
         {
-            territoryCoffers[territory] = new Dictionary<CofferRarity, int>();
+            territoryCoffers.TryAdd(territory, new Dictionary<CofferRarity, int>());
             foreach (var (rarity, history) in rarityDictionary)
             {
                 totalNumber += history.Count;
                 worth += history.Count * rarity.ToWorth();
-                territoryCoffers[territory][rarity] = history.Count;
+
+                if (!territoryCoffers[territory].TryAdd(rarity, history.Count))
+                    territoryCoffers[territory][rarity] += history.Count;
             }
         }
 

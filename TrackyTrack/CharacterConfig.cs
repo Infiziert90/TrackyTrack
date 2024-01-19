@@ -9,7 +9,7 @@ namespace TrackyTrack;
 public class CharacterConfiguration
 {
     // Increase with version bump
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 3;
 
     public ulong LocalContentId;
     public bool HadDesynthUpload = false;

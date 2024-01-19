@@ -14,7 +14,6 @@ using TrackyTrack.Data;
 using TrackyTrack.Windows.Main;
 using TrackyTrack.Windows.Config;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using TrackyTrack.Lib;
 using TrackyTrack.Manager;
 
 namespace TrackyTrack
@@ -33,6 +32,7 @@ namespace TrackyTrack
         [PluginService] public static IPluginLog Log { get; private set; } = null!;
         [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
         [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
+        [PluginService] public static IGameInventory GameInventory { get; private set; } = null!;
 
         public static FileDialogManager FileDialogManager { get; private set; } = null!;
 
@@ -72,24 +72,15 @@ namespace TrackyTrack
             TimerManager = new TimerManager(this);
             HookManager = new HookManager(this);
             FrameworkManager = new FrameworkManager(this);
-
             InventoryChanged = new InventoryChanged();
-            Task.Run(() =>
-            {
-                try
-                {
-                    InventoryChanged.Initialize();
 
-                    InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
-                    InventoryChanged.OnItemAdded += TimerManager.EurekaItemAdded;
-                    InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
-                    InventoryChanged.OnItemChanged += TimerManager.StoreCofferResult;
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error loading critical common functions, tracking of inventory is disabled.");
-                }
-            });
+            InventoryChanged.OnItemsChanged += TimerManager.StoreCofferResult;
+            InventoryChanged.OnItemsChanged += TimerManager.StoreEurekaResult;
+
+            InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
+
+            InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
+            InventoryChanged.OnItemRemoved += FragmentRemoved;
 
             ConfigWindow = new ConfigWindow(this);
             MainWindow = new MainWindow(this, Configuration);
@@ -125,10 +116,13 @@ namespace TrackyTrack
             ClientState.Login -= Login;
             ClientState.TerritoryChanged -= TerritoryChanged;
 
+            InventoryChanged.OnItemsChanged -= TimerManager.StoreCofferResult;
+            InventoryChanged.OnItemsChanged -= TimerManager.StoreEurekaResult;
+
             InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
-            InventoryChanged.OnItemAdded -= TimerManager.EurekaItemAdded;
+
             InventoryChanged.OnItemRemoved -= TimerManager.DesynthItemRemoved;
-            InventoryChanged.OnItemChanged -= TimerManager.StoreCofferResult;
+            InventoryChanged.OnItemRemoved -= FragmentRemoved;
 
             ConfigurationBase.Dispose();
             WindowSystem.RemoveAllWindows();
@@ -138,11 +132,10 @@ namespace TrackyTrack
 
             CommandManager.Dispose();
 
-            InventoryChanged.Dispose();
-
             HookManager.Dispose();
             TimerManager.Dispose();
             FrameworkManager.Dispose();
+            InventoryChanged.Dispose();
         }
 
         [Command("/ttracker")]
@@ -329,8 +322,7 @@ namespace TrackyTrack
 
             // Multiple other items use this handler, like the deep dungeon treasures, so we just add them as we go
             var type = (LockboxTypes) lockbox;
-            if (!character.Lockbox.History.ContainsKey(type))
-                character.Lockbox.History.Add(type, new Dictionary<uint, uint>());
+            character.Lockbox.History.TryAdd(type, new Dictionary<uint, uint>());
 
             character.Lockbox.Opened += 1;
             var lockboxHistory = character.Lockbox.History[type];
@@ -339,6 +331,21 @@ namespace TrackyTrack
 
             ConfigurationBase.SaveCharacterConfig();
             UploadEntry(new Export.GachaLoot(lockbox, itemId, amount));
+        }
+
+        // Fragments need special treatment to be registered
+        public void FragmentRemoved((uint ItemId, uint Quantity) changedItem)
+        {
+            if (!Lockboxes.Fragments.Contains(changedItem.ItemId))
+                return;
+
+            if (changedItem.Quantity > 1)
+            {
+                HookManager.LastSeenItemId = uint.MaxValue;
+                return;
+            }
+
+            HookManager.LastSeenItemId = Utils.NormalizeItemId(changedItem.ItemId);
         }
 
         #region Draws

@@ -57,4 +57,9 @@ public static class Utils
 
         return val;
     }
+
+    public static uint NormalizeItemId(uint itemId)
+    {
+        return itemId > 1_000_000 ? itemId - 1_000_000 : itemId > 500_000 ? itemId - 500_000 : itemId;
+    }
 }

@@ -11,8 +11,6 @@ public class FrameworkManager
 {
     private readonly Plugin Plugin;
 
-    public bool IsSafe;
-
     private static readonly Dictionary<Currency, int> CurrencyCounts = new()
     {
         { Currency.Gil, 0 },             // Gil
@@ -28,7 +26,8 @@ public class FrameworkManager
         { Currency.Skybuilders, 0 },     // Skybuilders
     };
 
-    private uint LastSeenVentureId = 0;
+    public bool IsSafe;
+    private uint LastSeenVentureId;
 
     public FrameworkManager(Plugin plugin)
     {
@@ -36,14 +35,12 @@ public class FrameworkManager
 
         Plugin.Framework.Update += TicketTracker;
         Plugin.Framework.Update += CurrencyTracker;
-        Plugin.Framework.Update += EurekaTracker;
     }
 
     public void Dispose()
     {
         Plugin.Framework.Update -= TicketTracker;
         Plugin.Framework.Update -= CurrencyTracker;
-        Plugin.Framework.Update -= EurekaTracker;
     }
     public unsafe void ScanCurrentCharacter()
     {
@@ -170,37 +167,6 @@ public class FrameworkManager
                 if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
                     Plugin.CastedTicketHandler(local.CastActionId);
                 break;
-            }
-        }
-    }
-
-    public void EurekaTracker(IFramework _)
-    {
-        if (!Plugin.Configuration.EnableEurekaCoffers)
-            return;
-
-        if (!EurekaExtensions.AsArray.Contains(Plugin.ClientState.TerritoryType))
-            return;
-
-        var local = Plugin.ClientState.LocalPlayer;
-        if (local == null || !local.IsCasting)
-            return;
-
-        // Interaction cast on coffer
-        if (local is { CastActionId: 21, CastActionType: 4 })
-        {
-            if (Plugin.TimerManager.AwaitingEurekaResult.Enabled)
-                return;
-
-            if (local.TargetObject == null)
-                return;
-
-            // 800ms before cast finish is when cast counts as successful
-            // Increased from 100 to 800 because people with high ping having issues
-            if (local.CurrentCastTime + 0.800 > local.TotalCastTime)
-            {
-                Plugin.Log.Debug($"Successful opening {((CofferRarity) local.TargetObject.DataId).ToName()}");
-                Plugin.TimerManager.StartEureka(local.TargetObject.DataId);
             }
         }
     }
