@@ -336,14 +336,12 @@ namespace TrackyTrack
         // Fragments need special treatment to be registered
         public void FragmentRemoved((uint ItemId, uint Quantity) changedItem)
         {
+            HookManager.LastSeenItemId = uint.MaxValue;
             if (!Lockboxes.Fragments.Contains(changedItem.ItemId))
                 return;
 
             if (changedItem.Quantity > 1)
-            {
-                HookManager.LastSeenItemId = uint.MaxValue;
                 return;
-            }
 
             HookManager.LastSeenItemId = Utils.NormalizeItemId(changedItem.ItemId);
         }

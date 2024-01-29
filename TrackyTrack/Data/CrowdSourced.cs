@@ -93,7 +93,7 @@ public class Importer
             foreach (var import in csv.GetRecords<CsvImport>())
             {
                 if (import.Source > 500_000)
-                    Plugin.Log.Warning($"Invalid data found, ID: {import.Id}");
+                    Plugin.Log.Warning($"Invalid source data found, ID: {import.Id}");
 
                 totalRecords++;
                 if (!records.TryAdd(import.Source, 1))
@@ -102,7 +102,7 @@ public class Importer
                 var spl = import.Rewards.Trim('{', '}').Split(",");
                 var length = spl.Length / 2;
                 if (length > 3)
-                    Plugin.Log.Warning($"Invalid data found, ID: {import.Id}");
+                    Plugin.Log.Warning($"Invalid length found, ID: {import.Id}");
 
                 for (var i = 0; i < spl.Length / 2; i++)
                 {
@@ -114,7 +114,7 @@ public class Importer
                         case 0:
                             continue;
                         case > 500_000:
-                            Plugin.Log.Warning($"Invalid data found, ID: {import.Id}");
+                            Plugin.Log.Warning($"Invalid reward data found, ID: {import.Id}");
                             break;
                     }
 

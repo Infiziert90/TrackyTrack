@@ -68,6 +68,7 @@ public class TimerManager
         // 19 and below are crystals
         var isHQ = changedItem.ItemId > 1_000_000;
         var itemId = Utils.NormalizeItemId(changedItem.ItemId);
+
         if (itemId > 19)
             LastBulkResult.AddItem(itemId, changedItem.Quantity, isHQ);
         else

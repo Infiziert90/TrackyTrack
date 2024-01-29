@@ -66,6 +66,7 @@ public unsafe class HookManager
             }
 
             Plugin.LockboxHandler(LastSeenItemId, lostAction, 1);
+            LastSeenItemId = uint.MaxValue;
         }
         catch (Exception e)
         {
