@@ -52,11 +52,9 @@ public unsafe class HookManager
 
         try
         {
+            // ItemInspection is called for multiple different use cases, so we ignore all that aren't fragment based
             if (LastSeenItemId == uint.MaxValue)
-            {
-                Plugin.Log.Warning("ItemID for fragment inspect wasn't read correctly");
                 return;
-            }
 
             var lostAction = item->ItemID;
             if (lostAction is < 30900 or > 33795)

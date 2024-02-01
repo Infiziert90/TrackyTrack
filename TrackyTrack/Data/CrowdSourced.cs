@@ -92,7 +92,7 @@ public class Importer
             using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture) { HasHeaderRecord = true });
             foreach (var import in csv.GetRecords<CsvImport>())
             {
-                if (import.Source > 500_000)
+                if (import.Source > 100_000)
                     Plugin.Log.Warning($"Invalid source data found, ID: {import.Id}");
 
                 totalRecords++;
@@ -113,7 +113,7 @@ public class Importer
                     {
                         case 0:
                             continue;
-                        case > 500_000:
+                        case > 100_000:
                             Plugin.Log.Warning($"Invalid reward data found, ID: {import.Id}");
                             break;
                     }

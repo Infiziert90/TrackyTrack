@@ -208,7 +208,6 @@ public static class Helper
 
     public static void ActivatedButton(string buttonText, Vector2 size, ref int selected, int number, ImDrawFlags corners)
     {
-        var pressed = false;
         var colors = ImGui.GetStyle().Colors;
 
         if (selected == number)
@@ -221,11 +220,9 @@ public static class Helper
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f });
         }
 
-        pressed |= ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners);
+        if (ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners))
+            selected = number;
 
         ImGui.PopStyleColor(selected == number ? 2 : 1);
-
-        if (pressed)
-            selected = number;
     }
 }
