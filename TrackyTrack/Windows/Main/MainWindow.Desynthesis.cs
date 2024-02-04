@@ -36,10 +36,16 @@ public partial class MainWindow
     public Dictionary<uint, History>? LocalSourcesCache;
     public Dictionary<uint, History>? LocalRewardsCache;
 
+    public uint LowestValidID;
+    public uint HighestValidID;
+
     public void InitializeDesynth()
     {
         DesynthCache = ItemSheet.Where(i => i.Desynth > 0).ToArray();
         HighestILvL = DesynthCache.Select(i => (int)i.LevelItem.Row).Max();
+
+        LowestValidID = 100;
+        HighestValidID = ItemSheet.Where(i => i.Icon != 0).MaxBy(i => i.RowId)!.RowId;
 
         // Fill once
         CatalogueCache = BuildCatalogue();
@@ -638,15 +644,26 @@ public partial class MainWindow
             LocalSourcesCache = null;
             LocalRewardsCache = null;
 
-            Task.Run(() => {
+            Task.Run(() =>
+            {
                 var allCharacters = Plugin.CharacterStorage.Values.Where(c => c.Storage.History.Count > 0).ToArray();
                 foreach (var pair in allCharacters.SelectMany(c => c.Storage.History))
+                {
+                    if (pair.Value.Source < LowestValidID || pair.Value.Source > HighestValidID)
+                        continue;
+
                     if (!SourceHistory.TryAdd(pair.Value.Source, 1))
                         SourceHistory[pair.Value.Source] += 1;
+                }
 
                 foreach (var pair in allCharacters.SelectMany(c => c.Storage.Total))
+                {
+                    if (pair.Key < LowestValidID || pair.Key > HighestValidID)
+                        continue;
+
                     if (!RewardHistory.TryAdd(pair.Key, pair.Value))
                         RewardHistory[pair.Key] += pair.Value;
+                }
 
                 TaskRunning = false;
             });
@@ -762,7 +779,7 @@ public partial class MainWindow
         var final = new Dictionary<uint, Dictionary<uint, Importer.Stats>>();
         foreach (var result in results)
         {
-            if (result.Source > 500_000)
+            if (result.Source > HighestValidID || result.Source < LowestValidID)
                 continue;
 
             if (!records.TryAdd(result.Source, 1))
@@ -778,9 +795,9 @@ public partial class MainWindow
 
                 switch (item)
                 {
-                    case 0:
+                    case < 100:
                         continue;
-                    case > 500_000:
+                    case > 100_000:
                         continue;
                 }
 

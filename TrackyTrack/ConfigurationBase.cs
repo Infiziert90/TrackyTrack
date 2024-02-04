@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.Internal.Notifications;
+using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using TrackyTrack.Data;
 
@@ -104,6 +105,47 @@ public class ConfigurationBase : IDisposable
                     config.Lockbox.Opened -= dict.Count;
                     dict.Clear();
                 }
+
+            Save(contentId, config);
+        }
+
+        if (config.Version < 4)
+        {
+            config.Version = 4;
+
+            var lowestValidID = 100;
+            var highestValidID = Plugin.Data.GetExcelSheet<Item>()!.Where(i => i.Icon != 0).MaxBy(i => i.RowId)!.RowId;
+
+            // Wipe the invalid desynth data from older versions
+            foreach (var (key, desynthResult) in config.Storage.History.ToArray())
+            {
+                if (desynthResult.Source > highestValidID || desynthResult.Source < lowestValidID)
+                    config.Storage.History.Remove(key);
+
+                if (desynthResult.Received.Length == 0)
+                {
+                    config.Storage.History.Remove(key);
+                    continue;
+                }
+
+                var itemResult = desynthResult.Received.First();
+                if (itemResult.Item > highestValidID || itemResult.Item < lowestValidID)
+                {
+                    config.Storage.History.Remove(key);
+                    config.Storage.Total.Remove(itemResult.Item);
+                }
+            }
+
+            // Wipe the fragment inspection hiccup from older versions
+            var invalidItems = new uint[] { 31664, 31326, 33672, 32828, 33706, 33257 };
+            foreach (var (key, dict) in config.Lockbox.History)
+            {
+                if (!Lockboxes.Fragments.Contains((uint) key))
+                    continue;
+
+                foreach (var itemId in dict.Keys.Where(i => invalidItems.Contains(i)).ToArray())
+                    dict.Remove(itemId);
+            }
 
             Save(contentId, config);
         }
