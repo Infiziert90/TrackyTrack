@@ -146,7 +146,7 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{destroyed.Value:N0}");
 
-            var bestItem = RewardHistory.Where(pair => pair.Key is > 20 and < 1000000).MaxBy(pair => pair.Value);
+            var bestItem = RewardHistory.Where(pair => pair.Key is > 20 and < 100_000).MaxBy(pair => pair.Value);
             item = ItemSheet.GetRow(bestItem.Key)!;
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Rewarded");
@@ -313,7 +313,7 @@ public partial class MainWindow
                 ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
                 ImGui.Indent(10.0f);
-                foreach (var (itemId, count) in RewardHistory.Where(pair => pair.Key is > 0 and < 1000000).OrderBy(pair => pair.Key))
+                foreach (var (itemId, count) in RewardHistory.Where(pair => pair.Key is > 0 and < 100_000).OrderBy(pair => pair.Key))
                 {
                     var item = ItemSheet.GetRow(itemId)!;
 
@@ -646,23 +646,30 @@ public partial class MainWindow
 
             Task.Run(() =>
             {
-                var allCharacters = Plugin.CharacterStorage.Values.Where(c => c.Storage.History.Count > 0).ToArray();
-                foreach (var pair in allCharacters.SelectMany(c => c.Storage.History))
+                try
                 {
-                    if (pair.Value.Source < LowestValidID || pair.Value.Source > HighestValidID)
-                        continue;
+                    var allCharacters = Plugin.CharacterStorage.Values.Where(c => c.Storage.History.Count > 0).ToArray();
+                    foreach (var pair in allCharacters.SelectMany(c => c.Storage.History))
+                    {
+                        if (pair.Value.Source < LowestValidID || pair.Value.Source > HighestValidID)
+                            continue;
 
-                    if (!SourceHistory.TryAdd(pair.Value.Source, 1))
-                        SourceHistory[pair.Value.Source] += 1;
+                        if (!SourceHistory.TryAdd(pair.Value.Source, 1))
+                            SourceHistory[pair.Value.Source] += 1;
+                    }
+
+                    foreach (var pair in allCharacters.SelectMany(c => c.Storage.Total))
+                    {
+                        if (pair.Key > HighestValidID)
+                            continue;
+
+                        if (!RewardHistory.TryAdd(pair.Key, pair.Value))
+                            RewardHistory[pair.Key] += pair.Value;
+                    }
                 }
-
-                foreach (var pair in allCharacters.SelectMany(c => c.Storage.Total))
+                catch (Exception e)
                 {
-                    if (pair.Key < LowestValidID || pair.Key > HighestValidID)
-                        continue;
-
-                    if (!RewardHistory.TryAdd(pair.Key, pair.Value))
-                        RewardHistory[pair.Key] += pair.Value;
+                    Plugin.Log.Error(e, "Error while building cache");
                 }
 
                 TaskRunning = false;
