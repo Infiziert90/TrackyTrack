@@ -210,7 +210,8 @@ public static class Helper
     {
         var colors = ImGui.GetStyle().Colors;
 
-        if (selected == number)
+        var check = selected == number;
+        if (check)
         {
             ImGui.PushStyleColor(ImGuiCol.Button, colors[(int) ImGuiCol.ButtonActive]);
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int) ImGuiCol.ButtonActive]);
@@ -223,6 +224,6 @@ public static class Helper
         if (ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners))
             selected = number;
 
-        ImGui.PopStyleColor(selected == number ? 2 : 1);
+        ImGui.PopStyleColor(check ? 2 : 1);
     }
 }

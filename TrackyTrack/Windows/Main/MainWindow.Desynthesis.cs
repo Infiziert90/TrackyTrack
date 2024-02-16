@@ -427,7 +427,7 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Search");
         ImGui.SameLine(width);
         ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.Button($"{FontAwesomeIcon.Search.ToIconString()}##Sources", new Vector2(definedSize * 2, 0));
+        ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(definedSize * 2, 0));
         ImGui.PopFont();
 
         if (SearchForSelection == 0)
@@ -472,7 +472,7 @@ public partial class MainWindow
         Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), Utils.ToStr(sourceItem.Name), ImGuiColors.ParsedOrange);
         if (!dict.TryGetValue(SourceSearchResult, out var history))
         {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this source item ...");
+            ImGui.TextColored(ImGuiColors.ParsedOrange, "Nothing found for this source item ...");
             return;
         }
 
@@ -523,7 +523,10 @@ public partial class MainWindow
         {
             var item = ItemSheet.GetRow(result.Item) ?? ItemSheet.GetRow(1)!;
             var source = Plugin.Importer.SourcedData.Sources[result.Item];
-            var sourceRecord = source.Results.First(r => r.Item == RewardSearchResult);
+            if (DataSourceSelection == 1 && LocalSourcesCache != null)
+                source = LocalSourcesCache[result.Item];
+
+            var sourceRecord = source.Results.FirstOrDefault(r => r.Item == RewardSearchResult);
             var percentage = (double) sourceRecord.Received / source.Records * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), result.Received, percentage);
         }).OrderByDescending(x => x.Percentage);
