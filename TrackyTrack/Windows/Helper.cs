@@ -1,7 +1,7 @@
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 
-using static OtterGui.Classes.ToggleButton;
+using static OtterGui.Widgets.ToggleButton;
 
 namespace TrackyTrack.Windows;
 

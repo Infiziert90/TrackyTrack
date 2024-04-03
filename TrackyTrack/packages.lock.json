@@ -1,12 +1,12 @@
 {
   "version": 1,
   "dependencies": {
-    "net7.0-windows7.0": {
+    "net8.0-windows7.0": {
       "CsvHelper": {
         "type": "Direct",
-        "requested": "[30.0.1, )",
-        "resolved": "30.0.1",
-        "contentHash": "rcZtgbWR+As4G3Vpgx0AMNmShGuQLFjkHAPIIflzrfkJCx8/AOd4m96ZRmiU1Wi39qS5UVjV0P8qdgqOo5Cwyg=="
+        "requested": "[31.0.2, )",
+        "resolved": "31.0.2",
+        "contentHash": "ndlIN77XcFm6qqGlNPzl0XjVupMCBVhVSiO+1+X2UhJtnnvkx9f//7FOvlkLuEQ76NC3Y7owa8IOhgtKVa4H7Q=="
       },
       "DalamudPackager": {
         "type": "Direct",
@@ -25,20 +25,23 @@
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
       },
-      "CSVFile": {
-        "type": "Transitive",
-        "resolved": "3.1.0",
-        "contentHash": "yz/FptkwDL0bxhaxoyrFPI5SyxUUfuZtbH1E2yLiHHFZFFrSXNnWJHfXSt5Anvy1gWpHCLpC520Bxy6G/Opp1g=="
-      },
-      "Dalamud.ContextMenu": {
-        "type": "Transitive",
-        "resolved": "1.3.1",
-        "contentHash": "ptAxut5PiLnzZ4G/KQdHJVcyklC/BF3otHJ7zYVUPiKBjsOCoF0n/6h2jK7e+8ev2Y1yAY3Wtx2GuXLFQgt9Uw=="
-      },
       "MessagePack.Annotations": {
         "type": "Transitive",
         "resolved": "2.6.100-alpha",
         "contentHash": "hl8OTk87/i4nMHtBasV+GRQe8g3tze3l6NGYmL4XOQwCATKLAFAIKRbaxxWAPo0wk26UPqJ7oC+Lg8fLQNWLAQ=="
+      },
+      "Microsoft.Extensions.DependencyInjection": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "V8S3bsm50ig6JSyrbcJJ8bW2b9QLGouz+G1miK3UTaOWmMtFwNNNzUf4AleyDWUmTrWMLNnFSLEQtxmxgNQnNQ==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "cjWrLkJXK0rs4zofsK4bSdg+jhDLTaxrkXu4gS6Y7MAlCvRyNNgwY/lJi5RDlQOnSZweHqoyvgvbdvQsRIW+hg=="
       },
       "Microsoft.NET.StringTools": {
         "type": "Transitive",
@@ -49,54 +52,21 @@
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
       },
-      "NaturalSort.Extension": {
-        "type": "Transitive",
-        "resolved": "3.2.0",
-        "contentHash": "E6DE1xnwGYIwvxMeqW/TwJ882q+NL+TBJtW1x+u5u77HMCupL9qBQUkQikFcZYH0oSBr47qLpC/UYx4atTLdQA=="
-      },
-      "SerialQueue": {
-        "type": "Transitive",
-        "resolved": "2.1.0",
-        "contentHash": "rmQcrFXgcrqT9M6+xdxAK/JWx1vFuCRT8fTdce4ALdze2/8N5yMRW9Vmkresw+JpL+JC8zuC1HfDkrfVgBUIqA=="
-      },
       "System.Memory": {
         "type": "Transitive",
         "resolved": "4.5.5",
         "contentHash": "XIWiDvKPXaTveaB7HVganDlOCRoj03l+jrwNvcge/t8vhGYKvqV+dMv6G4SAX2NoNmN0wZfVPTAlFwZcZvVOUw=="
-      },
-      "System.Reactive": {
-        "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       },
       "System.Runtime.CompilerServices.Unsafe": {
         "type": "Transitive",
         "resolved": "6.0.0",
         "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
       },
-      "criticalcommonlib": {
-        "type": "Project",
-        "dependencies": {
-          "DalaMock.Shared": "[1.0.0, )",
-          "Dalamud.ContextMenu": "[1.3.1, )",
-          "LuminaSupplemental.Excel": "[6.0.2, )",
-          "NaturalSort.Extension": "[3.2.0, )",
-          "SerialQueue": "[2.1.0, )",
-          "System.Reactive": "[5.0.0, )"
-        }
-      },
-      "dalamock.shared": {
-        "type": "Project"
-      },
-      "luminasupplemental.excel": {
-        "type": "Project",
-        "dependencies": {
-          "CSVFile": "[3.1.0, )",
-          "CsvHelper": "[30.0.1, )"
-        }
-      },
       "ottergui": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection": "[8.0.0, )"
+        }
       }
     }
   }

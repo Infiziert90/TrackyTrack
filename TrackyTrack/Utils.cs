@@ -1,4 +1,6 @@
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Utility;
 
 namespace TrackyTrack;
@@ -61,5 +63,10 @@ public static class Utils
     public static uint NormalizeItemId(uint itemId)
     {
         return itemId > 1_000_000 ? itemId - 1_000_000 : itemId > 500_000 ? itemId - 500_000 : itemId;
+    }
+
+    public static void AddNotification(string content, NotificationType type)
+    {
+        Plugin.NotificationManager.AddNotification(new Notification{Content = content, Type = type, Minimized = false});
     }
 }

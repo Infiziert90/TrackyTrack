@@ -16,7 +16,6 @@ public class ConfigurationBase : IDisposable
     private record SaveObject(ulong ContentId, string FilePath, CharacterConfiguration Character);
 
     private readonly Plugin Plugin;
-    private readonly UiBuilder UiBuilder;
 
     private readonly CancellationTokenSource CancellationToken = new();
     private readonly ConcurrentDictionary<ulong, DateTime> LastWriteTimes = new();
@@ -28,7 +27,6 @@ public class ConfigurationBase : IDisposable
     public ConfigurationBase(Plugin plugin)
     {
         Plugin = plugin;
-        UiBuilder = Plugin.PluginInterface.UiBuilder;
 
         ConfigurationDirectory = Plugin.PluginInterface.ConfigDirectory.FullName;
         MiscFolder = Path.Combine(ConfigurationDirectory, "Misc");
@@ -67,7 +65,7 @@ public class ConfigurationBase : IDisposable
             catch
             {
                 if (i == 4)
-                    UiBuilder.AddNotification("Failed to read config", "[Tracky]", NotificationType.Error);
+                    Utils.AddNotification("Failed to read config", NotificationType.Error);
 
                 Plugin.Log.Warning($"Config file read failed {i + 1}/5");
             }
@@ -87,7 +85,7 @@ public class ConfigurationBase : IDisposable
         catch (Exception e)
         {
             Plugin.Log.Error(e, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
-            Plugin.PluginInterface.UiBuilder.AddNotification("Exception during config load, pls check /xllog", "[Tracky]", NotificationType.Error);
+            Utils.AddNotification("Exception during config load, pls check /xllog", NotificationType.Error);
             config = CharacterConfiguration.CreateNew();
         }
 
@@ -247,7 +245,7 @@ public class ConfigurationBase : IDisposable
                     {
                         // Just try again until counter runs out
                         if (i == 4)
-                            UiBuilder.AddNotification("Failed to move config", "[Tracky]", NotificationType.Warning);
+                            Utils.AddNotification("Failed to move config", NotificationType.Warning);
 
                         Plugin.Log.Warning($"Config file couldn't be moved {i + 1}/5");
                         await Task.Delay(30, CancellationToken.Token);

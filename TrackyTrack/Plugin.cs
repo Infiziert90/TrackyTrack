@@ -33,6 +33,7 @@ namespace TrackyTrack
         [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
         [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
         [PluginService] public static IGameInventory GameInventory { get; private set; } = null!;
+        [PluginService] public static INotificationManager NotificationManager { get; private set; } = null!;
 
         public static FileDialogManager FileDialogManager { get; private set; } = null!;
 

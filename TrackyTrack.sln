@@ -5,12 +5,6 @@ VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackyTrack", "TrackyTrack\TrackyTrack.csproj", "{13C812E9-0D42-4B95-8646-40EEBF30636F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CriticalCommonLib", "CriticalCommonLib\CriticalCommonLib.csproj", "{224D5ACE-5700-4425-B368-39A28FB206D2}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LuminaSupplemental.Excel", "LuminaSupplemental\src\LuminaSupplemental.Excel\LuminaSupplemental.Excel.csproj", "{FDD0424C-4CCD-4D66-AB80-6374AF7DADAB}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DalaMock.Shared", "DalaMock\DalaMock.Shared\DalaMock.Shared.csproj", "{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OtterGui", "OtterGui\OtterGui.csproj", "{4672EF74-F237-44EA-AD08-CA4AC943D5DE}"
 EndProject
 Global
@@ -27,18 +21,6 @@ Global
 		{4FEC9558-EB25-419F-B86E-51B8CFDA32B7}.Debug|x64.Build.0 = Debug|x64
 		{4FEC9558-EB25-419F-B86E-51B8CFDA32B7}.Release|x64.ActiveCfg = Release|x64
 		{4FEC9558-EB25-419F-B86E-51B8CFDA32B7}.Release|x64.Build.0 = Release|x64
-		{224D5ACE-5700-4425-B368-39A28FB206D2}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{224D5ACE-5700-4425-B368-39A28FB206D2}.Debug|x64.Build.0 = Debug|Any CPU
-		{224D5ACE-5700-4425-B368-39A28FB206D2}.Release|x64.ActiveCfg = Release|Any CPU
-		{224D5ACE-5700-4425-B368-39A28FB206D2}.Release|x64.Build.0 = Release|Any CPU
-		{FDD0424C-4CCD-4D66-AB80-6374AF7DADAB}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{FDD0424C-4CCD-4D66-AB80-6374AF7DADAB}.Debug|x64.Build.0 = Debug|Any CPU
-		{FDD0424C-4CCD-4D66-AB80-6374AF7DADAB}.Release|x64.ActiveCfg = Release|Any CPU
-		{FDD0424C-4CCD-4D66-AB80-6374AF7DADAB}.Release|x64.Build.0 = Release|Any CPU
-		{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}.Debug|x64.Build.0 = Debug|Any CPU
-		{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}.Release|x64.ActiveCfg = Release|Any CPU
-		{C1AE1A14-9FE5-4B73-9B83-8AAEBD1E775E}.Release|x64.Build.0 = Release|Any CPU
 		{4672EF74-F237-44EA-AD08-CA4AC943D5DE}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{4672EF74-F237-44EA-AD08-CA4AC943D5DE}.Debug|x64.Build.0 = Debug|Any CPU
 		{4672EF74-F237-44EA-AD08-CA4AC943D5DE}.Release|x64.ActiveCfg = Release|Any CPU

@@ -53,7 +53,7 @@ public partial class ConfigWindow
                     Task.Run(() =>
                     {
                         Plugin.Importer.Import(InputPath);
-                        Plugin.PluginInterface.UiBuilder.AddNotification("Import Done", "[Tracky]", NotificationType.Success);
+                        Utils.AddNotification("Import Done", NotificationType.Success);
                     });
                 }
                 #endif
