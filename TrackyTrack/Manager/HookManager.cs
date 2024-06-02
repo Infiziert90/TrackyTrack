@@ -9,7 +9,7 @@ public unsafe class HookManager
     private readonly Plugin Plugin;
 
     private const string DesynthResultSig = "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 44 0F B6 43 ?? 4C 8D 4B 17";
-    private delegate void DesynthResultDelegate(uint param1, ushort param2, sbyte param3, Int64 param4, char param5);
+    private delegate void DesynthResultDelegate(uint param1, ushort param2, sbyte param3, nint param4, char param5);
     private Hook<DesynthResultDelegate> DesynthResultHook;
 
     private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
@@ -72,17 +72,13 @@ public unsafe class HookManager
         }
     }
 
-    private void DesynthResultPacket(uint param1, ushort param2, sbyte param3, Int64 param4, char param5)
+    private void DesynthResultPacket(uint param1, ushort param2, sbyte param3, nint param4, char param5)
     {
         DesynthResultHook.Original(param1, param2, param3, param4, param5);
 
         // DesynthResult is triggered by multiple events
         if (param1 != 3735552)
-        {
-            Plugin.Log.Debug("Received param1 that isn't DesynthResult");
-            Plugin.Log.Debug($"Param1 {param1}");
             return;
-        }
 
         try
         {
@@ -94,12 +90,11 @@ public unsafe class HookManager
         }
         catch (Exception e)
         {
-            Plugin.Log.Warning(e.Message);
-            Plugin.Log.Warning(e.StackTrace ?? "Unknown");
+            Plugin.Log.Error(e, "Error while parsing desynth result packet");
         }
     }
 
-    private void ActorControlSelf(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, UInt64 targetId, byte param7)
+    private void ActorControlSelf(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, ulong targetId, byte param7)
     {
         ActorControlSelfHook.Original(category, eventId, param1, param2, param3, param4, param5, param6, targetId, param7);
 
@@ -134,10 +129,7 @@ public unsafe class HookManager
         }
         catch (Exception e)
         {
-            Plugin.Log.Warning(e.Message);
-            Plugin.Log.Warning(e.StackTrace ?? "Unknown");
+            Plugin.Log.Error(e, "Error while parsing actor control packet");
         }
-
-        Plugin.Log.Debug($"Cate {category} id {eventId} param1 {param1} param2 {param2} param3 {param3} param4 {param4} param5 {param5} param6 {param6} target {targetId} param7 {param7}");
     }
 }
