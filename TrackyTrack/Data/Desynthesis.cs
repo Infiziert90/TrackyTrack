@@ -48,18 +48,18 @@ public record DesynthResult(uint Source, ItemResult[] Received)
         var sourceId = isSourceHQ ? desynthItemId - 1_000_000 : isSourceCol ? desynthItemId - 500_000 : desynthItemId;
 
         Source = sourceId;
-        Received = result->DesynthResultsSpan.ToArray()
-                                             .Where(r => r.ItemId > 0)
-                                             .Select(r =>
-                                             {
-                                                 // Collectable are Item + 500,000
-                                                 // HQ items are Item + 1,000,000
-                                                 var isCol = r.ItemId > 500_000;
-                                                 var isHQ = r.ItemId > 1_000_000;
-                                                 var rewardId = isHQ ? r.ItemId - 1_000_000 : isCol ? r.ItemId - 500_000 : r.ItemId;
-                                                 return new ItemResult(rewardId, (uint)r.Quantity, isHQ);
-                                             })
-                                             .ToArray();
+        Received = result->DesynthResults.ToArray()
+                                         .Where(r => r.ItemId > 0)
+                                         .Select(r =>
+                                         {
+                                             // Collectable are Item + 500,000
+                                             // HQ items are Item + 1,000,000
+                                             var isCol = r.ItemId > 500_000;
+                                             var isHQ = r.ItemId > 1_000_000;
+                                             var rewardId = isHQ ? r.ItemId - 1_000_000 : isCol ? r.ItemId - 500_000 : r.ItemId;
+                                             return new ItemResult(rewardId, (uint)r.Quantity, isHQ);
+                                         })
+                                         .ToArray();
     }
 
     public DesynthResult(BulkResult result) : this(0, Array.Empty<ItemResult>())

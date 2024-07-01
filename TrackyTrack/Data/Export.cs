@@ -38,7 +38,7 @@ public static class Export
         public string Table;
 
         [JsonProperty("version")]
-        public string Version = Plugin.Version;
+        public string Version = Plugin.PluginInterface.Manifest.AssemblyVersion.ToString();
 
         public Upload(string table)
         {

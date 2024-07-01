@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Reflection;
 using System.Threading.Tasks;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -23,7 +22,7 @@ namespace TrackyTrack
         [PluginService] public static IDataManager Data { get; private set; } = null!;
         [PluginService] public static IFramework Framework { get; private set; } = null!;
         [PluginService] public static ICommandManager Commands { get; private set; } = null!;
-        [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+        [PluginService] public static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
         [PluginService] public static IClientState ClientState { get; private set; } = null!;
         [PluginService] public static IChatGui ChatGui { get; private set; } = null!;
         [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
@@ -43,9 +42,6 @@ namespace TrackyTrack
         private ConfigWindow ConfigWindow { get; init; }
         private MainWindow MainWindow { get; init; }
 
-        public const string Authors = "Infi";
-        public static readonly string Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
-
         private readonly PluginCommandManager<Plugin> CommandManager;
 
         public ConfigurationBase ConfigurationBase;
@@ -63,7 +59,6 @@ namespace TrackyTrack
             ConfigurationBase = new ConfigurationBase(this);
 
             Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            Configuration.Initialize(PluginInterface);
 
             FileDialogManager = new FileDialogManager();
 
@@ -92,7 +87,8 @@ namespace TrackyTrack
             CommandManager = new PluginCommandManager<Plugin>(this, Commands);
 
             PluginInterface.UiBuilder.Draw += DrawUI;
-            PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+            PluginInterface.UiBuilder.OpenMainUi += OpenMainUi;
+            PluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
 
             ConfigurationBase.Load();
             Export.Init();
@@ -353,9 +349,14 @@ namespace TrackyTrack
             this.WindowSystem.Draw();
         }
 
-        public void DrawConfigUI()
+        public void OpenMainUi()
         {
-            ConfigWindow.IsOpen = true;
+            ConfigWindow.Toggle();
+        }
+
+        public void OpenConfigUi()
+        {
+            ConfigWindow.Toggle();
         }
         #endregion
 

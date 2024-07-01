@@ -52,7 +52,7 @@ public class CharacterConfiguration
 
     public CharacterConfiguration() { }
 
-    public CharacterConfiguration(ulong id, PlayerCharacter local)
+    public CharacterConfiguration(ulong id, IPlayerCharacter local)
     {
         LocalContentId = id;
         CharacterName = Utils.ToStr(local.Name);

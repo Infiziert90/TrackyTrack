@@ -1,5 +1,4 @@
 using Dalamud.Configuration;
-using Dalamud.Plugin;
 
 namespace TrackyTrack
 {
@@ -24,17 +23,9 @@ namespace TrackyTrack
         public DateTime UploadNotificationReceived = DateTime.MaxValue;
         public bool UploadPermission = true;
 
-        [NonSerialized]
-        private DalamudPluginInterface? PluginInterface;
-
-        public void Initialize(DalamudPluginInterface pluginInterface)
-        {
-            this.PluginInterface = pluginInterface;
-        }
-
         public void Save()
         {
-            this.PluginInterface!.SavePluginConfig(this);
+            Plugin.PluginInterface.SavePluginConfig(this);
         }
     }
 }

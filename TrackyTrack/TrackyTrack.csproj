@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>Infi</Authors>
-        <Version>1.5.0.1</Version>
+        <Version>1.5.1.0</Version>
         <Description>Tracking data is fun</Description>
         <PackageProjectUrl>https://github.com/Infiziert90/TrackyTrack</PackageProjectUrl>
     </PropertyGroup>
@@ -41,10 +41,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MessagePack" Version="2.6.100-alpha" />
+        <PackageReference Include="MessagePack" Version="3.0.54-alpha" />
         <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
-        <PackageReference Include="CsvHelper" Version="31.0.2" />
-        <PackageReference Include="DalamudPackager" Version="2.1.12" />
+        <PackageReference Include="CsvHelper" Version="33.0.1" />
+        <PackageReference Include="DalamudPackager" Version="2.1.13" />
         <Reference Include="FFXIVClientStructs">
             <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
             <Private>false</Private>

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using Dalamud.Interface.Components;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
 using Lumina.Excel.GeneratedSheets;
 using TrackyTrack.Data;

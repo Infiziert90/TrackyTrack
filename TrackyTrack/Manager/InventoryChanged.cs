@@ -59,7 +59,7 @@ public class InventoryChanged
             }
         }
 
-        if (changes.Any())
+        if (changes.Count != 0)
         {
             // Coffer checks added and removed
             OnItemsChanged?.Invoke(changes.Select(pair => (pair.Key, (int) pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray());

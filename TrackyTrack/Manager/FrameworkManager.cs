@@ -63,7 +63,7 @@ public class FrameworkManager
             {
                 var retainer = manager->GetActiveRetainer();
                 if (addonArgs.AddonName == "SelectString" && retainer != null)
-                    LastSeenVentureId = retainer->VentureID;
+                    LastSeenVentureId = retainer->VentureId;
             }
             catch (Exception e)
             {

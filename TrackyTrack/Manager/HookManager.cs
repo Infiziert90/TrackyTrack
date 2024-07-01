@@ -16,7 +16,7 @@ public unsafe class HookManager
     private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, UInt64 targetId, byte param7);
     private Hook<ActorControlSelfDelegate> ActorControlSelfHook;
 
-    private const string OpenInspectSig = "E8 ?? ?? ?? ?? EB ?? 44 8B C1";
+    private const string OpenInspectSig = "40 53 56 41 56 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 01";
     private delegate void OpenInspectThingy(nint inspectAgent, int something, InventoryItem* item);
     private Hook<OpenInspectThingy> OpenInspectHook;
 
@@ -56,7 +56,7 @@ public unsafe class HookManager
             if (LastSeenItemId == uint.MaxValue)
                 return;
 
-            var lostAction = item->ItemID;
+            var lostAction = item->ItemId;
             if (lostAction is < 30900 or > 33795)
             {
                 Plugin.Log.Warning($"{lostAction} exceeds the allowed item range");

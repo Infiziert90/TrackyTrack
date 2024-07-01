@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using TrackyTrack.Data;

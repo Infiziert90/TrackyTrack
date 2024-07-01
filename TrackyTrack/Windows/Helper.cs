@@ -71,7 +71,7 @@ public static class Helper
         ImGui.SameLine(avail - (33.0f * ImGuiHelpers.GlobalScale));
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
-            plugin.DrawConfigUI();
+            plugin.OpenConfigUi();
 
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Open the config menu");
@@ -144,7 +144,7 @@ public static class Helper
     public static void DrawIcon(uint iconId)
     {
         var size = IconSize * ImGuiHelpers.GlobalScale;
-        var texture = Plugin.Texture.GetIcon(iconId);
+        var texture = Plugin.Texture.GetFromGameIcon(iconId).GetWrapOrDefault();
         if (texture == null)
         {
             ImGui.Text($"Unknown icon {iconId}");
@@ -156,7 +156,7 @@ public static class Helper
 
     public static void DrawIcon(uint iconId, Vector2 size)
     {
-        var texture = Plugin.Texture.GetIcon(iconId);
+        var texture = Plugin.Texture.GetFromGameIcon(iconId).GetWrapOrDefault();
         if (texture == null)
         {
             ImGui.Text($"Unknown icon {iconId}");

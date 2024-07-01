@@ -107,7 +107,7 @@ public class TimerManager
         Plugin.UploadEntry(new Export.DesynthesisResult(desynthResult));
     }
 
-    public static readonly uint[] TrackedCoffers = { 32161, 36635, 36636, 41667 };
+    public static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];
     public void StoreCofferResult((uint ItemId, long Quantity)[] changes)
     {
         var added = changes.Where(pair => pair.Quantity > 0).ToArray();
