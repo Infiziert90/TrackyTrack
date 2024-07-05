@@ -15,6 +15,10 @@ public class TimerManager
     public uint Repaired;
     private readonly Timer RepairTimer = new(1 * 500);
 
+    public ushort NodeType;
+    public int Revisited = -1;
+    private readonly Timer RevisitTimer = new(1 * 3000);
+
     public TimerManager(Plugin plugin)
     {
         Plugin = plugin;
@@ -26,9 +30,19 @@ public class TimerManager
 
         RepairTimer.AutoReset = false;
         RepairTimer.Elapsed += (_, _) => Repaired = 0;
+
+        RevisitTimer.AutoReset = false;
+        RevisitTimer.Elapsed += StoreRevisitResult;
     }
 
     public void Dispose() { }
+
+    public void StartRevisit()
+    {
+        Plugin.TimerManager.Revisited = 0;
+        RevisitTimer.Start();
+    }
+
 
     public void StartBulk()
     {
@@ -44,6 +58,15 @@ public class TimerManager
     public void StartRepair()
     {
         RepairTimer.Start();
+    }
+
+    public void StoreRevisitResult(object? _, ElapsedEventArgs __)
+    {
+        if (Revisited == -1)
+            return;
+
+        var result = new Export.RevisitedResult(NodeType, Revisited != 0);
+        Plugin.UploadEntry(result);
     }
 
     public void RepairResult(int gilDifference)

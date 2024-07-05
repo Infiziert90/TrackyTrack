@@ -115,6 +115,21 @@ public static class Export
         }
     }
 
+    public class RevisitedResult : Upload
+    {
+        [JsonProperty("node")]
+        public ushort Node;
+
+        [JsonProperty("revisited")]
+        public bool Revisited;
+
+        public RevisitedResult(ushort node, bool revisited) : base("Gathering")
+        {
+            Node = node;
+            Revisited = revisited;
+        }
+    }
+
     public sealed class ExportMap : ClassMap<GachaLoot>
     {
         public ExportMap()

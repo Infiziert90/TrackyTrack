@@ -21,6 +21,7 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Lockboxes");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Bunny Coffers");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Desynthesis");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Gathering");
             ImGuiHelpers.ScaledIndent(-10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);
