@@ -57,13 +57,18 @@ public class FrameworkManager
     }
 
     public int Type;
+    public int NodeLevel;
     public void GatheringNodeOpening(AddonEvent addonEvent, AddonArgs addonArgs)
     {
         try
         {
             Type = -1;
             if (Plugin.ClientState.LocalPlayer is { TargetObject: not null } player)
-                Type = Sheets.GatheringPoints.GetRow(player.TargetObject.DataId)?.Type ?? -1;
+            {
+                var node = Sheets.GatheringPoints.GetRow(player.TargetObject.DataId)!;
+                Type = node.Type;
+                NodeLevel = node.GatheringPointBase.Value!.GatheringLevel;
+            }
         }
         catch (Exception e)
         {

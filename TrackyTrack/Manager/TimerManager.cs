@@ -64,7 +64,7 @@ public class TimerManager
         if (Revisited == -1)
             return;
 
-        var result = new Export.RevisitedResult(Plugin.FrameworkManager.Type, Revisited != 0);
+        var result = new Export.RevisitedResult(Plugin.FrameworkManager.Type, Plugin.FrameworkManager.NodeLevel, Revisited != 0);
         Plugin.UploadEntry(result);
     }
 

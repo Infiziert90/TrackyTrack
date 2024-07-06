@@ -121,6 +121,9 @@ public static class Export
         [JsonProperty("node")]
         public int Node;
 
+        [JsonProperty("node_level")]
+        public int NodeLevel;
+
         [JsonProperty("revisited")]
         public bool Revisited;
 
@@ -130,9 +133,10 @@ public static class Export
         [JsonProperty("perception")]
         public int Perception;
 
-        public unsafe RevisitedResult(int node, bool revisited) : base("Revisits")
+        public unsafe RevisitedResult(int node, int nodeLevel, bool revisited) : base("Revisits")
         {
             Node = node;
+            NodeLevel = nodeLevel;
             Revisited = revisited;
 
             var player = PlayerState.Instance();
