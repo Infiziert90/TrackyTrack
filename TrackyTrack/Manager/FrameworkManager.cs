@@ -56,11 +56,26 @@ public class FrameworkManager
         IsSafe = true;
     }
 
+    public int Type;
+    public void GatheringNodeOpening(AddonEvent addonEvent, AddonArgs addonArgs)
+    {
+        try
+        {
+            Type = -1;
+            if (Plugin.ClientState.LocalPlayer is { TargetObject: not null } player)
+                Type = Sheets.GatheringPoints.GetRow(player.TargetObject.DataId)?.Type ?? -1;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning(e, "Unable to read gathering node type");
+        }
+    }
+
     public void GatheringNodeClosing(AddonEvent addonEvent, AddonArgs addonArgs)
     {
         try
         {
-            CheckNode(addonArgs, 9, 0);
+            CheckNode(addonArgs, 9);
         }
         catch (Exception e)
         {
@@ -72,7 +87,7 @@ public class FrameworkManager
     {
         try
         {
-            CheckNode(addonArgs, 126, 1);
+            CheckNode(addonArgs, 126);
         }
         catch (Exception e)
         {
@@ -80,7 +95,7 @@ public class FrameworkManager
         }
     }
 
-    public unsafe void CheckNode(AddonArgs addonArgs, uint textIndex, ushort nodeValue)
+    public unsafe void CheckNode(AddonArgs addonArgs, uint textIndex)
     {
         var addon = (AtkUnitBase*)addonArgs.Addon;
         var text = addon->GetTextNodeById(textIndex);
@@ -89,7 +104,6 @@ public class FrameworkManager
         if (!successfulGathered)
             return;
 
-        Plugin.TimerManager.NodeType = nodeValue;
         if (Plugin.TimerManager.Revisited < 1)
             Plugin.TimerManager.StartRevisit();
         else

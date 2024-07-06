@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
@@ -118,15 +119,28 @@ public static class Export
     public class RevisitedResult : Upload
     {
         [JsonProperty("node")]
-        public ushort Node;
+        public int Node;
 
         [JsonProperty("revisited")]
         public bool Revisited;
 
-        public RevisitedResult(ushort node, bool revisited) : base("Gathering")
+        [JsonProperty("gathering")]
+        public int Gathering;
+
+        [JsonProperty("perception")]
+        public int Perception;
+
+        public unsafe RevisitedResult(int node, bool revisited) : base("Revisits")
         {
             Node = node;
             Revisited = revisited;
+
+            var player = PlayerState.Instance();
+            if (player == null)
+                return;
+
+            Gathering = player->Attributes[72];
+            Perception = player->Attributes[73];
         }
     }
 

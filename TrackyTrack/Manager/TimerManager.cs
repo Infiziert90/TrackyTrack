@@ -15,7 +15,6 @@ public class TimerManager
     public uint Repaired;
     private readonly Timer RepairTimer = new(1 * 500);
 
-    public ushort NodeType;
     public int Revisited = -1;
     private readonly Timer RevisitTimer = new(1 * 3000);
 
@@ -65,7 +64,7 @@ public class TimerManager
         if (Revisited == -1)
             return;
 
-        var result = new Export.RevisitedResult(NodeType, Revisited != 0);
+        var result = new Export.RevisitedResult(Plugin.FrameworkManager.Type, Revisited != 0);
         Plugin.UploadEntry(result);
     }
 

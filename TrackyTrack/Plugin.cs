@@ -95,6 +95,7 @@ namespace TrackyTrack
 
             AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
             AddonLifecycle.RegisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
+            AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Gathering", FrameworkManager.GatheringNodeOpening);
             AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Gathering", FrameworkManager.GatheringNodeClosing);
             AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GatheringMasterpiece", FrameworkManager.MasterpieceNodeClosing);
 
@@ -111,6 +112,7 @@ namespace TrackyTrack
         {
             AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
             AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
+            AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "Gathering", FrameworkManager.GatheringNodeOpening);
             AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "Gathering", FrameworkManager.GatheringNodeClosing);
             AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "GatheringMasterpiece", FrameworkManager.MasterpieceNodeClosing);
 
