@@ -65,6 +65,13 @@ public class TimerManager
             return;
 
         var result = new Export.RevisitedResult(Plugin.FrameworkManager.Type, Plugin.FrameworkManager.NodeLevel, Revisited != 0);
+
+        if (result.Gathering == 0 || result.Perception == 0)
+            return;
+
+        if (Plugin.ClientState.LocalPlayer?.Level < 91)
+            return;
+
         Plugin.UploadEntry(result);
     }
 
