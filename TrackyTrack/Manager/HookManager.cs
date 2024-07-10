@@ -1,6 +1,5 @@
 ﻿using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -14,7 +13,7 @@ public unsafe class HookManager
     private Hook<DesynthResultDelegate> DesynthResultHook;
 
     private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
-    private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, UInt64 targetId, byte param7);
+    private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, ulong targetId, byte param7);
     private Hook<ActorControlSelfDelegate> ActorControlSelfHook;
 
     private const string OpenInspectSig = "40 53 56 41 56 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 01";
