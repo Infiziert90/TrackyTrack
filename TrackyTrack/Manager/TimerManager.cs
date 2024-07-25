@@ -72,7 +72,7 @@ public class TimerManager
         if (Plugin.ClientState.LocalPlayer?.Level < 91)
             return;
 
-        Plugin.UploadEntry(result);
+        // Plugin.UploadEntry(result);
     }
 
     public void RepairResult(int gilDifference)
