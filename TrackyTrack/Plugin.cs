@@ -357,7 +357,7 @@ namespace TrackyTrack
 
         public void OpenMainUi()
         {
-            ConfigWindow.Toggle();
+            MainWindow.Toggle();
         }
 
         public void OpenConfigUi()
