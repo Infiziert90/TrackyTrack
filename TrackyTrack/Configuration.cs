@@ -19,6 +19,8 @@ namespace TrackyTrack
         public bool EnableEurekaCoffers = true;
         public bool EnableLockboxes = true;
 
+        public bool ShowUnlockCheckmark = true;
+
         public bool UploadNotification = true;
         public DateTime UploadNotificationReceived = DateTime.MaxValue;
         public bool UploadPermission = true;

@@ -1,15 +1,23 @@
 ﻿using Dalamud.Interface.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using OtterGui.Raii;
 
 namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
+    private long LastRefresh;
+    private readonly Dictionary<uint, bool> Unlocked = [];
+
     private void GachaTab()
     {
         if (ImGui.BeginTabItem("Gacha"))
         {
             if (ImGui.BeginTabBar("##GachaTabBar"))
             {
+                // Refreshes the unlocked dict every 5s
+                RefreshUnlocks();
+
                 GachaThreeZero();
 
                 GachaFourZero();
@@ -61,14 +69,17 @@ public partial class MainWindow
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
+        var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaThreeZero.Content.Count}");
-        if (ImGui.BeginTable($"##GachaThreeZeroTable", 4, ImGuiTableFlags.Sortable))
+        if (ImGui.BeginTable($"##GachaThreeZeroTable", showUnlock ? 5 : 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
             ImGui.TableSetupColumn("Item##item");
             ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
             ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
+            if (showUnlock)
+                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
 
             ImGui.TableHeadersRow();
 
@@ -88,6 +99,19 @@ public partial class MainWindow
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
+
+                if (showUnlock)
+                {
+                    Unlocked.TryGetValue(sortedEntry.Id, out var unlocked);
+
+                    ImGui.TableNextColumn();
+                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
+                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
+                    {
+                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
+                    }
+                }
+
                 ImGui.TableNextRow();
             }
 
@@ -97,11 +121,13 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
-        if (ImGui.BeginTable($"##GachaThreeMissingTable", 2))
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
+        if (ImGui.BeginTable($"##GachaThreeMissingTable", showUnlock ? 3 : 2))
         {
             ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
             ImGui.TableSetupColumn("Item##missingItem");
+            if (showUnlock)
+                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
 
             ImGui.TableHeadersRow();
 
@@ -115,6 +141,18 @@ public partial class MainWindow
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.Name);
+
+                if (showUnlock)
+                {
+                    Unlocked.TryGetValue(itemId, out var unlocked);
+
+                    ImGui.TableNextColumn();
+                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
+                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
+                    {
+                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
+                    }
+                }
 
                 ImGui.TableNextRow();
             }
@@ -164,14 +202,17 @@ public partial class MainWindow
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
+        var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaFourZero.Content.Count}");
-        if (ImGui.BeginTable($"##GachaFourZeroTable", 4, ImGuiTableFlags.Sortable))
+        if (ImGui.BeginTable($"##GachaFourZeroTable", showUnlock ? 5 : 4, ImGuiTableFlags.Sortable))
         {
             ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
             ImGui.TableSetupColumn("Item##item");
             ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
             ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
+            if (showUnlock)
+                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
 
             ImGui.TableHeadersRow();
 
@@ -191,6 +232,19 @@ public partial class MainWindow
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
+
+                if (showUnlock)
+                {
+                    Unlocked.TryGetValue(sortedEntry.Id, out var unlocked);
+
+                    ImGui.TableNextColumn();
+                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
+                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
+                    {
+                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
+                    }
+                }
+
                 ImGui.TableNextRow();
             }
 
@@ -200,11 +254,13 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
-        if (ImGui.BeginTable($"##GachaFourMissingTable", 2))
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
+        if (ImGui.BeginTable("##GachaFourMissingTable", showUnlock ? 3 : 2))
         {
             ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
             ImGui.TableSetupColumn("Item##missingItem");
+            if (showUnlock)
+                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
 
             ImGui.TableHeadersRow();
 
@@ -218,6 +274,18 @@ public partial class MainWindow
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.Name);
+
+                if (showUnlock)
+                {
+                    Unlocked.TryGetValue(itemId, out var unlocked);
+
+                    ImGui.TableNextColumn();
+                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
+                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
+                    {
+                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
+                    }
+                }
 
                 ImGui.TableNextRow();
             }
@@ -324,5 +392,38 @@ public partial class MainWindow
             ImGui.EndTable();
         }
         ImGui.EndTabItem();
+    }
+
+    private void RefreshUnlocks()
+    {
+        if (Environment.TickCount64 < LastRefresh)
+            return;
+
+        LastRefresh = Environment.TickCount64 + 5000; // 5s
+
+        foreach (var item in Data.GachaThreeZero.Content)
+            Unlocked[item] = CheckUnlockStatus(item);
+
+        foreach (var item in Data.GachaFourZero.Content)
+            Unlocked[item] = CheckUnlockStatus(item);
+    }
+
+    private unsafe bool CheckUnlockStatus(uint id)
+    {
+        var item = Sheets.ItemSheet.GetRow(id);
+        if (item == null || item.ItemAction.Row == 0)
+            return false;
+
+        var action = item.ItemAction.Value;
+        if (action == null)
+            return false;
+
+        var instance = UIState.Instance();
+        return action.Type switch
+        {
+            1322 => instance->PlayerState.IsMountUnlocked(action.Data[0]),
+            853 => instance->IsCompanionUnlocked(action.Data[0]),
+            _ => false
+        };
     }
 }

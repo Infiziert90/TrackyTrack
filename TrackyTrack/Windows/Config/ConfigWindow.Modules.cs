@@ -39,13 +39,20 @@ public partial class ConfigWindow
             ImGui.Unindent(10.0f);
 
             ImGuiHelpers.ScaledDummy(5.0f);
-            ImGui.TextColored(ImGuiColors.DalamudViolet, $"Advanced:");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Advanced:");
             ImGui.Indent(10.0f);
             changed |= ImGui.Checkbox("Bulk Desynthesis Support", ref Configuration.EnableBulkSupport);
             changed |= ImGui.Checkbox("Venture Coffer Tracking", ref Configuration.EnableVentureCoffers);
             changed |= ImGui.Checkbox("Gacha Coffer Tracking", ref Configuration.EnableGachaCoffers);
             changed |= ImGui.Checkbox("Bunny Coffer Tracking", ref Configuration.EnableEurekaCoffers);
             changed |= ImGui.Checkbox("Lockbox Tracking", ref Configuration.EnableLockboxes);
+            ImGui.Unindent(10.0f);
+
+            ImGuiHelpers.ScaledDummy(5.0f);
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Optional:");
+            ImGui.Indent(10.0f);
+            changed |= ImGui.Checkbox("Show Unlocked Checkmark", ref Configuration.ShowUnlockCheckmark);
+            ImGuiComponents.HelpMarker("Only for Gacha 3.0 and Gacha 4.0.");
             ImGui.Unindent(10.0f);
 
             if (changed)
