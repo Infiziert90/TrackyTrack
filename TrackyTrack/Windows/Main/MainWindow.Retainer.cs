@@ -2,6 +2,7 @@
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Lumina.Excel.GeneratedSheets;
 using TrackyTrack.Data;
 
@@ -23,39 +24,39 @@ public partial class MainWindow
     private double TotalSeals;
     private double TotalFCPoints;
 
+    // limits
+    private readonly long DateLimit = DateTime.Now.AddMonths(-1).Ticks;
+
     private void CofferTab()
     {
-        if (ImGui.BeginTabItem("Retainer"))
+        using var tabItem = ImRaii.TabItem("Retainer");
+        if (!tabItem.Success)
+            return;
+
+        using var tabBar = ImRaii.TabBar("##RetainerTabBar");
+        if (!tabBar.Success)
+            return;
+
+        var characters = Plugin.CharacterStorage.Values.ToArray();
+        if (characters.Length == 0)
         {
-            if (ImGui.BeginTabBar("##RetainerTabBar"))
-            {
-                var characters = Plugin.CharacterStorage.Values.ToArray();
-                if (!characters.Any())
-                {
-                    Helper.NoVentureCofferData();
-
-                    ImGui.EndTabBar();
-                    ImGui.EndTabItem();
-                    return;
-                }
-
-                RetainerStats(characters);
-
-                RetainerHistory(characters);
-
-                VentureCoffers(characters);
-
-                RetainerAdvanced();
-
-                ImGui.EndTabBar();
-            }
-            ImGui.EndTabItem();
+            Helper.NoVentureCofferData();
+            return;
         }
+
+        RetainerStats(characters);
+
+        RetainerHistory(characters);
+
+        VentureCoffers(characters);
+
+        RetainerAdvanced();
     }
 
     private void RetainerStats(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Stats"))
+        using var tabItem = ImRaii.TabItem("Stats");
+        if (!tabItem.Success)
             return;
 
         var history = characters.SelectMany(c => c.VentureStorage.History.Values).ToArray();
@@ -87,100 +88,98 @@ public partial class MainWindow
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
+
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Types:");
-        if (ImGui.BeginTable($"##TotalStatsTable", 2))
+        using var table = ImRaii.Table("##TotalStatsTable", 2);
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##stat", 0, 0.6f);
+        ImGui.TableSetupColumn("##amount");
+
+        ImGui.Indent(10.0f);
+        ImGui.TableNextColumn();
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Normal");
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted($"{totalNormal:N0} time{(totalNormal > 1 ? "s" : "")}");
+        ImGui.TableNextColumn();
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Quick");
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted($"{totalQuick:N0} time{(totalQuick > 1 ? "s" : "")}");
+        ImGui.Unindent(10.0f);
+
+        if (TotalQuick > 0)
         {
-            ImGui.TableSetupColumn("##stat", 0, 0.6f);
-            ImGui.TableSetupColumn("##amount");
-
+            ImGui.TableNextColumn();
+            ImGuiHelpers.ScaledDummy(5.0f);
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Average:");
             ImGui.Indent(10.0f);
+
+            ImGui.TableNextRow();
+
+            var avgLvL = TotalLvl / TotalQuick;
             ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Normal");
+            ImGui.TextColored(ImGuiColors.HealerGreen, "iLvL");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{totalNormal:N0} time{(totalNormal > 1 ? "s" : "")}");
+            ImGui.TextUnformatted($"{avgLvL:F2}");
+
+            var avgFCPoints = TotalFCPoints / TotalQuick;
             ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Quick");
+            ImGui.TextColored(ImGuiColors.HealerGreen, "FC Points");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{totalQuick:N0} time{(totalQuick > 1 ? "s" : "")}");
+            ImGui.TextUnformatted($"{avgFCPoints:F2}");
+
+            var avgSeals = TotalSeals / TotalQuick;
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "GC Seals");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{avgSeals:F2}");
             ImGui.Unindent(10.0f);
-
-            if (TotalQuick > 0)
-            {
-                ImGui.TableNextColumn();
-                ImGuiHelpers.ScaledDummy(5.0f);
-                ImGui.TextColored(ImGuiColors.DalamudViolet, "Average:");
-                ImGui.Indent(10.0f);
-
-                ImGui.TableNextRow();
-
-                var avgLvL = TotalLvl / TotalQuick;
-                ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "iLvL");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{avgLvL:F2}");
-
-                var avgFCPoints = TotalFCPoints / TotalQuick;
-                ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "FC Points");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{avgFCPoints:F2}");
-
-                var avgSeals = TotalSeals / TotalQuick;
-                ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "GC Seals");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{avgSeals:F2}");
-                ImGui.Unindent(10.0f);
-            }
-
-            if (CofferVentures > 0)
-            {
-                ImGui.TableNextColumn();
-                ImGuiHelpers.ScaledDummy(5.0f);
-                ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Coffers:");
-                ImGui.Indent(10.0f);
-
-                ImGui.TableNextRow();
-
-                ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Obtained");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{TotalCoffers:N0}");
-
-                ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Valid");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{CofferVentures:N0} venture{(CofferVentures > 1 ? "s" : "")}");
-
-                ImGui.TableNextColumn();
-                var width = ImGui.CalcTextSize("10000").X * 1.2f;
-                var avg = (TotalCoffers/ (double) CofferVentures) * RetainerAvgInput;
-                ImGui.AlignTextToFramePadding();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Chance in");
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(width);
-                ImGui.InputInt("##AvgInput", ref RetainerAvgInput, 0);
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{avg:F2} coffer{(avg > 1 ? "s" : "")}");
-                ImGui.Unindent(10.0f);
-            }
-
-            ImGui.EndTable();
         }
-        ImGui.EndTabItem();
+
+        if (CofferVentures > 0)
+        {
+            ImGui.TableNextColumn();
+            ImGuiHelpers.ScaledDummy(5.0f);
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Coffers:");
+            ImGui.Indent(10.0f);
+
+            ImGui.TableNextRow();
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Obtained");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{TotalCoffers:N0}");
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Valid");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{CofferVentures:N0} venture{(CofferVentures > 1 ? "s" : "")}");
+
+            ImGui.TableNextColumn();
+            var width = ImGui.CalcTextSize("10000").X * 1.2f;
+            var avg = (TotalCoffers/ (double) CofferVentures) * RetainerAvgInput;
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Chance in");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(width);
+            ImGui.InputInt("##AvgInput", ref RetainerAvgInput, 0);
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{avg:F2} coffer{(avg > 1 ? "s" : "")}");
+            ImGui.Unindent(10.0f);
+        }
     }
 
     private void RetainerHistory(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("History"))
+        using var tabItem = ImRaii.TabItem("History");
+        if (!tabItem.Success)
             return;
 
-        characters = characters.Where(c => c.VentureStorage.History.Any()).ToArray();
-        if (!characters.Any())
+        characters = characters.Where(c => c.VentureStorage.History.Count != 0).ToArray();
+        if (characters.Length == 0)
         {
             Helper.NoRetainerData();
-
-            ImGui.EndTabItem();
             return;
         }
 
@@ -192,9 +191,8 @@ public partial class MainWindow
             RetainerSelectedCharacter = selectedCharacter;
             RetainerSelectedHistory = 0;
         }
-
-        var selectedChar = characters[RetainerSelectedCharacter];
-        var history = selectedChar.VentureStorage.History.Reverse().Select(pair => $"{pair.Key}").ToArray();
+        var reversedHistory = characters[RetainerSelectedCharacter].VentureStorage.History.Reverse().ToArray();
+        var history = reversedHistory.TakeWhile(pair => pair.Key.Ticks > DateLimit).Select(pair => $"{pair.Key}").ToArray();
 
         ImGui.Combo("##voyageSelection", ref RetainerSelectedHistory, history, history.Length);
         Helper.DrawArrows(ref RetainerSelectedHistory, history.Length);
@@ -203,15 +201,15 @@ public partial class MainWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        var ventureResult = selectedChar.VentureStorage.History.Reverse().ToArray()[RetainerSelectedHistory].Value;
-
-        if (ImGui.BeginTable($"##HistoryTable", 3))
+        var ventureResult = reversedHistory[RetainerSelectedHistory].Value;
+        using var table = ImRaii.Table("##HistoryTable", 3);
+        if (table.Success)
         {
             ImGui.TableSetupColumn("##icon", 0, 0.2f);
             ImGui.TableSetupColumn("##item");
             ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
-            ImGui.Indent(10.0f);
+            using var indent = ImRaii.PushIndent(10.0f);
             foreach (var ventureItem in ventureResult.Items)
             {
                 if (!ventureItem.Valid)
@@ -230,23 +228,19 @@ public partial class MainWindow
                 ImGui.TextUnformatted($"x{ventureItem.Count}");
                 ImGui.TableNextRow();
             }
-            ImGui.Unindent(10.0f);
-
-            ImGui.EndTable();
         }
-        ImGui.EndTabItem();
     }
 
     private void VentureCoffers(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Venture Coffers"))
+        using var tabItem = ImRaii.TabItem("Venture Coffers");
+        if (!tabItem.Success)
             return;
 
-        var characterCoffers = characters.Where(c => c.Coffer.Opened > 0).ToList();
-        if (!characterCoffers.Any())
+        var characterCoffers = characters.Where(c => c.Coffer.Opened > 0).ToArray();
+        if (characterCoffers.Length == 0)
         {
             Helper.NoVentureCofferData();
-            ImGui.EndTabItem();
             return;
         }
 
@@ -270,54 +264,55 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {VentureCoffer.Content.Count}");
-        if (ImGui.BeginTable($"##HistoryTable", 4, ImGuiTableFlags.Sortable))
+
+        using (var table = ImRaii.Table("##HistoryTable", 4, ImGuiTableFlags.Sortable))
         {
-            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
-            ImGui.TableSetupColumn("Item##item");
-            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
+            if (table.Success)
             {
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(sortedEntry.Icon);
-                ImGui.TableNextColumn();
 
-                ImGui.TextUnformatted(sortedEntry.Name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(sortedEntry.Name);
+                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
+                ImGui.TableSetupColumn("Item##item");
+                ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
+                ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
 
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{sortedEntry.Count}");
+                ImGui.TableHeadersRow();
 
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-                ImGui.TableNextRow();
+                ImGui.Indent(10.0f);
+                foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
+                {
+                    ImGui.TableNextColumn();
+                    Helper.DrawIcon(sortedEntry.Icon);
+                    ImGui.TableNextColumn();
+
+                    ImGui.TextUnformatted(sortedEntry.Name);
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip(sortedEntry.Name);
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"x{sortedEntry.Count}");
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
+                    ImGui.TableNextRow();
+                }
+
+                ImGui.Unindent(10.0f);
             }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
         }
 
         ImGuiHelpers.ScaledDummy(10.0f);
         if (ImGui.Button("Export to clipboard"))
             Export.ExportToClipboard(dict);
-
-        ImGui.EndTabItem();
     }
 
     private void RetainerAdvanced()
     {
-        if (!ImGui.BeginTabItem("Advanced"))
+        using var tabItem = ImRaii.TabItem("Advanced");
+        if (!tabItem.Success)
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
-
-        Helper.WrappedError("This interface is for resetting your retainer history." +
-                            "\nBe careful and read the tooltips before doing anything.");
+        Helper.WrappedError("This interface is for resetting your retainer history.\nBe careful and read the tooltips before doing anything.");
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.Separator();
@@ -361,10 +356,7 @@ public partial class MainWindow
         else
         {
             ImGuiComponents.DisabledButton("Reset All Characters");
-            Helper.WrappedError("Detected multiple FFXIV instances." +
-                                "\nPlease close all other instances of the game.");
+            Helper.WrappedError("Detected multiple FFXIV instances.\nPlease close all other instances of the game.");
         }
-
-        ImGui.EndTabItem();
     }
 }
