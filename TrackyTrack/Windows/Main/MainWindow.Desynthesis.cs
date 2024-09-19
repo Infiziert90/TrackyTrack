@@ -82,7 +82,7 @@ public partial class MainWindow
             return;
         }
 
-        // Fill history if needed
+        // Fills history cache if total has changed
         FillHistory(characters);
 
         DesynthesisStats();
@@ -265,7 +265,7 @@ public partial class MainWindow
                 }
 
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as reward for search");
+                    ImGui.SetTooltip($"{name}\nClick to copy and set as reward for search");
             })
             .AddColumn("##amount", 0, 0.2f)
             .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
@@ -298,9 +298,12 @@ public partial class MainWindow
         ImGui.TableSetupColumn("##item");
         ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
+        var items = RewardHistory.Where(pair => pair.Key is > 0 and < 100_000).OrderBy(pair => pair.Key).ToArray();
         using var indent = ImRaii.PushIndent(10.0f);
-        foreach (var (itemId, count) in RewardHistory.Where(pair => pair.Key is > 0 and < 100_000).OrderBy(pair => pair.Key))
+        using var clipper = new ListClipper(items.Length, itemHeight: Helper.IconSize.Y * ImGuiHelpers.GlobalScale);
+        foreach (var i in clipper.Rows)
         {
+            var (itemId, count) = items[i];
             var item = ItemSheet.GetRow(itemId)!;
 
             ImGui.TableNextColumn();
@@ -316,7 +319,7 @@ public partial class MainWindow
             }
 
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as reward for search");
+                ImGui.SetTooltip($"{name}\nClick to copy and set as reward for search");
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{count}");
@@ -351,10 +354,13 @@ public partial class MainWindow
         ImGui.TableSetupColumn("##item");
         ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
+        var items = SourceHistory.OrderByDescending(pair => pair.Value).ToArray();
         using var indent = ImRaii.PushIndent(10.0f);
-        foreach (var (source, count) in SourceHistory.OrderByDescending(pair => pair.Value))
+        using var clipper = new ListClipper(items.Length, itemHeight: Helper.IconSize.Y * ImGuiHelpers.GlobalScale);
+        foreach (var i in clipper.Rows)
         {
-            var item = ItemSheet.GetRow(source)!;
+            var (itemId, count) = items[i];
+            var item = ItemSheet.GetRow(itemId)!;
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -369,7 +375,7 @@ public partial class MainWindow
             }
 
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as source for search");
+                ImGui.SetTooltip($"{name}\nClick to copy and set as source for search");
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{count:N0}");
@@ -617,6 +623,10 @@ public partial class MainWindow
 
                     foreach (var pair in allCharacters.SelectMany(c => c.Storage.Total))
                     {
+                        // Old corruption
+                        if (pair.Value == 0)
+                            continue;
+
                         if (pair.Key > HighestValidID)
                             continue;
 

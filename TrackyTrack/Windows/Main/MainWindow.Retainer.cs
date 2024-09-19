@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
@@ -24,6 +26,10 @@ public partial class MainWindow
     private double TotalSeals;
     private double TotalFCPoints;
 
+    private bool RetainerTaskRunning;
+    private int LastRetainerHistoryCount;
+    private readonly ConcurrentDictionary<uint, uint> AllItemsHistory = new();
+
     // limits
     private readonly long DateLimit = DateTime.Now.AddMonths(-1).Ticks;
 
@@ -44,7 +50,12 @@ public partial class MainWindow
             return;
         }
 
+        // Fills history cache if total has changed
+        FillRetainerItemHistory(characters);
+
         RetainerStats(characters);
+
+        RetainerAllOverview();
 
         RetainerHistory(characters);
 
@@ -167,6 +178,58 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{avg:F2} coffer{(avg > 1 ? "s" : "")}");
             ImGui.Unindent(10.0f);
+        }
+    }
+
+    private void RetainerAllOverview()
+    {
+        using var tabItem = ImRaii.TabItem("All");
+        if (!tabItem.Success)
+            return;
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+
+        if (RetainerTaskRunning)
+        {
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Rebuilding Cache...");
+            return;
+        }
+
+        using var child = ImRaii.Child("ItemTableChild");
+        if (!child.Success)
+            return;
+
+        using var table = ImRaii.Table("##RetainerAllTable", 3);
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
+        ImGui.TableSetupColumn("##item");
+        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+
+        var items = AllItemsHistory.OrderByDescending(pair => pair.Value).ToArray();
+        using var indent = ImRaii.PushIndent(10.0f);
+        using var clipper = new ListClipper(items.Length, itemHeight: Helper.IconSize.Y * ImGuiHelpers.GlobalScale);
+        foreach (var i in clipper.Rows)
+        {
+            var (itemId, count) = items[i];
+            var item = ItemSheet.GetRow(itemId)!;
+
+            ImGui.TableNextColumn();
+            Helper.DrawIcon(item.Icon);
+
+            ImGui.TableNextColumn();
+            var name = Utils.ToStr(item.Name);
+            if (ImGui.Selectable(name))
+                ImGui.SetClipboardText(name);
+
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip($"{name}\nClick to copy");
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{count:N0}");
+
+            ImGui.TableNextRow();
         }
     }
 
@@ -363,6 +426,47 @@ public partial class MainWindow
         {
             ImGuiComponents.DisabledButton("Reset All Characters");
             Helper.WrappedError("Detected multiple FFXIV instances.\nPlease close all other instances of the game.");
+        }
+    }
+
+    private void FillRetainerItemHistory(IEnumerable<CharacterConfiguration> characters)
+    {
+        if (RetainerTaskRunning)
+            return;
+
+        var total = characters.Sum(c => c.VentureStorage.History.Count);
+        if (LastRetainerHistoryCount != total)
+        {
+            // We set true outside so that all follow-up functions know this is running
+            // In rare cases the follow-up function can run before the new thread starts to execute
+            RetainerTaskRunning = true;
+            LastRetainerHistoryCount = total;
+            AllItemsHistory.Clear();
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    foreach (var pair in Plugin.CharacterStorage.Values.Where(c => c.VentureStorage.History.Count > 0).SelectMany(c => c.VentureStorage.History))
+                    {
+                        foreach (var item in pair.Value.Items)
+                        {
+                            // Old corruption
+                            if (item.Count == 0)
+                                continue;
+
+                            if (!AllItemsHistory.TryAdd(item.Item, (uint) item.Count))
+                                AllItemsHistory[item.Item] += (uint) item.Count;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.Error(e, "Error while building retainer cache");
+                }
+
+                RetainerTaskRunning = false;
+            });
         }
     }
 }

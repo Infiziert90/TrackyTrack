@@ -82,8 +82,10 @@ namespace TrackyTrack.Windows
                 foreach (var i in clipper.Rows)
                 {
                     var row = (T)FilteredSearchSheet[i];
+
                     ImGui.PushID(id);
-                    if (!drawSelectable(row, options.IsRowSelected(row))) continue;
+                    if (!drawSelectable(row, options.IsRowSelected(row)))
+                        continue;
                     selectedRow = row.RowId;
                     ret = true;
                     ImGui.PopID();
@@ -120,7 +122,7 @@ namespace TrackyTrack.Windows
                 {
                     if (Clipper.ItemsHeight > 0 && FirstRow < 0)
                         FirstRow = (int)(ImGui.GetScrollY() / Clipper.ItemsHeight);
-                    for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++)
+                    for (var i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++)
                     {
                         CurrentRow = i;
                         yield return TwoDimensional ? i : i * columns;
@@ -134,7 +136,7 @@ namespace TrackyTrack.Windows
             get
             {
                 var cols = (ItemRemainder == 0 || rows != DisplayEnd || CurrentRow != DisplayEnd - 1) ? columns : ItemRemainder;
-                for (int j = 0; j < cols; j++)
+                for (var j = 0; j < cols; j++)
                     yield return j;
             }
         }
