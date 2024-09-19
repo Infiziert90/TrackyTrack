@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using OtterGui.Raii;
 
 namespace TrackyTrack.Windows.Main;
 
@@ -11,43 +11,41 @@ public partial class MainWindow
 
     private void GachaTab()
     {
-        if (ImGui.BeginTabItem("Gacha"))
-        {
-            if (ImGui.BeginTabBar("##GachaTabBar"))
-            {
-                // Refreshes the unlocked dict every 5s
-                RefreshUnlocks();
+        using var tabItem = ImRaii.TabItem("Gacha");
+        if (!tabItem.Success)
+            return;
 
-                GachaThreeZero();
+        using var tabBar = ImRaii.TabBar("##GachaTabBar");
+        if (!tabBar.Success)
+            return;
 
-                GachaFourZero();
+        // Refreshes the unlocked dict every 5s
+        RefreshUnlocks();
 
-                Sanctuary();
+        GachaThreeZero();
 
-                ImGui.EndTabBar();
-            }
-            ImGui.EndTabItem();
-        }
+        GachaFourZero();
+
+        Sanctuary();
     }
 
     private void GachaThreeZero()
     {
-        if (!ImGui.BeginTabItem("Gacha 3.0"))
+        using var tabItem = ImRaii.TabItem("Gacha 3.0");
+        if (!tabItem.Success)
             return;
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (!characters.Any())
+        if (characters.Length == 0)
         {
             Helper.NoVentureCofferData();
-            ImGui.EndTabItem();
             return;
         }
 
         var characterGacha = characters.Where(c => c.GachaThreeZero.Opened > 0).ToList();
-        if (!characterGacha.Any())
+        if (characterGacha.Count == 0)
         {
             Helper.NoGachaData("Grand Company 3.0");
-            ImGui.EndTabItem();
             return;
         }
 
@@ -72,115 +70,49 @@ public partial class MainWindow
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaThreeZero.Content.Count}");
-        if (ImGui.BeginTable($"##GachaThreeZeroTable", showUnlock ? 5 : 4, ImGuiTableFlags.Sortable))
-        {
-            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
-            ImGui.TableSetupColumn("Item##item");
-            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
-            if (showUnlock)
-                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
-            {
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(sortedEntry.Icon);
-                ImGui.TableNextColumn();
-
-                ImGui.TextUnformatted(sortedEntry.Name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(sortedEntry.Name);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{sortedEntry.Count}");
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-
-                if (showUnlock)
-                {
-                    Unlocked.TryGetValue(sortedEntry.Id, out var unlocked);
-
-                    ImGui.TableNextColumn();
-                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
-                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
-                    {
-                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
-                    }
-                }
-
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
+        new SortableTable("##GachaTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
+            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(entry.Icon))
+            .AddColumn("Item##item")
+            .AddAction(entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", initWidth: 0.2f)
+            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
+            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
+            .AddColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), showUnlock)
+            .Draw();
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
-        if (ImGui.BeginTable($"##GachaThreeMissingTable", showUnlock ? 3 : 2))
-        {
-            ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
-            ImGui.TableSetupColumn("Item##missingItem");
-            if (showUnlock)
-                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var itemId in Data.GachaThreeZero.Content.Where(i => dict[i] == 0))
-            {
-                var item = ItemSheet.GetRow(itemId)!;
-
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(item.Icon);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(item.Name);
-
-                if (showUnlock)
-                {
-                    Unlocked.TryGetValue(itemId, out var unlocked);
-
-                    ImGui.TableNextColumn();
-                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
-                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
-                    {
-                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
-                    }
-                }
-
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
-        ImGui.EndTabItem();
+        new SimpleTable<uint>("##GachaMissingTable", Data.GachaThreeZero.Content.Where(i => dict[i] == 0), withIndent: 10.0f)
+            .AddColumn("##missingItemIcon", 0, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon))
+            .AddColumn("Item##missingItem")
+            .AddAction(entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .AddColumn("##missingUnlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), showUnlock)
+            .Draw();
     }
 
     private void GachaFourZero()
     {
-        if (!ImGui.BeginTabItem("Gacha 4.0"))
+        using var tabItem = ImRaii.TabItem("Gacha 4.0");
+        if (!tabItem.Success)
             return;
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (!characters.Any())
+        if (characters.Length == 0)
         {
             Helper.NoVentureCofferData();
-            ImGui.EndTabItem();
             return;
         }
 
         var characterGacha = characters.Where(c => c.GachaFourZero.Opened > 0).ToList();
-        if (!characterGacha.Any())
+        if (characterGacha.Count == 0)
         {
             Helper.NoGachaData("Grand Company 4.0");
-            ImGui.EndTabItem();
             return;
         }
 
@@ -205,107 +137,42 @@ public partial class MainWindow
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaFourZero.Content.Count}");
-        if (ImGui.BeginTable($"##GachaFourZeroTable", showUnlock ? 5 : 4, ImGuiTableFlags.Sortable))
-        {
-            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
-            ImGui.TableSetupColumn("Item##item");
-            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
-            if (showUnlock)
-                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
-            {
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(sortedEntry.Icon);
-                ImGui.TableNextColumn();
-
-                ImGui.TextUnformatted(sortedEntry.Name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(sortedEntry.Name);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{sortedEntry.Count}");
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-
-                if (showUnlock)
-                {
-                    Unlocked.TryGetValue(sortedEntry.Id, out var unlocked);
-
-                    ImGui.TableNextColumn();
-                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
-                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
-                    {
-                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
-                    }
-                }
-
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
+        new SortableTable("##GachaTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
+            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(entry.Icon))
+            .AddColumn("Item##item")
+            .AddAction(entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", initWidth: 0.2f)
+            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
+            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
+            .AddColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), showUnlock)
+            .Draw();
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
-        if (ImGui.BeginTable("##GachaFourMissingTable", showUnlock ? 3 : 2))
-        {
-            ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
-            ImGui.TableSetupColumn("Item##missingItem");
-            if (showUnlock)
-                ImGui.TableSetupColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var itemId in Data.GachaFourZero.Content.Where(i => dict[i] == 0))
-            {
-                var item = ItemSheet.GetRow(itemId)!;
-
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(item.Icon);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(item.Name);
-
-                if (showUnlock)
-                {
-                    Unlocked.TryGetValue(itemId, out var unlocked);
-
-                    ImGui.TableNextColumn();
-                    using (Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
-                    using (ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed))
-                    {
-                        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
-                    }
-                }
-
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
-        ImGui.EndTabItem();
+        new SimpleTable<uint>("##GachaMissingTable", Data.GachaFourZero.Content.Where(i => dict[i] == 0), withIndent: 10.0f)
+            .AddColumn("##missingItemIcon", 0, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon))
+            .AddColumn("Item##missingItem")
+            .AddAction(entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .AddColumn("##missingUnlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), showUnlock)
+            .Draw();
     }
 
     private void Sanctuary()
     {
-        if (!ImGui.BeginTabItem("Sanctuary"))
+        using var tabItem = ImRaii.TabItem("Sanctuary");
+        if (!tabItem.Success)
             return;
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (!characters.Any())
+        if (characters.Length == 0)
         {
             Helper.NoVentureCofferData();
-            ImGui.EndTabItem();
             return;
         }
 
@@ -331,67 +198,26 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Sanctuary.Content.Count} items");
-        if (ImGui.BeginTable($"##SanctuaryTable", 4, ImGuiTableFlags.Sortable))
-        {
-            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
-            ImGui.TableSetupColumn("Item##item");
-            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
-            {
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(sortedEntry.Icon);
-                ImGui.TableNextColumn();
-
-                ImGui.TextUnformatted(sortedEntry.Name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(sortedEntry.Name);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{sortedEntry.Count}");
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
+        new SortableTable("##GachaTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
+            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(entry.Icon))
+            .AddColumn("Item##item")
+            .AddAction(entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", initWidth: 0.2f)
+            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
+            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
+            .Draw();
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Missing:");
-        if (ImGui.BeginTable($"##SanctuaryMissingTable", 2))
-        {
-            ImGui.TableSetupColumn("##missingItemIcon", 0, 0.17f);
-            ImGui.TableSetupColumn("Item##missingItem");
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var itemId in Data.Sanctuary.Content.Where(i => dict[i] == 0))
-            {
-                var item = ItemSheet.GetRow(itemId)!;
-
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(item.Icon);
-
-                ImGui.TableNextColumn();
-                if (ImGui.Selectable(Utils.ToStr(item.Name)))
-                    ImGui.SetClipboardText(Utils.ToStr(item.Name));
-
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
-        ImGui.EndTabItem();
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
+        new SimpleTable<uint>("##GachaMissingTable", Data.Sanctuary.Content.Where(i => dict[i] == 0), withIndent: 10.0f)
+            .AddColumn("##missingItemIcon", 0, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon))
+            .AddColumn("Item##missingItem")
+            .AddAction(entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .Draw();
     }
 
     private void RefreshUnlocks()
@@ -408,7 +234,7 @@ public partial class MainWindow
             Unlocked[item] = CheckUnlockStatus(item);
     }
 
-    private unsafe bool CheckUnlockStatus(uint id)
+    private static unsafe bool CheckUnlockStatus(uint id)
     {
         var item = Sheets.ItemSheet.GetRow(id);
         if (item == null || item.ItemAction.Row == 0)

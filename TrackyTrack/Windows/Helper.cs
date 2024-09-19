@@ -1,5 +1,6 @@
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 
 using static OtterGui.Widgets.ToggleButton;
 
@@ -27,6 +28,12 @@ public static class Helper
         WrappedError("No data stored for retainers\nPlease complete a venture with your retainer.");
     }
 
+    public static void OldHistory()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("All existing data is older than 30 days\nPlease complete a venture with your retainer.");
+    }
+
     public static void NoVentureCofferData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
@@ -52,9 +59,8 @@ public static class Helper
 
     public static void WrappedText(Vector4 color, string text)
     {
-        ImGui.PushStyleColor(ImGuiCol.Text, color);
+        using var pushedColor = ImRaii.PushColor(ImGuiCol.Text, color);
         ImGui.TextWrapped(text);
-        ImGui.PopStyleColor();
     }
 
     public static void MainMenuIcon(Plugin plugin)
@@ -81,23 +87,31 @@ public static class Helper
     {
         var changed = false;
 
-        ImGui.SameLine();
-        if (selected == 0) ImGui.BeginDisabled();
-        if (ImGuiComponents.IconButton(id, FontAwesomeIcon.ArrowLeft))
-        {
-            selected--;
-            changed = true;
-        }
-        if (selected == 0) ImGui.EndDisabled();
+        // Prevents changing values from triggering EndDisable
+        var isMin = selected == 0;
+        var isMax = selected + 1 == length;
 
         ImGui.SameLine();
-        if (selected + 1 == length) ImGui.BeginDisabled();
-        if (ImGuiComponents.IconButton(id + 1, FontAwesomeIcon.ArrowRight))
+
+        using (ImRaii.Disabled(isMin))
         {
-            selected++;
-            changed = true;
+            if (ImGuiComponents.IconButton(id, FontAwesomeIcon.ArrowLeft))
+            {
+                selected--;
+                changed = true;
+            }
         }
-        if (selected + 1 == length) ImGui.EndDisabled();
+
+        ImGui.SameLine();
+
+        using (ImRaii.Disabled(isMax))
+        {
+            if (ImGuiComponents.IconButton(id + 1, FontAwesomeIcon.ArrowRight))
+            {
+                selected++;
+                changed = true;
+            }
+        }
 
         return changed;
     }
@@ -129,9 +143,9 @@ public static class Helper
     {
         indent *= ImGuiHelpers.GlobalScale;
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize(text).X + indent);
-        ImGui.PushStyleColor(ImGuiCol.Text, color);
+
+        using var textColor = ImRaii.PushColor(ImGuiCol.Text, color);
         ImGui.TextUnformatted(text);
-        ImGui.PopStyleColor();
     }
 
     public static void CenterText(string text, float indent = 0.0f)
@@ -141,8 +155,10 @@ public static class Helper
         ImGui.TextUnformatted(text);
     }
 
-    public static void DrawIcon(uint iconId)
+    public static void DrawIcon(uint iconId, float withIndent = 0.0f)
     {
+        using var indent = ImRaii.PushIndent(withIndent, condition: withIndent > 0.0f);
+
         var size = IconSize * ImGuiHelpers.GlobalScale;
         var texture = Plugin.Texture.GetFromGameIcon(iconId).GetWrapOrDefault();
         if (texture == null)
@@ -154,8 +170,10 @@ public static class Helper
         ImGui.Image(texture.ImGuiHandle, size);
     }
 
-    public static void DrawIcon(uint iconId, Vector2 size)
+    public static void DrawIcon(uint iconId, Vector2 size, float withIndent = 0.0f)
     {
+        using var indent = ImRaii.PushIndent(withIndent, condition: withIndent > 0.0f);
+
         var texture = Plugin.Texture.GetFromGameIcon(iconId).GetWrapOrDefault();
         if (texture == null)
         {
@@ -166,27 +184,29 @@ public static class Helper
         ImGui.Image(texture.ImGuiHandle, size);
     }
 
-    public static void ToggleButton(ref int selected, params string[] labels)
+    public static void HoverableText(string text)
     {
-        var width = 0.0f;
-        foreach (var label in labels)
-            width = Math.Max(width, ImGui.CalcTextSize(label).X);
+        ImGui.TextUnformatted(text);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(text);
+    }
 
-        var padding = 50.0f * ImGuiHelpers.GlobalScale;
-        var size = new Vector2(width + padding, 0.0f);
+    public static void SelectableClipboardText(string name, float withIndent = 0.0f)
+    {
+        using var indent = ImRaii.PushIndent(withIndent, condition: withIndent > 0.0f);
+        if (ImGui.Selectable(name))
+            ImGui.SetClipboardText(name);
 
-        var pos = ImGui.GetCursorPos();
-        for (var i = 0; i < labels.Length; i++)
-        {
-            var flags = i == 0 ? ImDrawFlags.RoundCornersLeft : i == labels.Length - 1 ? ImDrawFlags.RoundCornersRight : ImDrawFlags.RoundCornersNone;
-            if (i > 0)
-            {
-                ImGui.SetCursorPos(pos with { X = pos.X + width + padding });
-                pos = ImGui.GetCursorPos();
-            }
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Click to copy");
+    }
 
-            ActivatedButton(labels[i], size, ref selected, i, flags);
-        }
+    public static void DrawUnlockedSymbol(bool unlocked)
+    {
+        using var font = Plugin.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push();
+        using var textColor = ImRaii.PushColor(ImGuiCol.Text, unlocked ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed);
+
+        ImGui.TextUnformatted(unlocked ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
     }
 
     public static void ToggleButton(string leftOption, string rightOption, ref int selected, float predefinedSize = 0.0f)
@@ -211,19 +231,145 @@ public static class Helper
         var colors = ImGui.GetStyle().Colors;
 
         var check = selected == number;
-        if (check)
-        {
-            ImGui.PushStyleColor(ImGuiCol.Button, colors[(int) ImGuiCol.ButtonActive]);
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int) ImGuiCol.ButtonActive]);
-        }
-        else
-        {
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f });
-        }
+        using var buttonColor = ImRaii.PushColor(ImGuiCol.Button, colors[(int) ImGuiCol.ButtonActive], check);
+        using var hoveredColor = ImRaii.PushColor(ImGuiCol.ButtonHovered, colors[(int) ImGuiCol.ButtonActive], check);
+        using var negHoveredColor = ImRaii.PushColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f }, !check);
 
         if (ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners))
             selected = number;
+    }
+}
 
-        ImGui.PopStyleColor(check ? 2 : 1);
+public class SimpleTable<T>
+{
+    public record TableColumn(string Name, ImGuiTableColumnFlags Flags, float InitWidth);
+
+    private readonly string TableName;
+    private readonly float WithIndent;
+    private readonly IEnumerable<T> Values;
+    private readonly ImGuiTableFlags Flags;
+    private readonly Vector2? Size;
+
+    private readonly List<TableColumn> Columns = [];
+    private readonly List<Action<T>> ColumnActions = [];
+
+    public SimpleTable(string tableName, IEnumerable<T> values, ImGuiTableFlags flags = 0, Vector2? size = null, float withIndent = 0.0f)
+    {
+        TableName = tableName;
+        Values = values;
+        WithIndent = withIndent;
+        Flags = flags;
+        Size = size;
+    }
+
+    public SimpleTable<T> AddColumn(string name, ImGuiTableColumnFlags flags = 0, float initWidth = 0, bool useColumn = true)
+    {
+        if (!useColumn)
+            return this;
+
+        Columns.Add(new TableColumn(name, flags, initWidth));
+        return this;
+    }
+
+    public SimpleTable<T> AddAction(Action<T> columnAction, bool useColumn = true)
+    {
+        if (!useColumn)
+            return this;
+
+        ColumnActions.Add(columnAction);
+        return this;
+    }
+
+    public void Draw()
+    {
+        if (Columns.Count == 0)
+            return;
+
+        using var table = Size.HasValue ? ImRaii.Table(TableName, Columns.Count, Flags, Size.Value) : ImRaii.Table(TableName, Columns.Count, Flags);
+        if (!table.Success)
+            return;
+
+        foreach (var column in Columns)
+            ImGui.TableSetupColumn(column.Name, column.Flags, column.InitWidth);
+
+        ImGui.TableHeadersRow();
+
+        using var indent = ImRaii.PushIndent(WithIndent, condition: WithIndent > 0.0f);
+        foreach (var sortedEntry in Values)
+        {
+            foreach (var action in ColumnActions)
+            {
+                ImGui.TableNextColumn();
+                action(sortedEntry);
+            }
+
+            ImGui.TableNextRow();
+        }
+    }
+}
+
+public class SortableTable
+{
+    public record TableColumn(string Name, ImGuiTableColumnFlags Flags, float InitWidth);
+
+    private readonly string TableName;
+    private readonly float WithIndent;
+    private readonly IEnumerable<Utils.SortedEntry> Values;
+    private readonly ImGuiTableFlags Flags;
+
+    private readonly List<TableColumn> Columns = [];
+    private readonly List<Action<Utils.SortedEntry>> ColumnActions = [];
+
+    public SortableTable(string tableName, IEnumerable<Utils.SortedEntry> values, ImGuiTableFlags flags = 0, float withIndent = 0.0f)
+    {
+        TableName = tableName;
+        Values = values;
+        WithIndent = withIndent;
+        Flags = flags;
+    }
+
+    public SortableTable AddColumn(string name, ImGuiTableColumnFlags flags = 0, float initWidth = 0, bool useColumn = true)
+    {
+        if (!useColumn)
+            return this;
+
+        Columns.Add(new TableColumn(name, flags, initWidth));
+        return this;
+    }
+
+    public SortableTable AddAction(Action<Utils.SortedEntry> columnAction, bool useColumn = true)
+    {
+        if (!useColumn)
+            return this;
+
+        ColumnActions.Add(columnAction);
+        return this;
+    }
+
+    public void Draw()
+    {
+        if (Columns.Count == 0)
+            return;
+
+        using var table = ImRaii.Table(TableName, Columns.Count, Flags);
+        if (!table.Success)
+            return;
+
+        foreach (var column in Columns)
+            ImGui.TableSetupColumn(column.Name, column.Flags, column.InitWidth);
+
+        ImGui.TableHeadersRow();
+
+        using var indent = ImRaii.PushIndent(WithIndent, condition: WithIndent > 0.0f);
+        foreach (var sortedEntry in Utils.SortEntries(Values, ImGui.TableGetSortSpecs().Specs))
+        {
+            foreach (var action in ColumnActions)
+            {
+                ImGui.TableNextColumn();
+                action(sortedEntry);
+            }
+
+            ImGui.TableNextRow();
+        }
     }
 }

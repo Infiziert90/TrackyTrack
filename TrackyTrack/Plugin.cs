@@ -352,7 +352,8 @@ namespace TrackyTrack
         #region Draws
         private void DrawUI()
         {
-            this.WindowSystem.Draw();
+            FileDialogManager.Draw();
+            WindowSystem.Draw();
         }
 
         public void OpenMainUi()

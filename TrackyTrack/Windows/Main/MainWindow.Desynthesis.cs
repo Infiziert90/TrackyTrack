@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using TrackyTrack.Data;
 using Lumina.Excel.GeneratedSheets;
 
@@ -54,92 +55,91 @@ public partial class MainWindow
     private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> SourceOptions = new()
     {
         FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => Utils.ToStr(i.Name) != "").Where(i => i.Desynth > 0)
+        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.Payloads.Count > 0).Where(i => i.Desynth > 0)
     };
 
     private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> ItemOptions = new()
     {
         FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => Utils.ToStr(i.Name) != "")
+        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.Payloads.Count > 0)
     };
 
     private void DesynthesisTab()
     {
-        if (ImGui.BeginTabItem("Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Desynthesis");
+        if (!tabItem.Success)
+            return;
+
+        using var tabBar = ImRaii.TabBar("##DesynthTabBar");
+        if (!tabBar.Success)
+            return;
+
+        // Sort out any character with 0 desynthesis
+        var characters = Plugin.CharacterStorage.Values.Where(c => c.Storage.History.Count > 0).ToArray();
+        if (characters.Length == 0)
         {
-            // Sort out any character with 0 desynthesis
-            var characters = Plugin.CharacterStorage.Values.Where(c => c.Storage.History.Count > 0).ToArray();
-            if (!characters.Any())
-            {
-                Helper.NoDesynthesisData();
-
-                ImGui.EndTabItem();
-                return;
-            }
-
-            // Fill history if needed
-            FillHistory(characters);
-
-            if (ImGui.BeginTabBar("DesynthTabBar"))
-            {
-                DesynthesisStats();
-
-                Local(characters);
-
-                Discover();
-
-                Search();
-
-                CrowdSourcedInfo();
-
-                ImGui.EndTabBar();
-            }
-
-            ImGui.EndTabItem();
+            Helper.NoDesynthesisData();
+            return;
         }
+
+        // Fill history if needed
+        FillHistory(characters);
+
+        DesynthesisStats();
+
+        Local(characters);
+
+        Discover();
+
+        Search();
+
+        CrowdSourcedInfo();
     }
 
     private void DesynthesisStats()
     {
-        if (!ImGui.BeginTabItem("Stats##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Stats");
+        if (!tabItem.Success)
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
         if (TaskRunning)
         {
-            ImGui.TextColored(ImGuiColors.DalamudViolet, "Rebuilding Cache...1");
-
-            ImGui.EndTabItem();
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "Rebuilding Cache...");
             return;
         }
 
         ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
-        if (ImGui.BeginTable($"##TotalStatsTable", 3))
+        using var table = ImRaii.Table("##TotalStatsTable", 3);
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##stat", 0, 0.8f);
+        ImGui.TableSetupColumn("##name");
+        ImGui.TableSetupColumn("##amount");
+
+        using var indent = ImRaii.PushIndent(10.0f);
+
+        ImGui.TableNextColumn();
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Desynthesized");
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted($"{LastHistoryCount:N0} time{(LastHistoryCount > 1 ? "s" : "")}");
+
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
+
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "Most often:");
+
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
+
+        var destroyed = SourceHistory.MaxBy(pair => pair.Value);
+        var item = ItemSheet.GetRow(destroyed.Key)!;
+
+        using (ImRaii.PushIndent(10.0f))
         {
-            ImGui.TableSetupColumn("##stat", 0, 0.8f);
-            ImGui.TableSetupColumn("##name");
-            ImGui.TableSetupColumn("##amount");
-
-            ImGui.TableNextColumn();
-            ImGui.Indent(10.0f);
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Desynthesized");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{LastHistoryCount:N0} time{(LastHistoryCount > 1 ? "s" : "")}");
-
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-
-            ImGuiHelpers.ScaledDummy(5.0f);
-            ImGui.TextColored(ImGuiColors.DalamudViolet, "Most often:");
-
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-
-            var destroyed = SourceHistory.MaxBy(pair => pair.Value);
-            var item = ItemSheet.GetRow(destroyed.Key)!;
-
-            ImGui.Indent(10.0f);
             ImGui.TextColored(ImGuiColors.HealerGreen, "Destroyed");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
@@ -163,54 +163,50 @@ public partial class MainWindow
             ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{bestCrystal.Value:N0}");
-            ImGui.Unindent(10.0f);
+        }
 
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
 
-            ImGuiHelpers.ScaledDummy(5.0f);
-            ImGui.TextColored(ImGuiColors.DalamudViolet, "Gil:");
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "Gil:");
 
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
 
-            var sum = 0UL;
-            foreach (var pair in RewardHistory.Where(pair => Desynth.GilItems.ContainsKey(pair.Key)))
-                sum += Desynth.GilItems[pair.Key] * pair.Value;
+        var sum = 0UL;
+        foreach (var pair in RewardHistory.Where(pair => Desynth.GilItems.ContainsKey(pair.Key)))
+            sum += Desynth.GilItems[pair.Key] * pair.Value;
 
-            ImGui.Indent(10.0f);
+        using (ImRaii.PushIndent(10.0f))
+        {
             ImGui.TextColored(ImGuiColors.HealerGreen, "Pure");
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"{sum:N0}");
-            ImGui.Unindent(10.0f);
-
-            ImGui.EndTable();
         }
-        ImGui.EndTabItem();
     }
 
     public void Local(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Local##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Local");
+        if (!tabItem.Success)
             return;
 
-        if (ImGui.BeginTabBar("DesynthLocalBar"))
-        {
-            History(characters);
+        using var tabBar = ImRaii.TabBar("DesynthLocalBar");
+        if (!tabBar.Success)
+            return;
 
-            Rewards();
+        History(characters);
 
-            Sources();
+        Rewards();
 
-            ImGui.EndTabBar();
-        }
-
-        ImGui.EndTabItem();
+        Sources();
     }
 
     private void History(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("History##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("History");
+        if (!tabItem.Success)
             return;
 
         var existingCharacters = characters.Select(character => $"{character.CharacterName}@{character.World}").ToArray();
@@ -224,7 +220,8 @@ public partial class MainWindow
         }
 
         var selectedChar = characters[SelectedCharacter];
-        var history = selectedChar.Storage.History.Reverse().Select(pair => $"{pair.Key}").ToArray();
+        var selectedHistory = selectedChar.Storage.History.Reverse().ToArray();
+        var history = selectedHistory.Select(pair => $"{pair.Key}").ToArray();
 
         ImGui.Combo("##voyageSelection", ref SelectedHistory, history, history.Length);
         Helper.DrawArrows(ref SelectedHistory, history.Length);
@@ -233,40 +230,32 @@ public partial class MainWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        var resultPair = selectedChar.Storage.History.Reverse().ToArray()[SelectedHistory];
-
+        var resultPair = selectedHistory[SelectedHistory];
         var source = ItemSheet.GetRow(resultPair.Value.Source)!;
         Helper.DrawIcon(source.Icon);
         ImGui.SameLine();
 
         var sourceName = Utils.ToStr(source.Name);
-        ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.HealerGreen);
-        if (ImGui.Selectable(sourceName))
+        using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.HealerGreen))
         {
-            ImGui.SetClipboardText(sourceName);
-            SourceSearchResult = source.RowId;
-            RewardSearchResult = 0;
+            if (ImGui.Selectable(sourceName))
+            {
+                ImGui.SetClipboardText(sourceName);
+                SourceSearchResult = source.RowId;
+                RewardSearchResult = 0;
+            }
         }
-        ImGui.PopStyleColor();
 
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip($"{sourceName}\nClick to copy and set as reward for search");
 
-        if (ImGui.BeginTable($"##HistoryTable", 3))
-        {
-            ImGui.TableSetupColumn("##icon", 0, 0.2f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
-
-            ImGui.Indent(10.0f);
-            foreach (var result in resultPair.Value.Received.Where(i => i.Item > 0))
+        new SimpleTable<ItemResult>("##HistoryTable", resultPair.Value.Received.Where(i => i.Item > 0), withIndent: 10.0f)
+            .AddColumn("##icon", 0, 0.2f)
+            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry.Item)!.Icon))
+            .AddColumn("##item")
+            .AddAction(entry =>
             {
-                var item = ItemSheet.GetRow(result.Item)!;
-
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(item.Icon);
-                ImGui.TableNextColumn();
-
+                var item = ItemSheet.GetRow(entry.Item)!;
                 var name = Utils.ToStr(item.Name);
                 if (ImGui.Selectable(name))
                 {
@@ -277,21 +266,16 @@ public partial class MainWindow
 
                 if (ImGui.IsItemHovered())
                     ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as reward for search");
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{result.Count}");
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
-        ImGui.EndTabItem();
+            })
+            .AddColumn("##amount", 0, 0.2f)
+            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
+            .Draw();
     }
 
     private void Rewards()
     {
-        if (!ImGui.BeginTabItem("Rewards##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Rewards");
+        if (!tabItem.Success)
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
@@ -299,55 +283,52 @@ public partial class MainWindow
         if (TaskRunning)
         {
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Rebuilding Cache...");
-
-            ImGui.EndTabItem();
             return;
         }
 
-        if (ImGui.BeginChild("RewardsTableChild"))
+        using var child = ImRaii.Child("RewardsTableChild");
+        if (!child.Success)
+            return;
+
+        using var table = ImRaii.Table("##RewardsTable", 3);
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
+        ImGui.TableSetupColumn("##item");
+        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+
+        using var indent = ImRaii.PushIndent(10.0f);
+        foreach (var (itemId, count) in RewardHistory.Where(pair => pair.Key is > 0 and < 100_000).OrderBy(pair => pair.Key))
         {
-            if (ImGui.BeginTable($"##RewardsTable", 3))
+            var item = ItemSheet.GetRow(itemId)!;
+
+            ImGui.TableNextColumn();
+            Helper.DrawIcon(item.Icon);
+
+            ImGui.TableNextColumn();
+            var name = Utils.ToStr(item.Name);
+            if (ImGui.Selectable(name))
             {
-                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
-                ImGui.TableSetupColumn("##item");
-                ImGui.TableSetupColumn("##amount", 0, 0.2f);
-
-                ImGui.Indent(10.0f);
-                foreach (var (itemId, count) in RewardHistory.Where(pair => pair.Key is > 0 and < 100_000).OrderBy(pair => pair.Key))
-                {
-                    var item = ItemSheet.GetRow(itemId)!;
-
-                    ImGui.TableNextColumn();
-                    Helper.DrawIcon(item.Icon);
-                    ImGui.TableNextColumn();
-
-                    var name = Utils.ToStr(item.Name);
-                    if (ImGui.Selectable(name))
-                    {
-                        ImGui.SetClipboardText(name);
-                        RewardSearchResult = item.RowId;
-                        SourceSearchResult = 0;
-                    }
-
-                    if (ImGui.IsItemHovered())
-                        ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as reward for search");
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"x{count}");
-                    ImGui.TableNextRow();
-                }
-
-                ImGui.Unindent(10.0f);
-                ImGui.EndTable();
+                ImGui.SetClipboardText(name);
+                RewardSearchResult = item.RowId;
+                SourceSearchResult = 0;
             }
+
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as reward for search");
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{count}");
+
+            ImGui.TableNextRow();
         }
-        ImGui.EndChild();
-        ImGui.EndTabItem();
     }
 
     private void Sources()
     {
-        if (!ImGui.BeginTabItem("Sources##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Sources");
+        if (!tabItem.Success)
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
@@ -355,56 +336,52 @@ public partial class MainWindow
         if (TaskRunning)
         {
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Rebuilding Cache...");
-
-            ImGui.EndTabItem();
             return;
         }
 
-        if (ImGui.BeginChild("SourceTableChild"))
+        using var child = ImRaii.Child("SourceTableChild");
+        if (!child.Success)
+            return;
+
+        using var table = ImRaii.Table("##DesynthesisSourceTable", 3);
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
+        ImGui.TableSetupColumn("##item");
+        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+
+        using var indent = ImRaii.PushIndent(10.0f);
+        foreach (var (source, count) in SourceHistory.OrderByDescending(pair => pair.Value))
         {
-            if (ImGui.BeginTable($"##DesynthesisSourceTable", 3))
+            var item = ItemSheet.GetRow(source)!;
+
+            ImGui.TableNextColumn();
+            Helper.DrawIcon(item.Icon);
+
+            ImGui.TableNextColumn();
+            var name = Utils.ToStr(item.Name);
+            if (ImGui.Selectable(name))
             {
-                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
-                ImGui.TableSetupColumn("##item");
-                ImGui.TableSetupColumn("##amount", 0, 0.2f);
-
-                ImGui.Indent(10.0f);
-                foreach (var (source, count) in SourceHistory.OrderByDescending(pair => pair.Value))
-                {
-                    var item = ItemSheet.GetRow(source)!;
-
-                    ImGui.TableNextColumn();
-                    Helper.DrawIcon(item.Icon);
-                    ImGui.TableNextColumn();
-
-                    var name = Utils.ToStr(item.Name);
-                    if (ImGui.Selectable(name))
-                    {
-                        ImGui.SetClipboardText(name);
-                        SourceSearchResult = item.RowId;
-                        RewardSearchResult = 0;
-                    }
-
-                    if (ImGui.IsItemHovered())
-                        ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as source for search");
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"x{count:N0}");
-                    ImGui.TableNextRow();
-                }
-
-                ImGui.Unindent(10.0f);
-                ImGui.EndTable();
+                ImGui.SetClipboardText(name);
+                SourceSearchResult = item.RowId;
+                RewardSearchResult = 0;
             }
-        }
-        ImGui.EndChild();
 
-        ImGui.EndTabItem();
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip($"{Utils.ToStr(item.Name)}\nClick to copy and set as source for search");
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{count:N0}");
+
+            ImGui.TableNextRow();
+        }
     }
 
     private void Search()
     {
-        if (!ImGui.BeginTabItem("Search##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Search");
+        if (!tabItem.Success)
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
@@ -426,9 +403,10 @@ public partial class MainWindow
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Search");
         ImGui.SameLine(width);
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(definedSize * 2, 0));
-        ImGui.PopFont();
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(definedSize * 2, 0));
+        }
 
         if (SearchForSelection == 0)
         {
@@ -453,8 +431,6 @@ public partial class MainWindow
             RewardSearch();
         else if (SourceSearchResult > 0)
             SourceSearch();
-
-        ImGui.EndTabItem();
     }
 
     private void SourceSearch()
@@ -537,7 +513,8 @@ public partial class MainWindow
 
     private void Discover()
     {
-        if (!ImGui.BeginTabItem("Catalogue##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Catalogue");
+        if (!tabItem.Success)
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
@@ -562,52 +539,31 @@ public partial class MainWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        if (!CatalogueCache.Any())
+        if (CatalogueCache.Length == 0)
         {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this job and item level ...");
-
-            ImGui.EndTabItem();
+            ImGui.TextColored(ImGuiColors.ParsedOrange, "Nothing found for this job and item level ...");
             return;
         }
 
         ImGui.TextColored(ImGuiColors.HealerGreen, $"Found {CatalogueCache.Length:N0} item{(CatalogueCache.Length > 1 ? "s" : "")}");
-        if (ImGui.BeginChild("##PossibleItemsChild"))
-        {
-            if (ImGui.BeginTable($"##PossibleItemsTable", 3, 0, new Vector2(350 * ImGuiHelpers.GlobalScale, 0)))
-            {
-                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 5.0f);
-                ImGui.TableSetupColumn("Name##item");
-                ImGui.TableSetupColumn("Item Level##iLvL", 0, 0.3f);
+        using var child = ImRaii.Child("PossibleItemsChild");
+        if (!child.Success)
+            return;
 
-                ImGui.TableHeadersRow();
-                foreach (var item in CatalogueCache)
-                {
-                    ImGui.TableNextColumn();
-                    Helper.DrawIcon(item.Icon);
-                    ImGui.TableNextColumn();
-
-                    var name = Utils.ToStr(item.Name);
-                    if (ImGui.Selectable(name))
-                        ImGui.SetClipboardText(name);
-                    if (ImGui.IsItemHovered())
-                        ImGui.SetTooltip("Click to copy");
-
-                    ImGui.TableNextColumn();
-                    Helper.RightAlignedText($"{item.LevelItem.Row}");
-                    ImGui.TableNextRow();
-                }
-
-                ImGui.EndTable();
-            }
-        }
-        ImGui.EndChild();
-
-        ImGui.EndTabItem();
+        new SimpleTable<Item>("##PossibleItemsTable", CatalogueCache, 0, new Vector2(350 * ImGuiHelpers.GlobalScale, 0))
+            .AddColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 5.0f)
+            .AddAction(entry => Helper.DrawIcon(entry.Icon))
+            .AddColumn("Name##item")
+            .AddAction(entry => Helper.SelectableClipboardText(Utils.ToStr(entry.Name)))
+            .AddColumn("Item Level##iLvL", 0, 0.3f)
+            .AddAction(entry => Helper.RightAlignedText($"{entry.LevelItem.Row}"))
+            .Draw();
     }
 
     private void CrowdSourcedInfo()
     {
-        if (!ImGui.BeginTabItem("Info##Desynthesis"))
+        using var tabItem = ImRaii.TabItem("Info");
+        if (!tabItem.Success)
             return;
 
         ImGuiHelpers.ScaledDummy(5.0f);
@@ -624,8 +580,6 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(5.0f);
         Helper.WrappedText(ImGuiColors.DalamudViolet, "Please report any inconsistency.");
         Helper.WrappedText(ImGuiColors.DalamudViolet, "Contact info can be found in the about tab.");
-
-        ImGui.EndTabItem();
     }
 
     private void FillHistory(IEnumerable<CharacterConfiguration> characters)
@@ -682,74 +636,30 @@ public partial class MainWindow
 
     private static void MinMaxTable(string identifier, IEnumerable<Result> results, bool showReceived = false)
     {
-        if (ImGui.BeginTable(identifier, showReceived ? 5 : 4, 0, new Vector2((showReceived ? 400 : 300) * ImGuiHelpers.GlobalScale, 0)))
-        {
-            ImGui.TableSetupColumn("Item##ItemName", 0, 0.6f);
-            ImGui.TableSetupColumn("Min##StatMin", 0, 0.1f);
-            ImGui.TableSetupColumn("##StatSymbol", 0, 0.05f);
-            ImGui.TableSetupColumn("Max##StatMax", 0, 0.1f);
-            if (showReceived)
-                ImGui.TableSetupColumn("Received##StatReceived", 0, 0.3f);
-
-            ImGui.TableHeadersRow();
-            foreach (var result in SortByKeyCustom(results))
-            {
-                var name = Utils.ToStr(ItemSheet.GetRow(result.Item)?.Name ?? "Invalid Data");
-                ImGui.TableNextColumn();
-                ImGuiHelpers.ScaledIndent(10.0f);
-                if (ImGui.Selectable($"{name}"))
-                    ImGui.SetClipboardText(name);
-                ImGuiHelpers.ScaledIndent(-10.0f);
-
-                ImGui.TableNextColumn();
-                Helper.RightAlignedText(result.Min.ToString());
-
-                ImGui.TableNextColumn();
-                Helper.CenterText("-");
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(result.Max.ToString());
-
-                if (showReceived)
-                {
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"x{result.Received:N0}");
-                }
-
-                ImGui.TableNextRow();
-            }
-
-            ImGui.EndTable();
-        }
+        new SimpleTable<Result>(identifier, SortByKeyCustom(results), 0, new Vector2((showReceived ? 400 : 300) * ImGuiHelpers.GlobalScale, 0))
+            .AddColumn("Item##ItemName", 0, 0.6f)
+            .AddAction(entry => Helper.SelectableClipboardText(Utils.ToStr(ItemSheet.GetRow(entry.Item)?.Name ?? "Invalid Data"), 10.0f))
+            .AddColumn("Min##StatMin", 0, 0.1f)
+            .AddAction(entry => Helper.RightAlignedText(entry.Min.ToString()))
+            .AddColumn("##StatSymbol", 0, 0.05f)
+            .AddAction(_ => Helper.CenterText("-"))
+            .AddColumn("Max##StatMax", 0, 0.1f)
+            .AddAction(entry => ImGui.TextUnformatted(entry.Max.ToString()))
+            .AddColumn("Received##StatReceived", 0, 0.3f, showReceived)
+            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Received:N0}"), showReceived)
+            .Draw();
     }
 
     private static void PercentageTable(string identifier, IOrderedEnumerable<Utils.SortedEntry> sortedList)
     {
-        if (ImGui.BeginTable(identifier, 3))
-        {
-            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
-            ImGui.TableSetupColumn("Item##item");
-            ImGui.TableSetupColumn("Pct##percentage", 0, 0.25f);
-
-            ImGui.TableHeadersRow();
-            foreach (var sortedEntry in sortedList)
-            {
-                ImGui.TableNextColumn();
-                ImGuiHelpers.ScaledIndent(10.0f);
-                Helper.DrawIcon(sortedEntry.Icon);
-                ImGuiHelpers.ScaledIndent(-10.0f);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(sortedEntry.Name);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-
-                ImGui.TableNextRow();
-            }
-
-            ImGui.EndTable();
-        }
+        new SimpleTable<Utils.SortedEntry>(identifier, sortedList)
+            .AddColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f)
+            .AddAction(entry => Helper.DrawIcon(entry.Icon, withIndent: 10.0f))
+            .AddColumn("Item##item")
+            .AddAction(entry => ImGui.TextUnformatted(entry.Name))
+            .AddColumn("Pct##percentage", 0, 0.25f)
+            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
+            .Draw();
     }
 
     public Item[] BuildCatalogue()

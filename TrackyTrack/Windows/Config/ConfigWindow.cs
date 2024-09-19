@@ -1,3 +1,4 @@
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 
 namespace TrackyTrack.Windows.Config;
@@ -23,15 +24,14 @@ public partial class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        Plugin.FileDialogManager.Draw();
-        if (ImGui.BeginTabBar("##ConfigTabBar"))
-        {
-            Modules();
+        using var tabBar = ImRaii.TabBar("##ConfigTabBar");
+        if (!tabBar.Success)
+            return;
 
-            Upload();
+        Modules();
 
-            About();
-        }
-        ImGui.EndTabBar();
+        Upload();
+
+        About();
     }
 }

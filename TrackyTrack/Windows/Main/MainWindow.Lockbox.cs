@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
@@ -10,50 +11,42 @@ public partial class MainWindow
 
     private void LockboxTab()
     {
-        if (ImGui.BeginTabItem("Lockbox"))
+        using var tabItem = ImRaii.TabItem("Lockbox");
+        if (!tabItem.Success)
+            return;
+
+        using var tabBar = ImRaii.TabBar("##LockboxTabBar");
+        if (!tabBar.Success)
+            return;
+
+        var characters = Plugin.CharacterStorage.Values;
+        if (characters.Count == 0)
         {
-            if (ImGui.BeginTabBar("##LockboxTabBar"))
-            {
-                var characters = Plugin.CharacterStorage.Values;
-                if (!characters.Any())
-                {
-                    Helper.NoEurekaCofferData();
+            Helper.NoEurekaCofferData();
+            return;
+        }
 
-                    ImGui.EndTabBar();
-                    ImGui.EndTabItem();
-                    return;
-                }
+        var characterLockboxes = characters.Where(c => c.Lockbox.Opened > 0).ToArray();
+        if (characterLockboxes.Length == 0)
+        {
+            Helper.NoEurekaCofferData();
+            return;
+        }
 
-                var characterLockboxes = characters.Where(c => c.Lockbox.Opened > 0).ToArray();
-                if (!characterLockboxes.Any())
-                {
-                    Helper.NoEurekaCofferData();
+        LockboxStats(characterLockboxes);
 
-                    ImGui.EndTabBar();
-                    ImGui.EndTabItem();
-                    return;
-                }
-
-                LockboxStats(characterLockboxes);
-
-                foreach (var type in LockboxExtensions.AsArray)
-                {
-                    if (ImGui.BeginTabItem(type.ToArea()))
-                    {
-                        LockboxHistory(type, characterLockboxes);
-                        ImGui.EndTabItem();
-                    }
-                }
-
-                ImGui.EndTabBar();
-            }
-            ImGui.EndTabItem();
+        foreach (var type in LockboxExtensions.AsArray)
+        {
+            using var innerTabItem = ImRaii.TabItem(type.ToArea());
+            if (innerTabItem.Success)
+                LockboxHistory(type, characterLockboxes);
         }
     }
 
     private void LockboxStats(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Stats"))
+        using var tabItem = ImRaii.TabItem("Stats");
+        if (!tabItem.Success)
             return;
 
         var longest = 0;
@@ -80,50 +73,45 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
-        if (ImGui.BeginTable($"##TotalStatsTable", 2))
+        using var table = ImRaii.Table("##TotalStatsTable", 2);
+
+        ImGui.TableSetupColumn("##stat", 0, 2.0f);
+        ImGui.TableSetupColumn("##opened");
+
+        using var indent = ImRaii.PushIndent(10.0f);
+        ImGui.TableNextColumn();
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
+
+        ImGui.TableNextColumn();
+        Helper.RightTextColored(ImGuiColors.HealerGreen, $"{totalNumber:N0} Treasure{(totalNumber > 1 ? "s" : "")}");
+
+        foreach (var territory in Territories)
         {
-            ImGui.TableSetupColumn("##stat", 0, 2.0f);
-            ImGui.TableSetupColumn("##opened");
+            if (openedTypes[territory].Count == 0)
+                continue;
+
+            ImGuiHelpers.ScaledDummy(5.0f);
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, territory);
 
             ImGui.TableNextColumn();
-            ImGui.Indent(10.0f);
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
-            ImGui.TableNextColumn();
-            Helper.RightTextColored(ImGuiColors.HealerGreen, $"{totalNumber:N0} Treasure{(totalNumber > 1 ? "s" : "")}");
+            var opened = openedTypes[territory].Values.Sum(a => a);
+            var containerName = LockboxExtensions.TerritoryToContainerName(territory);
+            Helper.RightTextColored(ImGuiColors.HealerGreen, $"{opened:N0} {containerName}");
 
-            foreach (var territory in Territories)
+            using var innerIndent = ImRaii.PushIndent(10.0f);
+            foreach (var (type, amount) in openedTypes[territory].OrderBy(pair => pair.Key))
             {
-                if (!openedTypes[territory].Any())
-                    continue;
-
-                ImGuiHelpers.ScaledDummy(5.0f);
-
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, territory);
+                ImGui.TextUnformatted(type.ToName());
 
                 ImGui.TableNextColumn();
-                var opened = openedTypes[territory].Values.Sum(a => a);
-                var containerName = LockboxExtensions.TerritoryToContainerName(territory);
-                Helper.RightTextColored(ImGuiColors.HealerGreen, $"{opened:N0} {containerName}");
-
-                ImGui.Indent(10.0f);
-                foreach (var (type, amount) in openedTypes[territory].OrderBy(pair => pair.Key))
-                {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(type.ToName());
-
-                    ImGui.TableNextColumn();
-                    Helper.RightAlignedText($"x{amount:N0}", 10.0f);
-                }
-                ImGui.Unindent(10.0f);
+                Helper.RightAlignedText($"x{amount:N0}", 10.0f);
             }
-            ImGui.Unindent(10.0f);
-
-            ImGui.EndTable();
         }
-        ImGui.EndTabItem();
     }
 
     private void LockboxHistory(LockboxTypes types, CharacterConfiguration[] characters)
@@ -156,7 +144,7 @@ public partial class MainWindow
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
-        if (!dict.Any())
+        if (dict.Count == 0)
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {selectedType.ToName()} Lockboxes.");
             return;
@@ -172,36 +160,15 @@ public partial class MainWindow
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        if (ImGui.BeginTable($"##HistoryTable", 4, ImGuiTableFlags.Sortable))
-        {
-            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
-            ImGui.TableSetupColumn("Item##item");
-            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
-            {
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(sortedEntry.Icon);
-                ImGui.TableNextColumn();
-
-                ImGui.TextUnformatted(sortedEntry.Name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(sortedEntry.Name);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{sortedEntry.Count}");
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
+        new SortableTable("##HistoryTable", unsortedList, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(entry.Icon))
+            .AddColumn("Item##item")
+            .AddAction(entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", initWidth: 0.2f)
+            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
+            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
+            .Draw();
     }
 }

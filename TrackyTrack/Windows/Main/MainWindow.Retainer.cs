@@ -62,7 +62,7 @@ public partial class MainWindow
         var history = characters.SelectMany(c => c.VentureStorage.History.Values).ToArray();
         var quickHistory = history.Where(v => v.IsQuickVenture).ToArray();
 
-        var totalNormal = history.Count(c => !c.IsQuickVenture);
+        var totalNormal = history.Length - quickHistory.Length;
         var totalQuick = quickHistory.Length;
 
         if (TotalQuick != totalQuick)
@@ -193,6 +193,12 @@ public partial class MainWindow
         }
         var reversedHistory = characters[RetainerSelectedCharacter].VentureStorage.History.Reverse().ToArray();
         var history = reversedHistory.TakeWhile(pair => pair.Key.Ticks > DateLimit).Select(pair => $"{pair.Key}").ToArray();
+
+        if (history.Length == 0)
+        {
+            Helper.OldHistory();
+            return;
+        }
 
         ImGui.Combo("##voyageSelection", ref RetainerSelectedHistory, history, history.Length);
         Helper.DrawArrows(ref RetainerSelectedHistory, history.Length);

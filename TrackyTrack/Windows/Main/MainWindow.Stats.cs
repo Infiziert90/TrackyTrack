@@ -1,4 +1,5 @@
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
@@ -15,18 +16,17 @@ public partial class MainWindow
 
     private void StatsTab()
     {
-        if (ImGui.BeginTabItem("Common##GeneralStats"))
-        {
-            Stats();
+        using var tabItem = ImRaii.TabItem("Common##GeneralStats");
+        if (!tabItem.Success)
+            return;
 
-            ImGui.EndTabItem();
-        }
+        Stats();
     }
 
     private void Stats()
     {
         var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (!characters.Any())
+        if (characters.Length == 0)
         {
             Helper.NoCharacters();
             return;
@@ -53,41 +53,41 @@ public partial class MainWindow
     {
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(0.5f, 0.5f));
+        using var indent = ImRaii.PushIndent(10.0f);
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.CellPadding, new Vector2(0.5f, 0.5f));
+
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Currency:");
-        ImGui.Indent(10.0f);
-        if (ImGui.BeginTable($"##CurrencyStatsTable", 3, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
+        using var table = ImRaii.Table("##CurrencyStatsTable", 3, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##Stat", 0, 0.7f);
+        ImGui.TableSetupColumn("##Icon", 0, 0.17f);
+        ImGui.TableSetupColumn("##Num");
+
+        var textHeight = ImGui.CalcTextSize("Grand Company").Y * 1.5f;
+        var iconSize = new Vector2(textHeight, textHeight);
+
+        foreach (var currency in (Currency[]) Enum.GetValues(typeof(Currency)))
         {
-            ImGui.TableSetupColumn("##CurrencyStat", 0, 0.7f);
-            ImGui.TableSetupColumn("##CurrencyIcon", 0, 0.17f);
-            ImGui.TableSetupColumn("##CurrencyNum");
+            // We skip these as they are duplicates and aren't saved
+            if (currency is Currency.Gil or Currency.StormSeals or Currency.SerpentSeals)
+                continue;
 
-            var textHeight = ImGui.CalcTextSize("Grand Company").Y * 1.5f;
-            var iconSize = new Vector2(textHeight, textHeight);
+            var count = characters.Sum(c => c.GetCurrencyCount(currency));
+            if (count == 0)
+                continue;
 
-            foreach (var currency in (Currency[]) Enum.GetValues(typeof(Currency)))
-            {
-                // We skip these as they are duplicates and aren't saved
-                if (currency is Currency.Gil or Currency.StormSeals or Currency.SerpentSeals)
-                    continue;
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextColored(ImGuiColors.HealerGreen, currency.ToName());
 
-                var count = characters.Sum(c => c.GetCurrencyCount(currency));
-                if (count == 0)
-                    continue;
+            ImGui.TableNextColumn();
+            Helper.DrawIcon(IconList[currency], iconSize);
 
-                ImGui.TableNextColumn();
-                ImGui.AlignTextToFramePadding();
-                ImGui.TextColored(ImGuiColors.HealerGreen, currency.ToName());
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(IconList[currency], iconSize);
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{count:N0}");
-            }
-
-            ImGui.EndTable();
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{count:N0}");
         }
-        ImGui.Unindent(10.0f);
-        ImGui.PopStyleVar();
 
         ImGuiHelpers.ScaledDummy(5.0f);
     }
@@ -105,135 +105,141 @@ public partial class MainWindow
             teleportsWithout = 1;
 
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Teleport:");
-        ImGui.Indent(10.0f);
+
+        using var indent = ImRaii.PushIndent(10.0f);
         if (teleports > 0)
         {
-            if (ImGui.BeginTable($"##TeleportStatsTable", 2, 0, new Vector2(450 * ImGuiHelpers.GlobalScale, 0)))
+            using var table = ImRaii.Table("##TeleportStatsTable", 2, 0, new Vector2(450 * ImGuiHelpers.GlobalScale, 0));
+            if (!table.Success)
+                return;
+
+            ImGui.TableSetupColumn("##TeleportStat", 0, 0.6f);
+            ImGui.TableSetupColumn("##TeleportNum");
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Used");
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{teleports} times");
+
+            ImGui.TableNextRow();
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Costs");
+
+            var teleportCosts = characters.Sum(c => c.TeleportCost);
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{teleportCosts:N0} gil");
+
+            ImGui.TableNextRow();
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Average");
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{teleportCosts / teleportsWithout:N0} gil");
+
+            ImGui.TableNextRow();
+
+            #region Savings
+            var buffed = new Dictionary<TeleportBuff, (long, long)>();
+            foreach (var buff in (TeleportBuff[]) Enum.GetValues(typeof(TeleportBuff)))
             {
-                ImGui.TableSetupColumn("##TeleportStat", 0, 0.6f);
-                ImGui.TableSetupColumn("##TeleportNum");
+                var count = characters.Sum(c => c.TeleportsWithBuffs.TryGetValue(buff, out var value) ? value : 0);
+                var savings = characters.Sum(c => c.TeleportSavingsWithBuffs.TryGetValue(buff, out var value) ? value : 0);
+                if (count == 0)
+                    continue;
 
+                buffed[buff] = (count, savings);
+            }
+
+            if (buffed.Count > 0)
+            {
                 ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Used");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{teleports} times");
-
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Costs");
-
-                var teleportCosts = characters.Sum(c => c.TeleportCost);
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{teleportCosts:N0} gil");
-
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Average");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{teleportCosts / teleportsWithout:N0} gil");
-
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                #region Savings
-                var buffed = new Dictionary<TeleportBuff, (long, long)>();
-                foreach (var buff in (TeleportBuff[]) Enum.GetValues(typeof(TeleportBuff)))
-                {
-                    var count = characters.Sum(c => c.TeleportsWithBuffs.TryGetValue(buff, out var value) ? value : 0);
-                    var savings = characters.Sum(c => c.TeleportSavingsWithBuffs.TryGetValue(buff, out var value) ? value : 0);
-                    if (count == 0)
-                        continue;
-
-                    buffed[buff] = (count, savings);
-                }
-
-                if (buffed.Count > 0)
-                {
-                    ImGuiHelpers.ScaledDummy(5.0f);
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    ImGui.TextColored(ImGuiColors.HealerGreen, "Savings");
-                    ImGui.Indent(10.0f);
-
-                    var currentBuff = Plugin.GetCurrentTeleportBuff();
-                    foreach (var (buff, (count, savings)) in buffed)
-                    {
-                        ImGui.TableNextRow();
-                        ImGui.TableNextColumn();
-
-                        var color = ImGuiColors.HealerGreen;
-                        if (buff == currentBuff)
-                            color = ImGuiColors.DalamudYellow;
-
-                        ImGui.TextColored(color, buff.ToName().Replace("%", "%%"));
-                        ImGui.TableNextColumn();
-
-                        var stat = $"{count} times";
-                        if (savings > 0)
-                        {
-                            stat += $" (saved {savings:N0} gil)";
-                        }
-                        ImGui.TextUnformatted(stat);
-                    }
-
-                    ImGui.Unindent(10.0f);
-                }
-                #endregion
-
                 ImGuiHelpers.ScaledDummy(5.0f);
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Tickets");
 
                 ImGui.TableNextRow();
+
                 ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Savings");
 
-                ImGui.Indent(10.0f);
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Aetheryte");
+                using var innerIndent = ImRaii.PushIndent(10.0f);
+                var currentBuff = Plugin.GetCurrentTeleportBuff();
+                foreach (var (buff, (count, savings)) in buffed)
+                {
+                    ImGui.TableNextRow();
+
+                    var color = ImGuiColors.HealerGreen;
+                    if (buff == currentBuff)
+                        color = ImGuiColors.DalamudYellow;
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextColored(color, buff.ToName().Replace("%", "%%"));
+
+                    var stat = $"{count} times";
+                    if (savings > 0)
+                        stat += $" (saved {savings:N0} gil)";
+
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted(stat);
+                }
+            }
+            #endregion
+
+            ImGui.TableNextColumn();
+            ImGuiHelpers.ScaledDummy(5.0f);
+
+            ImGui.TableNextRow();
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Tickets");
+
+            ImGui.TableNextRow();
+
+            ImGui.TableNextColumn();
+            using var bottomIndent = ImRaii.PushIndent(10.0f);
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Aetheryte");
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{aetheryteTickets} used");
+
+            if (aetheryteTickets > 0)
+            {
+                ImGui.TableNextRow();
+
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{aetheryteTickets} used");
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Grand Company");
 
-                if (aetheryteTickets > 0)
-                {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{gcTickets} used");
+            }
 
-                    ImGui.TextColored(ImGuiColors.HealerGreen, "Grand Company");
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"{gcTickets} used");
-                }
+            if (vesperTickets > 0)
+            {
+                ImGui.TableNextRow();
 
-                if (vesperTickets > 0)
-                {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Vesper Bay");
 
-                    ImGui.TextColored(ImGuiColors.HealerGreen, "Vesper Bay");
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"{vesperTickets} used");
-                }
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{vesperTickets} used");
+            }
 
-                if (firmamentTickets > 0)
-                {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
+            if (firmamentTickets > 0)
+            {
+                ImGui.TableNextRow();
 
-                    ImGui.TextColored(ImGuiColors.HealerGreen, "Firmament");
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"{firmamentTickets} used");
-                }
-                ImGui.Unindent(10.0f);
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Firmament");
 
-                ImGui.EndTable();
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{firmamentTickets} used");
             }
         }
         else
         {
             ImGui.TextColored(ImGuiColors.DalamudOrange, "You haven't used teleport yet!");
         }
-        ImGui.Unindent(10.0f);
 
         ImGuiHelpers.ScaledDummy(5.0f);
     }
@@ -242,41 +248,43 @@ public partial class MainWindow
     {
         var repairs = characters.Sum(c => c.Repairs);
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Repair:");
-        ImGui.Indent(10.0f);
+
+        using var indent = ImRaii.PushIndent(10.0f);
         if (repairs > 0)
         {
-            if (ImGui.BeginTable($"##RepairStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
-            {
-                ImGui.TableSetupColumn("##RepairStat", 0, 0.6f);
-                ImGui.TableSetupColumn("##RepairNum");
+            using var table = ImRaii.Table("##RepairStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
+            if (!table.Success)
+                return;
 
-                ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Repaired");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{repairs} items");
+            ImGui.TableSetupColumn("##RepairStat", 0, 0.6f);
+            ImGui.TableSetupColumn("##RepairNum");
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Repaired");
 
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Costs");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{repairs} items");
 
-                var repairCosts = characters.Sum(c => c.RepairCost);
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{repairCosts:N0} gil");
+            ImGui.TableNextRow();
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Costs");
 
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Average");
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{repairCosts / repairs:N0} gil");
-                ImGui.EndTable();
-            }
+            var repairCosts = characters.Sum(c => c.RepairCost);
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{repairCosts:N0} gil");
+
+            ImGui.TableNextRow();
+
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Average");
+
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{repairCosts / repairs:N0} gil");
         }
         else
         {
             ImGui.TextColored(ImGuiColors.DalamudOrange, "You haven't used the NPC to repair yet");
         }
-        ImGui.Unindent(10.0f);
     }
 }

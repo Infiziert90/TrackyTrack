@@ -2,6 +2,7 @@
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 
 namespace TrackyTrack.Windows.Config;
 
@@ -11,10 +12,14 @@ public partial class ConfigWindow
 
     private void About()
     {
-        if (ImGui.BeginTabItem("About"))
+        using var tabItem = ImRaii.TabItem("About");
+        if (!tabItem.Success)
+            return;
+
+        var buttonHeight = ImGui.CalcTextSize("RRRR").Y + (20.0f * ImGuiHelpers.GlobalScale);
+        using (var contentChild = ImRaii.Child("AboutContent", new Vector2(0, -buttonHeight)))
         {
-            var buttonHeight = ImGui.CalcTextSize("RRRR").Y + (20.0f * ImGuiHelpers.GlobalScale);
-            if (ImGui.BeginChild("AboutContent", new Vector2(0, -buttonHeight)))
+            if (contentChild.Success)
             {
                 ImGuiHelpers.ScaledDummy(5.0f);
 
@@ -37,16 +42,9 @@ public partial class ConfigWindow
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.FolderClosed))
                     ImGui.OpenPopup("InputPathDialog");
 
-                if (ImGui.BeginPopup("InputPathDialog"))
-                {
-                    Plugin.FileDialogManager.OpenFileDialog(
-                        "Pick a file",
-                        ".csv",
-                        (b, s) => { if (b) InputPath = s.First(); },
-                        1);
-
-                    ImGui.EndPopup();
-                }
+                using var popup = ImRaii.Popup("InputPathDialog");
+                if (popup.Success)
+                    Plugin.FileDialogManager.OpenFileDialog("Pick a file", ".csv", (b, s) => { if (b) InputPath = s.First(); }, 1);
 
                 if (ImGui.Button("Import Data"))
                 {
@@ -58,35 +56,35 @@ public partial class ConfigWindow
                 }
                 #endif
             }
-            ImGui.EndChild();
+        }
 
-            ImGui.Separator();
-            ImGuiHelpers.ScaledDummy(1.0f);
+        ImGui.Separator();
+        ImGuiHelpers.ScaledDummy(1.0f);
 
-            if (ImGui.BeginChild("AboutBottomBar", new Vector2(0, 0), false, 0))
-            {
-                ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedBlue);
-                if (ImGui.Button("Discord Thread"))
-                    Dalamud.Utility.Util.OpenLink("https://canary.discord.com/channels/581875019861328007/1143510564165926992");
-                ImGui.PopStyleColor();
+        using var bottomChild = ImRaii.Child("AboutBottomBar", new Vector2(0, 0), false, 0);
+        if (!bottomChild.Success)
+            return;
 
-                ImGui.SameLine();
+        using (ImRaii.PushColor(ImGuiCol.Button, ImGuiColors.ParsedBlue))
+        {
+            if (ImGui.Button("Discord Thread"))
+                Dalamud.Utility.Util.OpenLink("https://canary.discord.com/channels/581875019861328007/1143510564165926992");
+        }
 
-                ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.DPSRed);
-                if (ImGui.Button("Issues"))
-                    Dalamud.Utility.Util.OpenLink("https://github.com/Infiziert90/TrackyTrack/issues");
-                ImGui.PopStyleColor();
+        ImGui.SameLine();
 
-                ImGui.SameLine();
+        using (ImRaii.PushColor(ImGuiCol.Button, ImGuiColors.DPSRed))
+        {
+            if (ImGui.Button("Issues"))
+                Dalamud.Utility.Util.OpenLink("https://github.com/Infiziert90/TrackyTrack/issues");
+        }
 
-                ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.12549f, 0.74902f, 0.33333f, 0.6f));
-                if (ImGui.Button("Ko-Fi Tip"))
-                    Dalamud.Utility.Util.OpenLink("https://ko-fi.com/infiii");
-                ImGui.PopStyleColor();
-            }
-            ImGui.EndChild();
+        ImGui.SameLine();
 
-            ImGui.EndTabItem();
+        using (ImRaii.PushColor(ImGuiCol.Button, new Vector4(0.12549f, 0.74902f, 0.33333f, 0.6f)))
+        {
+            if (ImGui.Button("Ko-Fi Tip"))
+                Dalamud.Utility.Util.OpenLink("https://ko-fi.com/infiii");
         }
     }
 }

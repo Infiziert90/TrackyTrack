@@ -1,4 +1,5 @@
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -36,34 +37,35 @@ public partial class MainWindow : Window, IDisposable
     public override void Draw()
     {
         var buttonHeight = ImGui.CalcTextSize("RRRR").Y + (20.0f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginChild("SubContent", new Vector2(0, -buttonHeight)))
+        using (var contentChild = ImRaii.Child("SubContent", new Vector2(0, -buttonHeight)))
         {
-            if (ImGui.BeginTabBar("##TrackerTabBar"))
+            if (contentChild.Success)
             {
-                StatsTab();
+                using var tabBar = ImRaii.TabBar("##TrackerTabBar");
+                if (tabBar.Success)
+                {
+                    StatsTab();
 
-                DesynthesisTab();
+                    DesynthesisTab();
 
-                CofferTab();
+                    CofferTab();
 
-                GachaTab();
+                    GachaTab();
 
-                BunnyTab();
+                    BunnyTab();
 
-                LockboxTab();
-
-                ImGui.EndTabBar();
+                    LockboxTab();
+                }
             }
         }
-        ImGui.EndChild();
 
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(1.0f);
 
-        if (ImGui.BeginChild("BottomBar", new Vector2(0, 0), false, 0))
-        {
-            Helper.MainMenuIcon(Plugin);
-        }
-        ImGui.EndChild();
+        using var bottomChild = ImRaii.Child("BottomBar", Vector2.Zero, false, 0);
+        if (!bottomChild.Success)
+            return;
+
+        Helper.MainMenuIcon(Plugin);
     }
 }

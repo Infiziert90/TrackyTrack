@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
@@ -9,47 +10,40 @@ public partial class MainWindow
 
     private void BunnyTab()
     {
-        if (ImGui.BeginTabItem("Bunny"))
+        using var tabItem = ImRaii.TabItem("Bunny");
+        if (!tabItem.Success)
+            return;
+
+        using var tabBar = ImRaii.TabBar("##BunnyTabBar");
+        if (!tabBar.Success)
+            return;
+
+        if (Plugin.CharacterStorage.Values.Count == 0)
         {
-            if (ImGui.BeginTabBar("##BunnyTabBar"))
-            {
-                var characters = Plugin.CharacterStorage.Values;
-                if (!characters.Any())
-                {
-                    Helper.NoEurekaCofferData();
-
-                    ImGui.EndTabBar();
-                    ImGui.EndTabItem();
-                    return;
-                }
-
-                var characterCoffers = characters.Where(c => c.Eureka.Opened > 0).ToArray();
-                if (!characterCoffers.Any())
-                {
-                    Helper.NoEurekaCofferData();
-
-                    ImGui.EndTabBar();
-                    ImGui.EndTabItem();
-                    return;
-                }
-
-                EurekaStats(characterCoffers);
-
-                Pagos(characterCoffers);
-
-                Pyros(characterCoffers);
-
-                Hydatos(characterCoffers);
-
-                ImGui.EndTabBar();
-            }
-            ImGui.EndTabItem();
+            Helper.NoEurekaCofferData();
+            return;
         }
+
+        var characterCoffers = Plugin.CharacterStorage.Values.Where(c => c.Eureka.Opened > 0).ToArray();
+        if (characterCoffers.Length == 0)
+        {
+            Helper.NoEurekaCofferData();
+            return;
+        }
+
+        EurekaStats(characterCoffers);
+
+        Pagos(characterCoffers);
+
+        Pyros(characterCoffers);
+
+        Hydatos(characterCoffers);
     }
 
     private void EurekaStats(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Stats"))
+        using var tabItem = ImRaii.TabItem("Stats");
+        if (!tabItem.Success)
             return;
 
         var worth = 0L;
@@ -69,80 +63,75 @@ public partial class MainWindow
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
-        ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
-        if (ImGui.BeginTable($"##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0)))
-        {
-            ImGui.TableSetupColumn("##stat", 0, 0.4f);
-            ImGui.TableSetupColumn("##opened");
 
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
+        using var table = ImRaii.Table("##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##stat", 0, 0.4f);
+        ImGui.TableSetupColumn("##opened");
+
+        using var indent = ImRaii.PushIndent(10.0f);
+        ImGui.TableNextColumn();
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted($"{totalNumber:N0} Coffer{(totalNumber > 1 ? "s" : "")}");
+
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
+        ImGui.TextColored(ImGuiColors.HealerGreen, "Worth");
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted($"{worth:N0} Gil");
+
+        foreach (var (territory, rarityDictionary) in territoryCoffers)
+        {
+            ImGui.TableNextRow();
             ImGui.TableNextColumn();
-            ImGui.Indent(10.0f);
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{totalNumber:N0} Coffer{(totalNumber > 1 ? "s" : "")}");
+            ImGuiHelpers.ScaledDummy(5.0f);
 
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Worth");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{worth:N0} Gil");
+            ImGui.TextColored(ImGuiColors.HealerGreen, territory.ToName());
 
-            foreach (var (territory, rarityDictionary) in territoryCoffers)
+            using var innerIndent = ImRaii.PushIndent(10.0f);
+            foreach (var (rarity, rarityCount) in rarityDictionary)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGuiHelpers.ScaledDummy(5.0f);
+                ImGui.TextColored(ImGuiColors.HealerGreen, rarity.ToName());
 
-                ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGui.TextColored(ImGuiColors.HealerGreen, territory.ToName());
-
-                ImGui.Indent(10.0f);
-                foreach (var (rarity, rarityCount) in rarityDictionary)
-                {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    ImGui.TextColored(ImGuiColors.HealerGreen, rarity.ToName());
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"{rarityCount:N0}  Coffer{(rarityCount > 1 ? "s" : "")}");
-                }
-                ImGui.Unindent(10.0f);
+                ImGui.TextUnformatted($"{rarityCount:N0}  Coffer{(rarityCount > 1 ? "s" : "")}");
             }
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
         }
-        ImGui.EndTabItem();
     }
 
     private void Pagos(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Pagos"))
+        using var tabItem = ImRaii.TabItem("Pagos");
+        if (!tabItem.Success)
             return;
 
         CofferHistory(Territory.Pagos, characters);
-
-        ImGui.EndTabItem();
     }
 
     private void Pyros(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Pyros"))
+        using var tabItem = ImRaii.TabItem("Pyros");
+        if (!tabItem.Success)
             return;
 
         CofferHistory(Territory.Pyros, characters);
-
-        ImGui.EndTabItem();
     }
 
     private void Hydatos(CharacterConfiguration[] characters)
     {
-        if (!ImGui.BeginTabItem("Hydatos"))
+        using var tabItem = ImRaii.TabItem("Hydatos");
+        if (!tabItem.Success)
             return;
 
         CofferHistory(Territory.Hydatos, characters);
-
-        ImGui.EndTabItem();
     }
 
     private void CofferHistory(Territory territory, CharacterConfiguration[] characters)
@@ -169,7 +158,7 @@ public partial class MainWindow
             }
         }
 
-        if (!dict.Any())
+        if (dict.Count == 0)
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {Rarity.ToName()} Coffer in {territory.ToName()}");
             return;
@@ -186,36 +175,15 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Gil Obtained: {opened * Rarity.ToWorth():N0}");
-        if (ImGui.BeginTable($"##HistoryTable", 4, ImGuiTableFlags.Sortable))
-        {
-            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
-            ImGui.TableSetupColumn("Item##item");
-            ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
-            ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
-
-            ImGui.TableHeadersRow();
-
-            ImGui.Indent(10.0f);
-            foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
-            {
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(sortedEntry.Icon);
-                ImGui.TableNextColumn();
-
-                ImGui.TextUnformatted(sortedEntry.Name);
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(sortedEntry.Name);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{sortedEntry.Count}");
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-                ImGui.TableNextRow();
-            }
-
-            ImGui.Unindent(10.0f);
-            ImGui.EndTable();
-        }
+        new SortableTable("##HistoryTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
+            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddAction(entry => Helper.DrawIcon(entry.Icon))
+            .AddColumn("Item##item")
+            .AddAction(entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", initWidth: 0.2f)
+            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
+            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
+            .Draw();
     }
 }
