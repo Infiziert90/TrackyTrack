@@ -246,25 +246,18 @@ public partial class MainWindow
             return;
         }
 
-        var existingCharacters = characters.Select(character => $"{character.CharacterName}@{character.World}").ToArray();
         var selectedCharacter = RetainerSelectedCharacter;
-        ImGui.Combo("##existingCharacters", ref selectedCharacter, existingCharacters, existingCharacters.Length);
+        Helper.ClippedCombo("##existingCharacters", ref selectedCharacter, characters, character => $"{character.CharacterName}@{character.World}");
         if (selectedCharacter != RetainerSelectedCharacter)
         {
             RetainerSelectedCharacter = selectedCharacter;
             RetainerSelectedHistory = 0;
         }
+
         var reversedHistory = characters[RetainerSelectedCharacter].VentureStorage.History.Reverse().ToArray();
-        var history = reversedHistory.TakeWhile(pair => pair.Key.Ticks > DateLimit).Select(pair => $"{pair.Key}").ToArray();
 
-        if (history.Length == 0)
-        {
-            Helper.OldHistory();
-            return;
-        }
-
-        ImGui.Combo("##voyageSelection", ref RetainerSelectedHistory, history, history.Length);
-        Helper.DrawArrows(ref RetainerSelectedHistory, history.Length);
+        Helper.ClippedCombo("##historySelection", ref RetainerSelectedHistory, reversedHistory, pair => $"{pair.Key}");
+        Helper.DrawArrows(ref RetainerSelectedHistory, reversedHistory.Length);
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.Separator();
@@ -272,31 +265,31 @@ public partial class MainWindow
 
         var ventureResult = reversedHistory[RetainerSelectedHistory].Value;
         using var table = ImRaii.Table("##HistoryTable", 3);
-        if (table.Success)
+        if (!table.Success)
+            return;
+
+        ImGui.TableSetupColumn("##icon", 0, 0.2f);
+        ImGui.TableSetupColumn("##item");
+        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+
+        using var indent = ImRaii.PushIndent(10.0f);
+        foreach (var ventureItem in ventureResult.Items)
         {
-            ImGui.TableSetupColumn("##icon", 0, 0.2f);
-            ImGui.TableSetupColumn("##item");
-            ImGui.TableSetupColumn("##amount", 0, 0.2f);
+            if (!ventureItem.Valid)
+                continue;
 
-            using var indent = ImRaii.PushIndent(10.0f);
-            foreach (var ventureItem in ventureResult.Items)
-            {
-                if (!ventureItem.Valid)
-                    continue;
+            var item = ItemSheet.GetRow(ventureItem.Item)!;
 
-                var item = ItemSheet.GetRow(ventureItem.Item)!;
+            ImGui.TableNextColumn();
+            Helper.DrawIcon(item.Icon);
+            ImGui.TableNextColumn();
 
-                ImGui.TableNextColumn();
-                Helper.DrawIcon(item.Icon);
-                ImGui.TableNextColumn();
+            var name = Utils.ToStr(item.Name);
+            ImGui.TextUnformatted(name);
 
-                var name = Utils.ToStr(item.Name);
-                ImGui.TextUnformatted(name);
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"x{ventureItem.Count}");
-                ImGui.TableNextRow();
-            }
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"x{ventureItem.Count}");
+            ImGui.TableNextRow();
         }
     }
 

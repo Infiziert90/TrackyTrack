@@ -3,7 +3,6 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -54,65 +53,6 @@ public class FrameworkManager
             CurrencyCounts[currency] = instance->GetInventoryItemCount((uint) currency, false, false, false);
 
         IsSafe = true;
-    }
-
-    public int Type;
-    public int NodeLevel;
-    public void GatheringNodeOpening(AddonEvent addonEvent, AddonArgs addonArgs)
-    {
-        try
-        {
-            Type = -1;
-            if (Plugin.ClientState.LocalPlayer is { TargetObject: not null } player)
-            {
-                var node = Sheets.GatheringPoints.GetRow(player.TargetObject.DataId)!;
-                Type = node.Type;
-                NodeLevel = node.GatheringPointBase.Value!.GatheringLevel;
-            }
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.Warning(e, "Unable to read gathering node type");
-        }
-    }
-
-    public void GatheringNodeClosing(AddonEvent addonEvent, AddonArgs addonArgs)
-    {
-        try
-        {
-            CheckNode(addonArgs, 9);
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.Warning(e, "Parsing gathering node close failed");
-        }
-    }
-
-    public void MasterpieceNodeClosing(AddonEvent addonEvent, AddonArgs addonArgs)
-    {
-        try
-        {
-            CheckNode(addonArgs, 126);
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.Warning(e, "Parsing gathering node close failed");
-        }
-    }
-
-    public unsafe void CheckNode(AddonArgs addonArgs, uint textIndex)
-    {
-        var addon = (AtkUnitBase*)addonArgs.Addon;
-        var text = addon->GetTextNodeById(textIndex);
-        var successfulGathered = text->NodeText.ToInteger() == 0;
-
-        if (!successfulGathered)
-            return;
-
-        if (Plugin.TimerManager.Revisited < 1)
-            Plugin.TimerManager.StartRevisit();
-        else
-            Plugin.TimerManager.Revisited = -1;
     }
 
     public unsafe void RetainerPreChecker(AddonEvent addonEvent, AddonArgs addonArgs)

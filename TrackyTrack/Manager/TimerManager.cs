@@ -15,9 +15,6 @@ public class TimerManager
     public uint Repaired;
     private readonly Timer RepairTimer = new(1 * 500);
 
-    public int Revisited = -1;
-    private readonly Timer RevisitTimer = new(1 * 3000);
-
     public TimerManager(Plugin plugin)
     {
         Plugin = plugin;
@@ -29,19 +26,9 @@ public class TimerManager
 
         RepairTimer.AutoReset = false;
         RepairTimer.Elapsed += (_, _) => Repaired = 0;
-
-        RevisitTimer.AutoReset = false;
-        RevisitTimer.Elapsed += StoreRevisitResult;
     }
 
     public void Dispose() { }
-
-    public void StartRevisit()
-    {
-        Plugin.TimerManager.Revisited = 0;
-        RevisitTimer.Start();
-    }
-
 
     public void StartBulk()
     {
@@ -57,22 +44,6 @@ public class TimerManager
     public void StartRepair()
     {
         RepairTimer.Start();
-    }
-
-    public void StoreRevisitResult(object? _, ElapsedEventArgs __)
-    {
-        if (Revisited == -1)
-            return;
-
-        var result = new Export.RevisitedResult(Plugin.FrameworkManager.Type, Plugin.FrameworkManager.NodeLevel, Revisited != 0);
-
-        if (result.Gathering == 0 || result.Perception == 0)
-            return;
-
-        if (Plugin.ClientState.LocalPlayer?.Level < 91)
-            return;
-
-        // Plugin.UploadEntry(result);
     }
 
     public void RepairResult(int gilDifference)
@@ -243,10 +214,6 @@ public class TimerManager
         character.Eureka.Opened += 1;
         character.Eureka.History[territory][rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();
-
-        Plugin.Log.Information($"Stored result for {rarity.ToName()} in {territory.ToName()}");
-        foreach (var item in result.Items)
-            Plugin.Log.Information($"Item: {item.Item} Quantity: {item.Count}");
 
         Plugin.UploadEntry(new Export.BunnyLoot((uint)rarity, (uint)territory, result.Items));
     }

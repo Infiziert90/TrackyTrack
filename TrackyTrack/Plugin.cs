@@ -95,9 +95,6 @@ namespace TrackyTrack
 
             AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
             AddonLifecycle.RegisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
-            AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Gathering", FrameworkManager.GatheringNodeOpening);
-            AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Gathering", FrameworkManager.GatheringNodeClosing);
-            AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GatheringMasterpiece", FrameworkManager.MasterpieceNodeClosing);
 
             ClientState.Login += Login;
             ClientState.TerritoryChanged += TerritoryChanged;
@@ -112,9 +109,6 @@ namespace TrackyTrack
         {
             AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
             AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
-            AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "Gathering", FrameworkManager.GatheringNodeOpening);
-            AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "Gathering", FrameworkManager.GatheringNodeClosing);
-            AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "GatheringMasterpiece", FrameworkManager.MasterpieceNodeClosing);
 
             ClientState.Login -= Login;
             ClientState.TerritoryChanged -= TerritoryChanged;
@@ -395,41 +389,7 @@ namespace TrackyTrack
             if (Configuration.UploadNotification)
                 Login();
 
-            if (!CheckUploadPermissions())
-                return;
-
-            try
-            {
-                var character = CharacterStorage[ClientState.LocalContentId];
-                if (character.HadDesynthUpload)
-                {
-                    ClientState.TerritoryChanged -= TerritoryChanged;
-                    return;
-                }
-
-                character.HadDesynthUpload = true;
-                ConfigurationBase.SaveCharacterConfig();
-
-                // Desynthesis
-                Task.Run(async () =>
-                {
-                    foreach (var (source, rewards) in character.Storage.History.Values)
-                    {
-                        // Delay to prevent too many uploads in a short time
-                        await Task.Delay(30);
-
-                        var r = new List<uint>();
-                        foreach (var reward in rewards)
-                            r.AddRange(reward.ItemCountArray());
-
-                        Export.UploadEntry(new Export.DesynthesisResult(source, r.ToArray()));
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Upload went wrong, just throw it away");
-            }
+            ClientState.TerritoryChanged -= TerritoryChanged;
         }
 
         public void UploadEntry(Export.Upload entry)

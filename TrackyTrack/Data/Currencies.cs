@@ -20,7 +20,7 @@ public static class CurrencyExtension
 {
     public static string ToName(this Currency currency)
     {
-        return (currency) switch
+        return currency switch
         {
             Currency.SerpentSeals or Currency.FlameSeals or Currency.StormSeals => "Grand Company",
             Currency.MGP => "MGP",

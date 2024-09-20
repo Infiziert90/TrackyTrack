@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
@@ -113,38 +112,6 @@ public static class Export
             foreach (var reward in result.Received)
                 r.AddRange(reward.ItemCountArray());
             Rewards = r.ToArray();
-        }
-    }
-
-    public class RevisitedResult : Upload
-    {
-        [JsonProperty("node")]
-        public int Node;
-
-        [JsonProperty("node_level")]
-        public int NodeLevel;
-
-        [JsonProperty("revisited")]
-        public bool Revisited;
-
-        [JsonProperty("gathering")]
-        public int Gathering;
-
-        [JsonProperty("perception")]
-        public int Perception;
-
-        public unsafe RevisitedResult(int node, int nodeLevel, bool revisited) : base("Revisits")
-        {
-            Node = node;
-            NodeLevel = nodeLevel;
-            Revisited = revisited;
-
-            var player = PlayerState.Instance();
-            if (player == null)
-                return;
-
-            Gathering = player->Attributes[72];
-            Perception = player->Attributes[73];
         }
     }
 

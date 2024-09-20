@@ -98,17 +98,6 @@ public unsafe class HookManager
     {
         ActorControlSelfHook.Original(category, eventId, param1, param2, param3, param4, param5, param6, targetId, param7);
 
-        // handler for gathering traits
-        if (eventId == 309)
-        {
-            if (Plugin.ClientState.LocalPlayer is { } player && player.EntityId == param2)
-            {
-                Plugin.TimerManager.Revisited++;
-                Plugin.Log.Information($"param1 {param1} param2 {param2:X}");
-                Plugin.Log.Information($"Revisit triggered? Node was {Plugin.FrameworkManager.Type}");
-            }
-        }
-
         // handler for teleport, repair and other message logs
         if (eventId != 517)
             return;

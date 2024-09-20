@@ -209,10 +209,8 @@ public partial class MainWindow
         if (!tabItem.Success)
             return;
 
-        var existingCharacters = characters.Select(character => $"{character.CharacterName}@{character.World}").ToArray();
-
         var selectedCharacter = SelectedCharacter;
-        ImGui.Combo("##existingCharacters", ref selectedCharacter, existingCharacters, existingCharacters.Length);
+        Helper.ClippedCombo("##existingCharacters", ref selectedCharacter, characters, character => $"{character.CharacterName}@{character.World}");
         if (selectedCharacter != SelectedCharacter)
         {
             SelectedCharacter = selectedCharacter;
@@ -221,10 +219,9 @@ public partial class MainWindow
 
         var selectedChar = characters[SelectedCharacter];
         var selectedHistory = selectedChar.Storage.History.Reverse().ToArray();
-        var history = selectedHistory.Select(pair => $"{pair.Key}").ToArray();
 
-        ImGui.Combo("##voyageSelection", ref SelectedHistory, history, history.Length);
-        Helper.DrawArrows(ref SelectedHistory, history.Length);
+        Helper.ClippedCombo("##desynthesisSelection", ref SelectedHistory, selectedHistory, pair => $"{pair.Key}");
+        Helper.DrawArrows(ref SelectedHistory, selectedHistory.Length);
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.Separator();
