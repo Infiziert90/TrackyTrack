@@ -175,15 +175,12 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Gil Obtained: {opened * Rarity.ToWorth():N0}");
-        new SortableTable("##HistoryTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
-            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
-            .AddAction(entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Item##item")
-            .AddAction(entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", initWidth: 0.2f)
-            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
-            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
-            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
-            .Draw();
+        new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+            .EnableSortSpec()
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .Draw(unsortedList);
     }
 }

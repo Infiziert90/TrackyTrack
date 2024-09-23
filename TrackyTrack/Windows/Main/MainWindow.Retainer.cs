@@ -326,41 +326,13 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {VentureCoffer.Content.Count}");
-
-        using (var table = ImRaii.Table("##HistoryTable", 4, ImGuiTableFlags.Sortable))
-        {
-            if (table.Success)
-            {
-
-                ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f);
-                ImGui.TableSetupColumn("Item##item");
-                ImGui.TableSetupColumn("Num##amount", 0, 0.2f);
-                ImGui.TableSetupColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f);
-
-                ImGui.TableHeadersRow();
-
-                ImGui.Indent(10.0f);
-                foreach (var sortedEntry in Utils.SortEntries(unsortedList, ImGui.TableGetSortSpecs().Specs))
-                {
-                    ImGui.TableNextColumn();
-                    Helper.DrawIcon(sortedEntry.Icon);
-                    ImGui.TableNextColumn();
-
-                    ImGui.TextUnformatted(sortedEntry.Name);
-                    if (ImGui.IsItemHovered())
-                        ImGui.SetTooltip(sortedEntry.Name);
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"x{sortedEntry.Count}");
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"{sortedEntry.Percentage:F2}%");
-                    ImGui.TableNextRow();
-                }
-
-                ImGui.Unindent(10.0f);
-            }
-        }
+        new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+            .EnableSortSpec()
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .Draw(unsortedList);
 
         ImGuiHelpers.ScaledDummy(10.0f);
         if (ImGui.Button("Export to clipboard"))

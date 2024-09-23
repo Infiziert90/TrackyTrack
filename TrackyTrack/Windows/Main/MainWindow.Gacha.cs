@@ -70,30 +70,23 @@ public partial class MainWindow
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaThreeZero.Content.Count}");
-        new SortableTable("##GachaTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
-            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
-            .AddAction(entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Item##item")
-            .AddAction(entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", initWidth: 0.2f)
-            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
-            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
-            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
-            .AddColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), showUnlock)
-            .Draw();
+        new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+            .EnableSortSpec()
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddColumn("##unlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .Draw(unsortedList);
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
-        new SimpleTable<uint>("##GachaMissingTable", Data.GachaThreeZero.Content.Where(i => dict[i] == 0), withIndent: 10.0f)
-            .AddColumn("##missingItemIcon", 0, 0.17f)
-            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon))
-            .AddColumn("Item##missingItem")
-            .AddAction(entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
-            .AddColumn("##missingUnlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), showUnlock)
-            .Draw();
+        new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
+            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon), initWidth: 0.17f)
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .Draw(Data.GachaThreeZero.Content.Where(i => dict[i] == 0));
     }
 
     private void GachaFourZero()
@@ -137,30 +130,23 @@ public partial class MainWindow
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaFourZero.Content.Count}");
-        new SortableTable("##GachaTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
-            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
-            .AddAction(entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Item##item")
-            .AddAction(entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", initWidth: 0.2f)
-            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
-            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
-            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
-            .AddColumn("##unlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), showUnlock)
-            .Draw();
+        new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+            .EnableSortSpec()
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddColumn("##unlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .Draw(unsortedList);
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
-        new SimpleTable<uint>("##GachaMissingTable", Data.GachaFourZero.Content.Where(i => dict[i] == 0), withIndent: 10.0f)
-            .AddColumn("##missingItemIcon", 0, 0.17f)
-            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon))
-            .AddColumn("Item##missingItem")
-            .AddAction(entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
-            .AddColumn("##missingUnlocked", ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .AddAction(entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), showUnlock)
-            .Draw();
+        new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
+            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon), initWidth: 0.17f)
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
+            .Draw(Data.GachaFourZero.Content.Where(i => dict[i] == 0));
     }
 
     private void Sanctuary()
@@ -198,26 +184,21 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Sanctuary.Content.Count} items");
-        new SortableTable("##GachaTable", unsortedList, ImGuiTableFlags.Sortable, 10.0f)
-            .AddColumn("##icon", ImGuiTableColumnFlags.NoSort, 0.17f)
-            .AddAction(entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Item##item")
-            .AddAction(entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", initWidth: 0.2f)
-            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
-            .AddColumn("Pct##percentage", ImGuiTableColumnFlags.DefaultSort, 0.25f)
-            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
-            .Draw();
+        new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+            .EnableSortSpec()
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .Draw(unsortedList);
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
-        new SimpleTable<uint>("##GachaMissingTable", Data.Sanctuary.Content.Where(i => dict[i] == 0), withIndent: 10.0f)
-            .AddColumn("##missingItemIcon", 0, 0.17f)
-            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon))
-            .AddColumn("Item##missingItem")
-            .AddAction(entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
-            .Draw();
+        new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
+            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon), initWidth: 0.17f)
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .Draw(Data.Sanctuary.Content.Where(i => dict[i] == 0));
     }
 
     private void RefreshUnlocks()

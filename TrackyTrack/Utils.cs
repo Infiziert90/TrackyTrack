@@ -11,9 +11,10 @@ public static class Utils
 
     public record SortedEntry(uint Id, uint Icon, string Name, uint Count, double Percentage);
 
-    public static IOrderedEnumerable<SortedEntry> SortEntries(IEnumerable<SortedEntry> unsortedList, ImGuiTableColumnSortSpecsPtr sortSpecsPtr)
+    public static IOrderedEnumerable<SortedEntry> SortEntries(IEnumerable<SortedEntry> unsortedList, object sortSpecsPtr)
     {
-        object SortFunction(SortedEntry entry) => sortSpecsPtr.ColumnIndex switch
+        var sortSpec = (ImGuiTableColumnSortSpecsPtr)sortSpecsPtr;
+        object SortFunction(SortedEntry entry) => sortSpec.ColumnIndex switch
         {
             1 => entry.Name,
             2 => entry.Count,
@@ -21,7 +22,7 @@ public static class Utils
             _ => entry.Percentage
         };
 
-        return sortSpecsPtr.SortDirection switch
+        return sortSpec.SortDirection switch
         {
             ImGuiSortDirection.Ascending => unsortedList.OrderBy(SortFunction),
             ImGuiSortDirection.Descending => unsortedList.OrderByDescending(SortFunction),

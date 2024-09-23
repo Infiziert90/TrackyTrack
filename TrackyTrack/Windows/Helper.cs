@@ -243,15 +243,17 @@ public static class Helper
     {
         var height = ImGui.GetTextLineHeightWithSpacing();
 
-        using var clipper = new ListClipper(items.Length, itemHeight: height);
         using var combo = ImRaii.Combo(label, toString(items[selected]));
         if (!combo.Success)
             return;
 
+        using var clipper = new ListClipper(items.Length, itemHeight: height);
         foreach (var idx in clipper.Rows)
             if (ImGui.Selectable(toString(items[idx]), idx == selected))
                 selected = idx;
     }
+
+    public static IOrderedEnumerable<T> NoSort<T>(IEnumerable<T> values, object _) => values.OrderBy(_ => 1);
 }
 
 public class SimpleTable<T>
@@ -260,122 +262,65 @@ public class SimpleTable<T>
 
     private readonly string TableName;
     private readonly float WithIndent;
-    private readonly IEnumerable<T> Values;
+    private readonly Func<IEnumerable<T>, object, IOrderedEnumerable<T>> Enumerator;
     private readonly ImGuiTableFlags Flags;
-    private readonly Vector2? Size;
+    private readonly Vector2 Size;
+
+    private bool UseSortSpec;
+    private bool ShowHeaderRow = true;
 
     private readonly List<TableColumn> Columns = [];
     private readonly List<Action<T>> ColumnActions = [];
 
-    public SimpleTable(string tableName, IEnumerable<T> values, ImGuiTableFlags flags = 0, Vector2? size = null, float withIndent = 0.0f)
+    public SimpleTable(string tableName, Func<IEnumerable<T>, object, IOrderedEnumerable<T>> enumerator, ImGuiTableFlags flags = 0, Vector2? size = null, float withIndent = 0.0f)
     {
         TableName = tableName;
-        Values = values;
+        Enumerator = enumerator;
         WithIndent = withIndent;
         Flags = flags;
-        Size = size;
+
+        Size = size ?? Vector2.Zero;
     }
 
-    public SimpleTable<T> AddColumn(string name, ImGuiTableColumnFlags flags = 0, float initWidth = 0, bool useColumn = true)
+    public SimpleTable<T> AddColumn(string name, Action<T> columnAction, ImGuiTableColumnFlags flags = 0, float initWidth = 0, bool useColumn = true)
     {
         if (!useColumn)
             return this;
 
         Columns.Add(new TableColumn(name, flags, initWidth));
-        return this;
-    }
-
-    public SimpleTable<T> AddAction(Action<T> columnAction, bool useColumn = true)
-    {
-        if (!useColumn)
-            return this;
-
         ColumnActions.Add(columnAction);
         return this;
     }
 
-    public void Draw()
+    public SimpleTable<T> EnableSortSpec()
+    {
+        UseSortSpec = true;
+        return this;
+    }
+
+    public SimpleTable<T> HideHeaderRow()
+    {
+        ShowHeaderRow = false;
+        return this;
+    }
+
+    public void Draw(IEnumerable<T> values)
     {
         if (Columns.Count == 0)
             return;
 
-        using var table = Size.HasValue ? ImRaii.Table(TableName, Columns.Count, Flags, Size.Value) : ImRaii.Table(TableName, Columns.Count, Flags);
+        using var table = ImRaii.Table(TableName, Columns.Count, Flags, Size);
         if (!table.Success)
             return;
 
         foreach (var column in Columns)
             ImGui.TableSetupColumn(column.Name, column.Flags, column.InitWidth);
 
-        ImGui.TableHeadersRow();
+        if (ShowHeaderRow)
+            ImGui.TableHeadersRow();
 
         using var indent = ImRaii.PushIndent(WithIndent, condition: WithIndent > 0.0f);
-        foreach (var sortedEntry in Values)
-        {
-            foreach (var action in ColumnActions)
-            {
-                ImGui.TableNextColumn();
-                action(sortedEntry);
-            }
-
-            ImGui.TableNextRow();
-        }
-    }
-}
-
-public class SortableTable
-{
-    public record TableColumn(string Name, ImGuiTableColumnFlags Flags, float InitWidth);
-
-    private readonly string TableName;
-    private readonly float WithIndent;
-    private readonly IEnumerable<Utils.SortedEntry> Values;
-    private readonly ImGuiTableFlags Flags;
-
-    private readonly List<TableColumn> Columns = [];
-    private readonly List<Action<Utils.SortedEntry>> ColumnActions = [];
-
-    public SortableTable(string tableName, IEnumerable<Utils.SortedEntry> values, ImGuiTableFlags flags = 0, float withIndent = 0.0f)
-    {
-        TableName = tableName;
-        Values = values;
-        WithIndent = withIndent;
-        Flags = flags;
-    }
-
-    public SortableTable AddColumn(string name, ImGuiTableColumnFlags flags = 0, float initWidth = 0, bool useColumn = true)
-    {
-        if (!useColumn)
-            return this;
-
-        Columns.Add(new TableColumn(name, flags, initWidth));
-        return this;
-    }
-
-    public SortableTable AddAction(Action<Utils.SortedEntry> columnAction, bool useColumn = true)
-    {
-        if (!useColumn)
-            return this;
-
-        ColumnActions.Add(columnAction);
-        return this;
-    }
-
-    public void Draw()
-    {
-        if (Columns.Count == 0)
-            return;
-
-        using var table = ImRaii.Table(TableName, Columns.Count, Flags);
-        if (!table.Success)
-            return;
-
-        foreach (var column in Columns)
-            ImGui.TableSetupColumn(column.Name, column.Flags, column.InitWidth);
-
-        ImGui.TableHeadersRow();
-
-        using var indent = ImRaii.PushIndent(WithIndent, condition: WithIndent > 0.0f);
-        foreach (var sortedEntry in Utils.SortEntries(Values, ImGui.TableGetSortSpecs().Specs))
+        foreach (var sortedEntry in Enumerator(values, UseSortSpec ? ImGui.TableGetSortSpecs().Specs : null))
         {
             foreach (var action in ColumnActions)
             {

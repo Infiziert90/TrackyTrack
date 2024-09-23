@@ -246,11 +246,10 @@ public partial class MainWindow
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip($"{sourceName}\nClick to copy and set as reward for search");
 
-        new SimpleTable<ItemResult>("##HistoryTable", resultPair.Value.Received.Where(i => i.Item > 0), withIndent: 10.0f)
-            .AddColumn("##icon", 0, 0.2f)
-            .AddAction(entry => Helper.DrawIcon(ItemSheet.GetRow(entry.Item)!.Icon))
-            .AddColumn("##item")
-            .AddAction(entry =>
+        new SimpleTable<ItemResult>("##HistoryTable", Helper.NoSort, withIndent: 10.0f)
+            .HideHeaderRow()
+            .AddColumn("##icon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry.Item)!.Icon), initWidth: 0.2f)
+            .AddColumn("##item", entry =>
             {
                 var item = ItemSheet.GetRow(entry.Item)!;
                 var name = Utils.ToStr(item.Name);
@@ -264,9 +263,8 @@ public partial class MainWindow
                 if (ImGui.IsItemHovered())
                     ImGui.SetTooltip($"{name}\nClick to copy and set as reward for search");
             })
-            .AddColumn("##amount", 0, 0.2f)
-            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Count}"))
-            .Draw();
+            .AddColumn("##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .Draw(resultPair.Value.Received.Where(i => i.Item > 0));
     }
 
     private void Rewards()
@@ -553,14 +551,11 @@ public partial class MainWindow
         if (!child.Success)
             return;
 
-        new SimpleTable<Item>("##PossibleItemsTable", CatalogueCache, 0, new Vector2(350 * ImGuiHelpers.GlobalScale, 0))
-            .AddColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 5.0f)
-            .AddAction(entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Name##item")
-            .AddAction(entry => Helper.SelectableClipboardText(Utils.ToStr(entry.Name)))
-            .AddColumn("Item Level##iLvL", 0, 0.3f)
-            .AddAction(entry => Helper.RightAlignedText($"{entry.LevelItem.Row}"))
-            .Draw();
+        new SimpleTable<Item>("##PossibleItemsTable", Helper.NoSort)
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 5.0f)
+            .AddColumn("Name##item", entry => Helper.SelectableClipboardText(Utils.ToStr(entry.Name)))
+            .AddColumn("Item Level##iLvL", entry => Helper.RightAlignedText($"{entry.LevelItem.Row}"), initWidth: 0.3f)
+            .Draw(CatalogueCache);
     }
 
     private void CrowdSourcedInfo()
@@ -643,30 +638,22 @@ public partial class MainWindow
 
     private static void MinMaxTable(string identifier, IEnumerable<Result> results, bool showReceived = false)
     {
-        new SimpleTable<Result>(identifier, SortByKeyCustom(results), 0, new Vector2((showReceived ? 400 : 300) * ImGuiHelpers.GlobalScale, 0))
-            .AddColumn("Item##ItemName", 0, 0.6f)
-            .AddAction(entry => Helper.SelectableClipboardText(Utils.ToStr(ItemSheet.GetRow(entry.Item)?.Name ?? "Invalid Data"), 10.0f))
-            .AddColumn("Min##StatMin", 0, 0.1f)
-            .AddAction(entry => Helper.RightAlignedText(entry.Min.ToString()))
-            .AddColumn("##StatSymbol", 0, 0.05f)
-            .AddAction(_ => Helper.CenterText("-"))
-            .AddColumn("Max##StatMax", 0, 0.1f)
-            .AddAction(entry => ImGui.TextUnformatted(entry.Max.ToString()))
-            .AddColumn("Received##StatReceived", 0, 0.3f, showReceived)
-            .AddAction(entry => ImGui.TextUnformatted($"x{entry.Received:N0}"), showReceived)
-            .Draw();
+        new SimpleTable<Result>(identifier, SortByKeyCustom, size: new Vector2((showReceived ? 400 : 300) * ImGuiHelpers.GlobalScale, 0))
+            .AddColumn("Item##ItemName", entry => Helper.SelectableClipboardText(Utils.ToStr(ItemSheet.GetRow(entry.Item)?.Name ?? "Invalid Data"), 10.0f), initWidth: 0.6f)
+            .AddColumn("Min##StatMin", entry => Helper.RightAlignedText(entry.Min.ToString()), initWidth: 0.1f)
+            .AddColumn("##StatSymbol", _ => Helper.CenterText("-"), initWidth: 0.05f)
+            .AddColumn("Max##StatMax", entry => ImGui.TextUnformatted(entry.Max.ToString()), initWidth: 0.1f)
+            .AddColumn("Received##StatReceived", entry => ImGui.TextUnformatted($"x{entry.Received:N0}"), initWidth: 0.3f, useColumn: showReceived)
+            .Draw(results);
     }
 
     private static void PercentageTable(string identifier, IOrderedEnumerable<Utils.SortedEntry> sortedList)
     {
-        new SimpleTable<Utils.SortedEntry>(identifier, sortedList)
-            .AddColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f)
-            .AddAction(entry => Helper.DrawIcon(entry.Icon, withIndent: 10.0f))
-            .AddColumn("Item##item")
-            .AddAction(entry => ImGui.TextUnformatted(entry.Name))
-            .AddColumn("Pct##percentage", 0, 0.25f)
-            .AddAction(entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"))
-            .Draw();
+        new SimpleTable<Utils.SortedEntry>(identifier, Helper.NoSort)
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon, withIndent: 10.0f), ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f)
+            .AddColumn("Item##item", entry => ImGui.TextUnformatted(entry.Name))
+            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), initWidth: 0.25f)
+            .Draw(sortedList);
     }
 
     public Item[] BuildCatalogue()
@@ -683,7 +670,7 @@ public partial class MainWindow
 
     private const int GilItemOrder = 1_000_000;
     private const int CrystalOrder = 2_000_000;
-    public static IOrderedEnumerable<Result> SortByKeyCustom(IEnumerable<Result> unsortedArray)
+    public static IOrderedEnumerable<Result> SortByKeyCustom(IEnumerable<Result> unsortedArray, object _)
     {
         return unsortedArray.OrderBy(result =>
         {
