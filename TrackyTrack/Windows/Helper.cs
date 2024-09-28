@@ -231,9 +231,9 @@ public static class Helper
         var colors = ImGui.GetStyle().Colors;
 
         var check = selected == number;
-        using var buttonColor = ImRaii.PushColor(ImGuiCol.Button, colors[(int) ImGuiCol.ButtonActive], check);
-        using var hoveredColor = ImRaii.PushColor(ImGuiCol.ButtonHovered, colors[(int) ImGuiCol.ButtonActive], check);
-        using var negHoveredColor = ImRaii.PushColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f }, !check);
+        using var buttonColor = ImRaii.PushColor(ImGuiCol.Button, colors[(int) ImGuiCol.ButtonActive], check)
+                                      .Push(ImGuiCol.ButtonHovered, colors[(int) ImGuiCol.ButtonActive], check)
+                                      .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f }, !check);
 
         if (ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners))
             selected = number;

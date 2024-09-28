@@ -327,6 +327,11 @@ namespace TrackyTrack
                 lockboxHistory[itemId] += amount;
 
             ConfigurationBase.SaveCharacterConfig();
+
+            // Uploads for Logograms are finished, 700k data points is enough
+            if (Lockboxes.Logograms.Contains(lockbox))
+                return;
+
             UploadEntry(new Export.GachaLoot(lockbox, itemId, amount));
         }
 
