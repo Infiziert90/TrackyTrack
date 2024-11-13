@@ -61,7 +61,7 @@ public partial class MainWindow
         var opened = characterGacha.Select(c => c.GachaThreeZero.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.ItemSheet.GetRow(pair.Key);
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
@@ -83,8 +83,8 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
-            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon), initWidth: 0.17f)
-            .AddColumn("Item##missingItem", entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon), initWidth: 0.17f)
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
             .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
             .Draw(Data.GachaThreeZero.Content.Where(i => dict[i] == 0));
     }
@@ -121,7 +121,7 @@ public partial class MainWindow
         var opened = characterGacha.Select(c => c.GachaFourZero.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.ItemSheet.GetRow(pair.Key);
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
@@ -143,8 +143,8 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
-            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon), initWidth: 0.17f)
-            .AddColumn("Item##missingItem", entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon), initWidth: 0.17f)
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
             .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
             .Draw(Data.GachaFourZero.Content.Where(i => dict[i] == 0));
     }
@@ -176,7 +176,7 @@ public partial class MainWindow
         var opened = characterGacha.Select(c => c.GachaSanctuary.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.ItemSheet.GetRow(pair.Key);
             var count = pair.Value;
             var percentage = (Data.Sanctuary.MultiRewardItems.Contains(pair.Key) ? count / 5.0 : count ) / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
@@ -196,8 +196,8 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
-            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry)!.Icon), initWidth: 0.17f)
-            .AddColumn("Item##missingItem", entry => Helper.HoverableText(ItemSheet.GetRow(entry)!.Name))
+            .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon), initWidth: 0.17f)
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
             .Draw(Data.Sanctuary.Content.Where(i => dict[i] == 0));
     }
 
@@ -217,14 +217,14 @@ public partial class MainWindow
 
     private static unsafe bool CheckUnlockStatus(uint id)
     {
+        if (!Sheets.ItemSheet.HasRow(id))
+            return false;
+
         var item = Sheets.ItemSheet.GetRow(id);
-        if (item == null || item.ItemAction.Row == 0)
+        if (item.ItemAction.RowId == 0)
             return false;
 
         var action = item.ItemAction.Value;
-        if (action == null)
-            return false;
-
         var instance = UIState.Instance();
         return action.Type switch
         {

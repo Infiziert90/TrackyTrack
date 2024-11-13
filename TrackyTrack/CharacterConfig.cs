@@ -56,7 +56,7 @@ public class CharacterConfiguration
     {
         LocalContentId = id;
         CharacterName = Utils.ToStr(local.Name);
-        World = Utils.ToStr(local.HomeWorld.GameData!.Name);
+        World = Utils.ToStr(local.HomeWorld.Value.Name);
     }
 
     public static CharacterConfiguration CreateNew() => new()
@@ -64,7 +64,7 @@ public class CharacterConfiguration
         LocalContentId = Plugin.ClientState.LocalContentId,
 
         CharacterName = Plugin.ClientState.LocalPlayer?.Name.ToString() ?? "",
-        World = Plugin.ClientState.LocalPlayer?.HomeWorld.GameData?.Name.ToString() ?? "Unknown"
+        World = Plugin.ClientState.LocalPlayer?.HomeWorld.Value.Name.ToString() ?? "Unknown"
     };
 
     public uint GetCurrencyCount(Currency currency)

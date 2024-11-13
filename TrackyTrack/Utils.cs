@@ -1,13 +1,14 @@
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Utility;
+using Lumina.Text.ReadOnly;
 
 namespace TrackyTrack;
 
 public static class Utils
 {
     public static string ToStr(SeString content) => content.ToString();
-    public static string ToStr(Lumina.Text.SeString content) => content.ToDalamudString().ToString();
+    public static string ToStr(ReadOnlySeString content) => content.ToDalamudString().ToString();
 
     public record SortedEntry(uint Id, uint Icon, string Name, uint Count, double Percentage);
 

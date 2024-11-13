@@ -12,7 +12,7 @@ public class InventoryChanged
     public delegate void ItemRemovedEvent((uint ItemId, uint Quantity) changedItem);
 
     public event ItemsChangedEvent? OnItemsChanged;
-    public delegate void ItemsChangedEvent((uint ItemId, long Quantity)[] changedItems);
+    public delegate void ItemsChangedEvent((uint ItemId, int Quantity)[] changedItems);
 
     public InventoryChanged()
     {
@@ -21,7 +21,7 @@ public class InventoryChanged
 
     public void TriggerInventoryChanged(IReadOnlyCollection<InventoryEventArgs> events)
     {
-        var changes = new Dictionary<uint, (uint NewQuantity, uint OldQuantity)>();
+        var changes = new Dictionary<uint, (int NewQuantity, int OldQuantity)>();
         foreach (var (e, _, type) in events.Select(e => (e, e.Item, e.Type)))
         {
             if (e.Item.ContainerType == GameInventoryType.DamagedGear)
@@ -62,14 +62,14 @@ public class InventoryChanged
         if (changes.Count != 0)
         {
             // Coffer checks added and removed
-            OnItemsChanged?.Invoke(changes.Select(pair => (pair.Key, (int) pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray());
+            OnItemsChanged?.Invoke(changes.Select(pair => (pair.Key, pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray());
 
             foreach (var (itemId, (newQuantity, oldQuantity)) in changes)
             {
                 if (itemId == 1)
                     continue;
 
-                var changedQuantity = (int) newQuantity - oldQuantity;
+                var changedQuantity = newQuantity - oldQuantity;
                 switch (changedQuantity)
                 {
                     case > 0:

@@ -108,7 +108,7 @@ public class TimerManager
     }
 
     public static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];
-    public void StoreCofferResult((uint ItemId, long Quantity)[] changes)
+    public void StoreCofferResult((uint ItemId, int Quantity)[] changes)
     {
         var added = changes.Where(pair => pair.Quantity > 0).ToArray();
         var removed = changes.Where(pair => pair.Quantity < 0).ToArray();
@@ -180,7 +180,7 @@ public class TimerManager
         Plugin.ChatGui.Print($"Coffer: {coffer.ItemId} Item: {item.ItemId}");
     }
 
-    public void StoreEurekaResult((uint ItemId, long Quantity)[] changes)
+    public void StoreEurekaResult((uint ItemId, int Quantity)[] changes)
     {
         if (!EurekaExtensions.AsArray.Contains(Plugin.ClientState.TerritoryType))
             return;

@@ -10,14 +10,14 @@ public partial class ConfigWindow : Window, IDisposable
 
     public ConfigWindow(Plugin plugin) : base("Configuration##TrackyTrack")
     {
-        this.SizeConstraints = new WindowSizeConstraints
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(320, 460),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        this.Plugin = plugin;
-        this.Configuration = plugin.Configuration;
+        Plugin = plugin;
+        Configuration = plugin.Configuration;
     }
 
     public void Dispose() { }

@@ -5,7 +5,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Windows.Main;
@@ -85,12 +85,12 @@ public partial class MainWindow
             TotalCoffers = quickHistory.Count(v => v.Primary.Item == 32161);
 
             // All valid gear is rarity green or higher
-            (Item Item, bool HQ)[] validGear = quickHistory.Select(v => (ItemSheet.GetRow(v.Primary.Item)!, v.Primary.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
-            TotalLvl = validGear.Sum(i => i.Item.LevelItem.Row);
-            TotalSeals = validGear.Sum(i => GCSupplySheet.GetRow(i.Item.LevelItem.Row)!.SealsExpertDelivery);
+            (Item Item, bool HQ)[] validGear = quickHistory.Select(v => (Sheets.ItemSheet.GetRow(v.Primary.Item)!, v.Primary.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
+            TotalLvl = validGear.Sum(i => i.Item.LevelItem.RowId);
+            TotalSeals = validGear.Sum(i => Sheets.GCSupplySheet.GetRow(i.Item.LevelItem.RowId).SealsExpertDelivery);
             TotalFCPoints = validGear.Sum(i =>
             {
-                var iLvL = i.Item.LevelItem.Row;
+                var iLvL = i.Item.LevelItem.RowId;
                 if ((iLvL & 1) == 1)
                     iLvL += 1;
 
@@ -213,7 +213,7 @@ public partial class MainWindow
         foreach (var i in clipper.Rows)
         {
             var (itemId, count) = items[i];
-            var item = ItemSheet.GetRow(itemId)!;
+            var item = Sheets.ItemSheet.GetRow(itemId)!;
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -278,7 +278,7 @@ public partial class MainWindow
             if (!ventureItem.Valid)
                 continue;
 
-            var item = ItemSheet.GetRow(ventureItem.Item)!;
+            var item = Sheets.ItemSheet.GetRow(ventureItem.Item)!;
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -318,7 +318,7 @@ public partial class MainWindow
         var opened = characterCoffers.Select(c => c.Coffer.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
             var percentage = (pair.Key != 8841 ? count / 2.0 : count) / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);

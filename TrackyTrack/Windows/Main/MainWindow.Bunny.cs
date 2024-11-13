@@ -167,7 +167,7 @@ public partial class MainWindow
         var opened = characters.Select(c => c.Eureka.History[territory][Rarity].Count).Sum();
         var unsortedList = dict.Where(pair => pair.Value.Obtained > 0).Select(pair =>
         {
-            var item = ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value.Total;
             var percentage = (double) pair.Value.Obtained / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);

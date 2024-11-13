@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using TrackyTrack.Data;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace TrackyTrack.Windows.Main;
 
@@ -42,26 +42,26 @@ public partial class MainWindow
 
     public void InitializeDesynth()
     {
-        DesynthCache = ItemSheet.Where(i => i.Desynth > 0).ToArray();
-        HighestILvL = DesynthCache.Select(i => (int)i.LevelItem.Row).Max();
+        DesynthCache = Sheets.ItemSheet.Where(i => i.Desynth > 0).ToArray();
+        HighestILvL = DesynthCache.Select(i => (int)i.LevelItem.RowId).Max();
 
         LowestValidID = 100;
-        HighestValidID = ItemSheet.Where(i => i.Icon != 0).MaxBy(i => i.RowId)!.RowId;
+        HighestValidID = Sheets.ItemSheet.Where(i => i.Icon != 0).MaxBy(i => i.RowId)!.RowId;
 
         // Fill once
         CatalogueCache = BuildCatalogue();
     }
 
-    private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> SourceOptions = new()
+    private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions SourceOptions = new()
     {
         FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.Payloads.Count > 0).Where(i => i.Desynth > 0)
+        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.PayloadCount > 0).Where(i => i.Desynth > 0)
     };
 
-    private static readonly ExcelSheetSelector.ExcelSheetPopupOptions<Item> ItemOptions = new()
+    private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions ItemOptions = new()
     {
         FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.Payloads.Count > 0)
+        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.PayloadCount > 0)
     };
 
     private void DesynthesisTab()
@@ -136,7 +136,7 @@ public partial class MainWindow
         ImGui.TableNextColumn();
 
         var destroyed = SourceHistory.MaxBy(pair => pair.Value);
-        var item = ItemSheet.GetRow(destroyed.Key)!;
+        var item = Sheets.ItemSheet.GetRow(destroyed.Key);
 
         using (ImRaii.PushIndent(10.0f))
         {
@@ -147,7 +147,7 @@ public partial class MainWindow
             ImGui.TextUnformatted($"x{destroyed.Value:N0}");
 
             var bestItem = RewardHistory.Where(pair => pair.Key is > 20 and < 100_000).MaxBy(pair => pair.Value);
-            item = ItemSheet.GetRow(bestItem.Key)!;
+            item = Sheets.ItemSheet.GetRow(bestItem.Key);
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Rewarded");
             ImGui.TableNextColumn();
@@ -156,7 +156,7 @@ public partial class MainWindow
             ImGui.TextUnformatted($"x{bestItem.Value:N0}");
 
             var bestCrystal = RewardHistory.Where(pair => pair.Key is > 0 and < 20).MaxBy(pair => pair.Value);
-            item = ItemSheet.GetRow(bestCrystal.Key)!;
+            item = Sheets.ItemSheet.GetRow(bestCrystal.Key);
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Crystal");
             ImGui.TableNextColumn();
@@ -228,7 +228,7 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(5.0f);
 
         var resultPair = selectedHistory[SelectedHistory];
-        var source = ItemSheet.GetRow(resultPair.Value.Source)!;
+        var source = Sheets.ItemSheet.GetRow(resultPair.Value.Source);
         Helper.DrawIcon(source.Icon);
         ImGui.SameLine();
 
@@ -248,10 +248,10 @@ public partial class MainWindow
 
         new SimpleTable<ItemResult>("##HistoryTable", Helper.NoSort, withIndent: 10.0f)
             .HideHeaderRow()
-            .AddColumn("##icon", entry => Helper.DrawIcon(ItemSheet.GetRow(entry.Item)!.Icon), initWidth: 0.2f)
+            .AddColumn("##icon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry.Item).Icon), initWidth: 0.2f)
             .AddColumn("##item", entry =>
             {
-                var item = ItemSheet.GetRow(entry.Item)!;
+                var item = Sheets.ItemSheet.GetRow(entry.Item);
                 var name = Utils.ToStr(item.Name);
                 if (ImGui.Selectable(name))
                 {
@@ -299,7 +299,7 @@ public partial class MainWindow
         foreach (var i in clipper.Rows)
         {
             var (itemId, count) = items[i];
-            var item = ItemSheet.GetRow(itemId)!;
+            var item = Sheets.ItemSheet.GetRow(itemId);
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -355,7 +355,7 @@ public partial class MainWindow
         foreach (var i in clipper.Rows)
         {
             var (itemId, count) = items[i];
-            var item = ItemSheet.GetRow(itemId)!;
+            var item = Sheets.ItemSheet.GetRow(itemId);
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -411,7 +411,7 @@ public partial class MainWindow
 
         if (SearchForSelection == 0)
         {
-            if (ExcelSheetSelector.ExcelSheetPopup("SourceResultPopup", out var sourceRow, SourceOptions))
+            if (ExcelSheetSelector<Item>.ExcelSheetPopup("SourceResultPopup", out var sourceRow, SourceOptions))
             {
                 SourceSearchResult = sourceRow;
                 RewardSearchResult = 0;
@@ -419,7 +419,7 @@ public partial class MainWindow
         }
         else
         {
-            if (ExcelSheetSelector.ExcelSheetPopup("ItemResultPopup", out var itemRow, ItemOptions))
+            if (ExcelSheetSelector<Item>.ExcelSheetPopup("ItemResultPopup", out var itemRow, ItemOptions))
             {
                 SourceSearchResult = 0;
                 RewardSearchResult = itemRow;
@@ -445,7 +445,7 @@ public partial class MainWindow
             dict = LocalSourcesCache!;
         }
 
-        var sourceItem = ItemSheet.GetRow(SourceSearchResult)!;
+        var sourceItem = Sheets.ItemSheet.GetRow(SourceSearchResult)!;
         Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), Utils.ToStr(sourceItem.Name), ImGuiColors.ParsedOrange);
         if (!dict.TryGetValue(SourceSearchResult, out var history))
         {
@@ -461,7 +461,7 @@ public partial class MainWindow
 
         var sortedList = history.Results.Where(result => result.Item > 20).Select(result =>
         {
-            var item = ItemSheet.GetRow(result.Item) ?? ItemSheet.GetRow(1)!;
+            var item = Sheets.ItemSheet.HasRow(result.Item) ? Sheets.ItemSheet.GetRow(result.Item) : Sheets.ItemSheet.GetRow(1);
             var count = result.Received;
             var percentage = (double) count / desynthesized * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
@@ -482,7 +482,7 @@ public partial class MainWindow
             dict = LocalRewardsCache!;
         }
 
-        var sourceItem = ItemSheet.GetRow(RewardSearchResult)!;
+        var sourceItem = Sheets.ItemSheet.GetRow(RewardSearchResult);
         Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), Utils.ToStr(sourceItem.Name), ImGuiColors.ParsedOrange);
         if (!dict.TryGetValue(RewardSearchResult, out var history))
         {
@@ -498,7 +498,7 @@ public partial class MainWindow
 
         var sortedList = history.Results.Select(result =>
         {
-            var item = ItemSheet.GetRow(result.Item) ?? ItemSheet.GetRow(1)!;
+            var item = Sheets.ItemSheet.HasRow(result.Item) ? Sheets.ItemSheet.GetRow(result.Item) : Sheets.ItemSheet.GetRow(1);
             var source = Plugin.Importer.SourcedData.Sources[result.Item];
             if (DataSourceSelection == 1 && LocalSourcesCache != null)
                 source = LocalSourcesCache[result.Item];
@@ -554,7 +554,7 @@ public partial class MainWindow
         new SimpleTable<Item>("##PossibleItemsTable", Helper.NoSort)
             .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 5.0f)
             .AddColumn("Name##item", entry => Helper.SelectableClipboardText(Utils.ToStr(entry.Name)))
-            .AddColumn("Item Level##iLvL", entry => Helper.RightAlignedText($"{entry.LevelItem.Row}"), initWidth: 0.3f)
+            .AddColumn("Item Level##iLvL", entry => Helper.RightAlignedText($"{entry.LevelItem.RowId}"), initWidth: 0.3f)
             .Draw(CatalogueCache);
     }
 
@@ -639,7 +639,7 @@ public partial class MainWindow
     private static void MinMaxTable(string identifier, IEnumerable<Result> results, bool showReceived = false)
     {
         new SimpleTable<Result>(identifier, SortByKeyCustom, size: new Vector2((showReceived ? 400 : 300) * ImGuiHelpers.GlobalScale, 0))
-            .AddColumn("Item##ItemName", entry => Helper.SelectableClipboardText(Utils.ToStr(ItemSheet.GetRow(entry.Item)?.Name ?? "Invalid Data"), 10.0f), initWidth: 0.6f)
+            .AddColumn("Item##ItemName", entry => Helper.SelectableClipboardText(Utils.ToStr(Sheets.ItemSheet.TryGetRow(entry.Item, out var item) ? item.Name : "Invalid Data"), 10.0f), initWidth: 0.6f)
             .AddColumn("Min##StatMin", entry => Helper.RightAlignedText(entry.Min.ToString()), initWidth: 0.1f)
             .AddColumn("##StatSymbol", _ => Helper.CenterText("-"), initWidth: 0.05f)
             .AddColumn("Max##StatMax", entry => ImGui.TextUnformatted(entry.Max.ToString()), initWidth: 0.1f)
@@ -659,12 +659,12 @@ public partial class MainWindow
     public Item[] BuildCatalogue()
     {
         return DesynthCache.Where(i => i.Desynth > 0)
-                              .Where(i => i.ItemUICategory.Row != 39)
-                              .Where(i => i.LevelItem.Row > ILvLSearchResult)
-                              .Where(i => i.ClassJobRepair.Row == SelectedJob + 8)
-                              .Where(i => !ExcludeGear || i.EquipSlotCategory.Row == 0)
+                              .Where(i => i.ItemUICategory.RowId != 39)
+                              .Where(i => i.LevelItem.RowId > ILvLSearchResult)
+                              .Where(i => i.ClassJobRepair.RowId == SelectedJob + 8)
+                              .Where(i => !ExcludeGear || i.EquipSlotCategory.RowId == 0)
                               .Where(i => !ExcludeNonMB || !i.IsUntradable)
-                              .OrderBy(i => i.LevelItem.Row)
+                              .OrderBy(i => i.LevelItem.RowId)
                               .ToArray();
     }
 

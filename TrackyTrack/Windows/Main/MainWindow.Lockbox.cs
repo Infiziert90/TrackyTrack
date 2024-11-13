@@ -153,7 +153,7 @@ public partial class MainWindow
         var opened = dict.Values.Sum(s => s);
         var unsortedList = dict.Select(pair =>
         {
-            var item = ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.ItemSheet.GetRow(pair.Key)!;
             var count = pair.Value;
             var percentage = (double) pair.Value / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);

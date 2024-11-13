@@ -7,8 +7,6 @@ using System.Net.Http;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
-using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -19,14 +17,10 @@ public static class Export
     private const string SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6d252d2p4Z21hcXRyeGV3bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk3NzcwMDIsImV4cCI6MjAwNTM1MzAwMn0.aNYTnhY_Sagi9DyH5Q9tCz9lwaRCYzMC12SZ7q7jZBc";
     private static readonly HttpClient Client = new();
 
-    private static ExcelSheet<Item> ItemSheet = null!;
-
     private static readonly CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
 
     public static void Init()
     {
-        ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
-
         Client.DefaultRequestHeaders.Add("apikey", SupabaseAnonKey);
         Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {SupabaseAnonKey}");
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
@@ -67,7 +61,7 @@ public static class Export
             Coffer = coffer;
             ItemId = id;
             Amount = amount;
-            Name = Utils.ToStr(ItemSheet.GetRow(ItemId)!.Name);
+            Name = Utils.ToStr(Sheets.ItemSheet.GetRow(ItemId).Name);
         }
     }
 

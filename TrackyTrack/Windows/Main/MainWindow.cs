@@ -1,8 +1,6 @@
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
 
 namespace TrackyTrack.Windows.Main;
 
@@ -10,9 +8,6 @@ public partial class MainWindow : Window, IDisposable
 {
     private Plugin Plugin;
     private Configuration Configuration;
-
-    private static ExcelSheet<Item> ItemSheet = null!;
-    private static ExcelSheet<GCSupplyDutyReward> GCSupplySheet = null!;
 
     public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky##TrackyTrack")
     {
@@ -24,9 +19,6 @@ public partial class MainWindow : Window, IDisposable
 
         Plugin = plugin;
         Configuration = configuration;
-
-        ItemSheet = Plugin.Data.GetExcelSheet<Item>()!;
-        GCSupplySheet = Plugin.Data.GetExcelSheet<GCSupplyDutyReward>()!;
 
         InitializeStats();
         InitializeDesynth();

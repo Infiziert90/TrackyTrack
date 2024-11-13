@@ -10,53 +10,59 @@
       },
       "DalamudPackager": {
         "type": "Direct",
-        "requested": "[2.1.13, )",
-        "resolved": "2.1.13",
-        "contentHash": "rMN1omGe8536f4xLMvx9NwfvpAc9YFFfeXJ1t4P4PE6Gu8WCIoFliR1sh07hM+bfODmesk/dvMbji7vNI+B/pQ=="
+        "requested": "[11.0.0, )",
+        "resolved": "11.0.0",
+        "contentHash": "bjT7XUlhIJSmsE/O76b7weUX+evvGQctbQB8aKXt94o+oPWxHpCepxAGMs7Thow3AzCyqWs7cOpp9/2wcgRRQA=="
       },
       "MessagePack": {
         "type": "Direct",
-        "requested": "[3.0.54-alpha, )",
-        "resolved": "3.0.54-alpha",
-        "contentHash": "cSAPiO8A7Lp51rEROBb5Npe4Jp/Q8UT+rb9MDaUW4eg/dvweHYHSJvqpLJFYV7NaP5MmdwUs6jNKi5ZXywVqAQ==",
+        "requested": "[3.0.238-rc.1, )",
+        "resolved": "3.0.238-rc.1",
+        "contentHash": "gAVmHb2gswXviGFpAmUgGBVvZEjYGph7Co5hp6IbshEooIuZT34Rv4YcBKvVnUCHdoqxQvK6DZIOPSLSYv3LjQ==",
         "dependencies": {
-          "MessagePack.Annotations": "3.0.54-alpha",
-          "Microsoft.NET.StringTools": "17.9.5"
+          "MessagePack.Annotations": "3.0.238-rc.1",
+          "MessagePackAnalyzer": "3.0.238-rc.1",
+          "Microsoft.NET.StringTools": "17.11.4"
         }
       },
       "JetBrains.Annotations": {
         "type": "Transitive",
-        "resolved": "2023.3.0",
-        "contentHash": "PHfnvdBUdGaTVG9bR/GEfxgTwWM0Z97Y6X3710wiljELBISipSfF5okn/vz+C2gfO+ihoEyVPjaJwn8ZalVukA=="
+        "resolved": "2024.3.0",
+        "contentHash": "ox5pkeLQXjvJdyAB4b2sBYAlqZGLh3PjSnP1bQNVx72ONuTJ9+34/+Rq91Fc0dG29XG9RgZur9+NcP4riihTug=="
       },
       "MessagePack.Annotations": {
         "type": "Transitive",
-        "resolved": "3.0.54-alpha",
-        "contentHash": "KUDOe8K2nH8kVVOF3Pp66d0jSs33Jl6C94n1j3aVOlp0j8ysFphuT6bh7HJnju7GSI/z10A5C8tKiguOJcmEoQ=="
+        "resolved": "3.0.238-rc.1",
+        "contentHash": "yvnpKGuxZuFHnYZ9N8WQXQn0J28w2f0evh0RekDtuxIEKGPw/qQLQXyQWFzMunfb/+pKTWYlUZR1rvvNcwl10A=="
+      },
+      "MessagePackAnalyzer": {
+        "type": "Transitive",
+        "resolved": "3.0.238-rc.1",
+        "contentHash": "qweXSZ+3mrf3RAqBs71vrF20SiNmqQdbrrt/L3749jh7OPpvdyZcHhOd20BSk+THQXgmmQfqF5F3o/J7S7tGCQ=="
       },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "V8S3bsm50ig6JSyrbcJJ8bW2b9QLGouz+G1miK3UTaOWmMtFwNNNzUf4AleyDWUmTrWMLNnFSLEQtxmxgNQnNQ==",
+        "resolved": "9.0.0",
+        "contentHash": "MCPrg7v3QgNMr0vX4vzRXvkNGgLg8vKWX0nKCWUxu2uPyMsaRgiRc1tHBnbTcfJMhMKj2slE/j2M9oGkd25DNw==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
         }
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "cjWrLkJXK0rs4zofsK4bSdg+jhDLTaxrkXu4gS6Y7MAlCvRyNNgwY/lJi5RDlQOnSZweHqoyvgvbdvQsRIW+hg=="
+        "resolved": "9.0.0",
+        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
       },
       "Microsoft.NET.StringTools": {
         "type": "Transitive",
-        "resolved": "17.9.5",
-        "contentHash": "C/oPRnjcIZBRzcpl1V06R1eEMCxOGt6mIm+8ioyblELgJEXLM8XjUPuCwljMO52VetsHw54xMcYwU8UEeHEIEg=="
+        "resolved": "17.11.4",
+        "contentHash": "mudqUHhNpeqIdJoUx2YDWZO/I9uEDYVowan89R6wsomfnUJQk6HteoQTlNjZDixhT2B4IXMkMtgZtoceIjLRmA=="
       },
       "ottergui": {
         "type": "Project",
         "dependencies": {
-          "JetBrains.Annotations": "[2023.3.0, )",
-          "Microsoft.Extensions.DependencyInjection": "[8.0.0, )"
+          "JetBrains.Annotations": "[2024.3.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[9.0.0, )"
         }
       }
     }

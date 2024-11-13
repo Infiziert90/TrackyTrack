@@ -1,5 +1,8 @@
 ﻿using Dalamud.Hooking;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -20,6 +23,10 @@ public unsafe class HookManager
     private delegate void OpenInspectThingy(nint inspectAgent, int something, InventoryItem* item);
     private Hook<OpenInspectThingy> OpenInspectHook;
 
+    private const string LootAddedSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 89 4C 24";
+    private delegate byte LootAddedDelegate(Loot* a1, uint chestObjectId, uint chestItemIndex, uint itemId, ushort itemCount, nint materia, nint glamourStainIds, uint glamourItemId, RollState rollState, RollResult rollResult, float time, float maxTime, byte rollValue, byte a14, LootMode lootMode, int a16);
+    private Hook<LootAddedDelegate> LootAddedHook;
+
     public uint LastSeenItemId;
 
     public HookManager(Plugin plugin)
@@ -37,6 +44,10 @@ public unsafe class HookManager
         var openInspectPtr = Plugin.SigScanner.ScanText(OpenInspectSig);
         OpenInspectHook = Plugin.Hook.HookFromAddress<OpenInspectThingy>(openInspectPtr, OpenInspect);
         OpenInspectHook.Enable();
+
+        var lootAddedPtr = Plugin.SigScanner.ScanText(LootAddedSig);
+        LootAddedHook = Plugin.Hook.HookFromAddress<LootAddedDelegate>(lootAddedPtr, LootAddedDetour);
+        LootAddedHook.Enable();
     }
 
     public void Dispose()
@@ -44,6 +55,7 @@ public unsafe class HookManager
         DesynthResultHook.Dispose();
         ActorControlSelfHook.Dispose();
         OpenInspectHook.Dispose();
+        LootAddedHook.Dispose();
     }
 
     private void OpenInspect(nint inspectAgent, int something, InventoryItem* item)
@@ -131,5 +143,37 @@ public unsafe class HookManager
         {
             Plugin.Log.Error(e, "Error while parsing actor control packet");
         }
+    }
+
+
+    private byte LootAddedDetour(Loot* a1, uint chestObjectId, uint chestItemIndex, uint itemId, ushort itemCount, nint materia, nint glamourStainIds, uint glamourItemId, RollState rollState, RollResult rollResult, float time, float maxTime, byte rollValue, byte a14, LootMode lootMode, int a16)
+    {
+        var r = LootAddedHook.Original(a1, chestObjectId, chestItemIndex, itemId, itemCount, materia, glamourStainIds, glamourItemId, rollState, rollResult, time, maxTime, rollValue, a14, lootMode, a16);
+
+        try
+        {
+            Plugin.Log.Information($"Loot added: {r} ID1 {GroupManager.Instance()->MainGroup.PartyId} ID2 {GroupManager.Instance()->MainGroup.PartyId_2}");
+            Plugin.Log.Information($"chestObjectId {chestObjectId:X} itemId {itemId} itemCount {itemCount} roll {rollValue} a14 {a14} a16 {a16}");
+
+            var chestObject = Plugin.ObjectTable.SearchByEntityId(chestObjectId);
+            if (chestObject != null && chestObject.IsValid())
+            {
+                Plugin.Log.Information($"Chest Info: {chestObject.Name} BaseId {chestObject.DataId} Field7 {Sheets.TreasureSheet.GetRow(chestObject.DataId).Unknown7}");
+                Plugin.Log.Information($"Chest Position: {chestObject.Position.X} {chestObject.Position.Y} {chestObject.Position.Z}");
+
+                var map = Sheets.MapSheet.GetRow(Plugin.ClientState.MapId)!;
+                var transient = Sheets.TerritoryTransientSheet.GetRow(Plugin.ClientState.TerritoryType)!;
+
+                var mapPos = MapUtil.WorldToMap(chestObject.Position, map, transient);
+                Plugin.Log.Information($"Mao Info: {map.PlaceName.Value!.Name} | {map.PlaceNameRegion.Value!.Name} | {map.PlaceNameSub.Value!.Name}");
+                Plugin.Log.Information($"Map Position: {mapPos.X} {mapPos.Y} {mapPos.Z}");
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Error(e, "Error while parsing actor control packet");
+        }
+
+        return r;
     }
 }
