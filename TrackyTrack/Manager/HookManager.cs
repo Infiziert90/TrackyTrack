@@ -19,7 +19,7 @@ public unsafe class HookManager
     private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, ulong targetId, byte param7);
     private Hook<ActorControlSelfDelegate> ActorControlSelfHook;
 
-    private const string OpenInspectSig = "40 53 56 41 56 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 01";
+    private const string OpenInspectSig = "40 53 56 41 54 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 01";
     private delegate void OpenInspectThingy(nint inspectAgent, int something, InventoryItem* item);
     private Hook<OpenInspectThingy> OpenInspectHook;
 
@@ -149,6 +149,10 @@ public unsafe class HookManager
     private byte LootAddedDetour(Loot* a1, uint chestObjectId, uint chestItemIndex, uint itemId, ushort itemCount, nint materia, nint glamourStainIds, uint glamourItemId, RollState rollState, RollResult rollResult, float time, float maxTime, byte rollValue, byte a14, LootMode lootMode, int a16)
     {
         var r = LootAddedHook.Original(a1, chestObjectId, chestItemIndex, itemId, itemCount, materia, glamourStainIds, glamourItemId, rollState, rollResult, time, maxTime, rollValue, a14, lootMode, a16);
+
+        #if RELEASE
+        return r;
+        #endif
 
         try
         {
