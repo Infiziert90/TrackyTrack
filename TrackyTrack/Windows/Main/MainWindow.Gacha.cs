@@ -69,7 +69,9 @@ public partial class MainWindow
 
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaThreeZero.Content.Count}");
+        if (showUnlock)
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Unlocked: {dict.Count(pair => Unlocked.TryGetValue(pair.Key, out var unlocked) && unlocked)} out of {Data.GachaThreeZero.Content.Count}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Received From Coffers: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaThreeZero.Content.Count}");
         new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
             .EnableSortSpec()
             .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
@@ -81,7 +83,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
             .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon), initWidth: 0.17f)
             .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
@@ -129,7 +131,9 @@ public partial class MainWindow
 
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Obtained: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaFourZero.Content.Count}");
+        if (showUnlock)
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Unlocked: {dict.Count(pair => Unlocked.TryGetValue(pair.Key, out var unlocked) && unlocked)} out of {Data.GachaFourZero.Content.Count}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Received From Coffers: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaFourZero.Content.Count}");
         new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
             .EnableSortSpec()
             .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
@@ -141,7 +145,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
             .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon), initWidth: 0.17f)
             .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
@@ -194,7 +198,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "Missing:");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
             .AddColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon), initWidth: 0.17f)
             .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
@@ -217,10 +221,9 @@ public partial class MainWindow
 
     private static unsafe bool CheckUnlockStatus(uint id)
     {
-        if (!Sheets.ItemSheet.HasRow(id))
+        if (!Sheets.ItemSheet.TryGetRow(id, out var item))
             return false;
 
-        var item = Sheets.ItemSheet.GetRow(id);
         if (item.ItemAction.RowId == 0)
             return false;
 
