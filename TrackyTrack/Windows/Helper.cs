@@ -52,6 +52,12 @@ public static class Helper
         WrappedError("No data stored for bunny coffers\nPlease open a bunny coffer in eureka.");
     }
 
+    public static void TrackingDisabled(string text)
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError(text);
+    }
+
     public static void WrappedError(string text)
     {
         WrappedText(ImGuiColors.DalamudOrange, text);

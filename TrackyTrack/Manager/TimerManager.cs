@@ -120,7 +120,7 @@ public class TimerManager
         if (coffer.Quantity * -1 > 1)
             return;
 
-        // Handle card packs just like any other gacha lockbox item
+        // Handle card packs just like any other lockbox
         if (Lockboxes.CardPacks.Contains(coffer.ItemId))
         {
             Plugin.LockboxHandler(coffer.ItemId, item.ItemId, (uint) item.Quantity);
@@ -130,54 +130,54 @@ public class TimerManager
         if (!TrackedCoffers.Contains(coffer.ItemId))
             return;
 
-        var save = false;
-        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
-        if (Plugin.Configuration.EnableVentureCoffers)
+        if (!Plugin.Configuration.EnableVentureCoffers && coffer.ItemId is 32161)
         {
-            if (coffer.ItemId == 32161 && VentureCoffer.Content.Contains(item.ItemId))
-            {
-                character.Coffer.Opened += 1;
-                if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                    character.Coffer.Obtained[item.ItemId] += (uint) item.Quantity;
-                save = true;
-            }
-        }
-
-        if (Plugin.Configuration.EnableGachaCoffers)
-        {
-            if (coffer.ItemId == 36635 && GachaThreeZero.Content.Contains(item.ItemId))
-            {
-                character.GachaThreeZero.Opened += 1;
-                if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                    character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
-                save = true;
-            }
-            else if (coffer.ItemId == 36636 && GachaFourZero.Content.Contains(item.ItemId))
-            {
-                character.GachaFourZero.Opened += 1;
-                if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                    character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
-                save = true;
-            }
-            else if (coffer.ItemId == 41667 && Sanctuary.Content.Contains(item.ItemId))
-            {
-                character.GachaSanctuary.Opened += 1;
-                if (!character.GachaSanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                    character.GachaSanctuary.Obtained[item.ItemId] += (uint) item.Quantity;
-                save = true;
-            }
-        }
-
-        if (save)
-        {
-            Plugin.ConfigurationBase.SaveCharacterConfig();
-            Plugin.UploadEntry(new Export.GachaLoot(coffer.ItemId, item.ItemId, (uint) item.Quantity));
+            Plugin.Log.Warning("Opened venture coffer but has tracking disabled.");
             return;
         }
 
-        Plugin.ChatGui.Print(Utils.SuccessMessage("You've found an unknown coffer drop."));
-        Plugin.ChatGui.Print(Utils.SuccessMessage("Please consider sending the following information to the dev:"));
-        Plugin.ChatGui.Print($"Coffer: {coffer.ItemId} Item: {item.ItemId}");
+        if (!Plugin.Configuration.EnableGachaCoffers && coffer.ItemId is 36635 or 36636 or 41667)
+        {
+            Plugin.Log.Warning("Opened gacha coffer but has tracking disabled.");
+            return;
+        }
+
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        if (coffer.ItemId == 32161 && VentureCoffer.Content.Contains(item.ItemId))
+        {
+            character.Coffer.Opened += 1;
+            if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.Coffer.Obtained[item.ItemId] += (uint) item.Quantity;
+        }
+        else if (coffer.ItemId == 36635 && GachaThreeZero.Content.Contains(item.ItemId))
+        {
+            character.GachaThreeZero.Opened += 1;
+            if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
+        }
+        else if (coffer.ItemId == 36636 && GachaFourZero.Content.Contains(item.ItemId))
+        {
+            character.GachaFourZero.Opened += 1;
+            if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
+        }
+        else if (coffer.ItemId == 41667 && Sanctuary.Content.Contains(item.ItemId))
+        {
+            character.GachaSanctuary.Opened += 1;
+            if (!character.GachaSanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaSanctuary.Obtained[item.ItemId] += (uint) item.Quantity;
+        }
+        else
+        {
+            Plugin.ChatGui.Print(Utils.SuccessMessage("You've found an unknown coffer drop."));
+            Plugin.ChatGui.Print(Utils.SuccessMessage("Please consider sending the following information to the dev:"));
+            Plugin.ChatGui.Print($"Coffer: {coffer.ItemId} Item: {item.ItemId}");
+
+            return;
+        }
+
+        Plugin.ConfigurationBase.SaveCharacterConfig();
+        Plugin.UploadEntry(new Export.GachaLoot(coffer.ItemId, item.ItemId, (uint) item.Quantity));
     }
 
     public void StoreEurekaResult((uint ItemId, int Quantity)[] changes)

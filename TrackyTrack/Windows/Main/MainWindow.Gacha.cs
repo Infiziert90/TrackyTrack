@@ -35,6 +35,12 @@ public partial class MainWindow
         if (!tabItem.Success)
             return;
 
+        if (!Plugin.Configuration.EnableGachaCoffers)
+        {
+            Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
+            return;
+        }
+
         var characters = Plugin.CharacterStorage.Values.ToArray();
         if (characters.Length == 0)
         {
@@ -97,6 +103,12 @@ public partial class MainWindow
         if (!tabItem.Success)
             return;
 
+        if (!Plugin.Configuration.EnableGachaCoffers)
+        {
+            Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
+            return;
+        }
+
         var characters = Plugin.CharacterStorage.Values.ToArray();
         if (characters.Length == 0)
         {
@@ -158,6 +170,12 @@ public partial class MainWindow
         using var tabItem = ImRaii.TabItem("Sanctuary");
         if (!tabItem.Success)
             return;
+
+        if (!Plugin.Configuration.EnableGachaCoffers)
+        {
+            Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
+            return;
+        }
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
         if (characters.Length == 0)

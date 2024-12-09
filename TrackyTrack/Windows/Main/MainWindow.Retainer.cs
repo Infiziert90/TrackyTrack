@@ -299,6 +299,12 @@ public partial class MainWindow
         if (!tabItem.Success)
             return;
 
+        if (!Plugin.Configuration.EnableVentureCoffers)
+        {
+            Helper.TrackingDisabled("Venture Coffer tracking has been disabled in the config.");
+            return;
+        }
+
         var characterCoffers = characters.Where(c => c.Coffer.Opened > 0).ToArray();
         if (characterCoffers.Length == 0)
         {
