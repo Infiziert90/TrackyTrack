@@ -70,4 +70,13 @@ public static class Utils
     {
         Plugin.NotificationManager.AddNotification(new Notification{Content = content, Type = type, Minimized = false});
     }
+
+    public static bool NeedsRefresh(ref long lastRefresh, int refreshRate)
+    {
+        if (Environment.TickCount64 < lastRefresh)
+            return false;
+
+        lastRefresh = Environment.TickCount64 + refreshRate;
+        return true;
+    }
 }

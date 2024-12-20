@@ -7,6 +7,8 @@ namespace TrackyTrack.Windows.Main;
 public partial class MainWindow
 {
     private long LastRefresh;
+    private const int RefreshRate = 5000; // 5s
+
     private readonly Dictionary<uint, bool> Unlocked = [];
 
     private void GachaTab()
@@ -225,16 +227,14 @@ public partial class MainWindow
 
     private void RefreshUnlocks()
     {
-        if (Environment.TickCount64 < LastRefresh)
-            return;
+        if (Utils.NeedsRefresh(ref LastRefresh, RefreshRate))
+        {
+            foreach (var item in Data.GachaThreeZero.Content)
+                Unlocked[item] = CheckUnlockStatus(item);
 
-        LastRefresh = Environment.TickCount64 + 5000; // 5s
-
-        foreach (var item in Data.GachaThreeZero.Content)
-            Unlocked[item] = CheckUnlockStatus(item);
-
-        foreach (var item in Data.GachaFourZero.Content)
-            Unlocked[item] = CheckUnlockStatus(item);
+            foreach (var item in Data.GachaFourZero.Content)
+                Unlocked[item] = CheckUnlockStatus(item);
+        }
     }
 
     private static unsafe bool CheckUnlockStatus(uint id)

@@ -6,17 +6,18 @@ namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
-    private int SelectedType;
-    private static readonly string[] Territories = { "Eureka", "Bozja", "Unknown" };
+    private uint SelectedType;
+    private readonly Dictionary<uint, Dictionary<uint, uint>> LockboxContent = [];
+
+    private static readonly string[] Territories = ["Eureka", "Bozja", "Unknown"];
+
+    private long LastLockboxRefresh;
+    private const int LockboxRefreshRate = 30_000; // 30s
 
     private void LockboxTab()
     {
         using var tabItem = ImRaii.TabItem("Lockbox");
         if (!tabItem.Success)
-            return;
-
-        using var tabBar = ImRaii.TabBar("##LockboxTabBar");
-        if (!tabBar.Success)
             return;
 
         var characters = Plugin.CharacterStorage.Values;
@@ -33,22 +34,51 @@ public partial class MainWindow
             return;
         }
 
-        LockboxStats(characterLockboxes);
+        RefreshLockbox(characterLockboxes);
 
-        foreach (var type in LockboxExtensions.AsArray)
+        var styles = ImGui.GetStyle();
+        var nameDict = new SortedDictionary<uint, (string Name, float Width)>();
+        foreach (var lockboxId in LockboxContent.Keys)
         {
-            using var innerTabItem = ImRaii.TabItem(type.ToArea());
-            if (innerTabItem.Success)
-                LockboxHistory(type, characterLockboxes);
+            var name = Sheets.ItemSheet.GetRow(lockboxId).Name.ExtractText();
+            nameDict[lockboxId] = (name, ImGui.CalcTextSize(name).X + (styles.ItemSpacing.X * 2));
+        }
+
+        var pos = ImGui.GetCursorPos();
+
+        var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max(), 0);
+        using (var tabChild = ImRaii.Child("LockboxTabs", childSize, true))
+        {
+            if (tabChild.Success)
+            {
+                if (ImGui.Selectable("Stats", SelectedType == 0))
+                    SelectedType = 0;
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                foreach (var (lockboxId, (name, _)) in nameDict)
+                    if (ImGui.Selectable(name, SelectedType == lockboxId))
+                        SelectedType = lockboxId;
+            }
+        }
+
+        ImGui.SetCursorPos(pos with {X = pos.X + childSize.X});
+        using (var contentChild = ImRaii.Child("LockboxContent", Vector2.Zero, true))
+        {
+            if (contentChild.Success)
+            {
+                if (SelectedType == 0)
+                    LockboxStats(characterLockboxes);
+                else
+                    LockboxHistory();
+            }
         }
     }
 
     private void LockboxStats(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("Stats");
-        if (!tabItem.Success)
-            return;
-
         var longest = 0;
         var totalNumber = 0u;
         var openedTypes = new Dictionary<string, Dictionary<LockboxTypes, uint>>
@@ -70,15 +100,10 @@ public partial class MainWindow
                     longest = type.ToName().Length;
             }
         }
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-        ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
         using var table = ImRaii.Table("##TotalStatsTable", 2);
-
         ImGui.TableSetupColumn("##stat", 0, 2.0f);
         ImGui.TableSetupColumn("##opened");
 
-        using var indent = ImRaii.PushIndent(10.0f);
         ImGui.TableNextColumn();
         ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
 
@@ -114,58 +139,50 @@ public partial class MainWindow
         }
     }
 
-    private void LockboxHistory(LockboxTypes types, CharacterConfiguration[] characters)
+    private void LockboxHistory()
     {
-        var bothTypes = types.ToMultiple();
-        if (types.HasMultiple())
-        {
-            if (SelectedType != (int) bothTypes.Main && SelectedType != (int) bothTypes.Secondary)
-                SelectedType = (int) bothTypes.Main;
+        var content = LockboxContent[SelectedType];
 
-            ImGui.RadioButton(bothTypes.Main.ToName(), ref SelectedType, (int) bothTypes.Main);
-            ImGui.SameLine();
-            ImGui.RadioButton(bothTypes.Secondary.ToName(), ref SelectedType, (int) bothTypes.Secondary);
-        }
-        else
-        {
-            SelectedType = (int) types;
-        }
-
-        // fill dict with real values
-        var selectedType = (LockboxTypes) SelectedType;
-        var dict = new Dictionary<uint, uint>();
-        foreach (var (_, lockboxDict) in characters.SelectMany(c => c.Lockbox.History).Where(pair => pair.Key == selectedType))
-        {
-            foreach (var (itemId, amount) in lockboxDict)
-            {
-                if (!dict.TryAdd(itemId, amount))
-                    dict[itemId] += amount;
-            }
-        }
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-        if (dict.Count == 0)
-        {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {selectedType.ToName()} Lockboxes.");
+        var opened = content.Values.Sum(s => s);
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        if (content.Count == 0)
             return;
-        }
 
-        var opened = dict.Values.Sum(s => s);
-        var unsortedList = dict.Select(pair =>
+        var unsortedList = content.Select(pair =>
         {
-            var item = Sheets.ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.ItemSheet.GetRow(pair.Key);
             var count = pair.Value;
             var percentage = (double) pair.Value / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
         });
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+        new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable)
             .EnableSortSpec()
-            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort | ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X)
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
             .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
             .Draw(unsortedList);
+    }
+
+    private void RefreshLockbox(CharacterConfiguration[] characters)
+    {
+        if (Utils.NeedsRefresh(ref LastLockboxRefresh, LockboxRefreshRate))
+        {
+            LockboxContent.Clear();
+            foreach (var (type, innerDict) in characters.SelectMany(s => s.Lockbox.History))
+            {
+                var typeId = (uint)type;
+                if (Lockboxes.Logograms.Contains(typeId) || Lockboxes.Fragments.Contains(typeId))
+                    continue;
+
+                LockboxContent.TryAdd(typeId, []);
+
+                var lockbox = LockboxContent[typeId];
+                foreach (var (itemId, quantity) in innerDict.ToArray())
+                    if (!lockbox.TryAdd(itemId, quantity))
+                        lockbox[itemId] += quantity;
+            }
+        }
     }
 }
