@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using OtterGui;
 
 namespace TrackyTrack.Windows.Main;
 
@@ -11,32 +12,54 @@ public partial class MainWindow
 
     private readonly Dictionary<uint, bool> Unlocked = [];
 
+    private int SelectedGachaType;
+    private static readonly string[] GachaTabs = ["Gacha 3.0", "Gacha 4.0", "Sanctuary"];
+
     private void GachaTab()
     {
         using var tabItem = ImRaii.TabItem("Gacha");
         if (!tabItem.Success)
             return;
 
-        using var tabBar = ImRaii.TabBar("##GachaTabBar");
-        if (!tabBar.Success)
-            return;
-
         // Refreshes the unlocked dict every 5s
         RefreshUnlocks();
 
-        GachaThreeZero();
+        var styles = ImGui.GetStyle();
+        var nameDict = new SortedDictionary<int, (string Name, float Width)>();
+        foreach (var (name, idx) in GachaTabs.WithIndex())
+            nameDict[idx] = (name, ImGui.CalcTextSize(name).X + (styles.ItemSpacing.X * 2));
 
-        GachaFourZero();
 
-        Sanctuary();
+        var pos = ImGui.GetCursorPos();
+
+        var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max(), 0);
+        using (var tabChild = ImRaii.Child("GachaTabs", childSize, true))
+        {
+            if (tabChild.Success)
+            {
+                foreach (var (id, (name, _)) in nameDict)
+                    if (ImGui.Selectable(name, SelectedGachaType == id))
+                        SelectedGachaType = id;
+            }
+        }
+
+        ImGui.SetCursorPos(pos with {X = pos.X + childSize.X});
+        using (var contentChild = ImRaii.Child("GachaContent", Vector2.Zero, true))
+        {
+            if (contentChild.Success)
+            {
+                if (SelectedGachaType == 0)
+                    GachaThreeZero();
+                else if (SelectedGachaType == 1)
+                    GachaFourZero();
+                else if (SelectedGachaType == 2)
+                    Sanctuary();
+            }
+        }
     }
 
     private void GachaThreeZero()
     {
-        using var tabItem = ImRaii.TabItem("Gacha 3.0");
-        if (!tabItem.Success)
-            return;
-
         if (!Plugin.Configuration.EnableGachaCoffers)
         {
             Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
@@ -80,31 +103,16 @@ public partial class MainWindow
         if (showUnlock)
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Unlocked: {dict.Count(pair => Unlocked.TryGetValue(pair.Key, out var unlocked) && unlocked)} out of {Data.GachaThreeZero.Content.Count}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Received From Coffers: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaThreeZero.Content.Count}");
-        new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
-            .EnableSortSpec()
-            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
-            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
-            .AddColumn("##unlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .Draw(unsortedList);
+        DrawTable(unsortedList, showUnlock);
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
-        new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
-            .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon))
-            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
-            .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .Draw(Data.GachaThreeZero.Content.Where(i => dict[i] == 0));
+        DrawMissingTable(Data.GachaThreeZero.Content.Where(i => dict[i] == 0), showUnlock);
     }
 
     private void GachaFourZero()
     {
-        using var tabItem = ImRaii.TabItem("Gacha 4.0");
-        if (!tabItem.Success)
-            return;
-
         if (!Plugin.Configuration.EnableGachaCoffers)
         {
             Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
@@ -148,31 +156,16 @@ public partial class MainWindow
         if (showUnlock)
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Unlocked: {dict.Count(pair => Unlocked.TryGetValue(pair.Key, out var unlocked) && unlocked)} out of {Data.GachaFourZero.Content.Count}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Received From Coffers: {dict.Count(pair => pair.Value > 0)} out of {Data.GachaFourZero.Content.Count}");
-        new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
-            .EnableSortSpec()
-            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
-            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
-            .AddColumn("##unlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .Draw(unsortedList);
+        DrawTable(unsortedList, showUnlock);
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
-        new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
-            .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon))
-            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
-            .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlock)
-            .Draw(Data.GachaFourZero.Content.Where(i => dict[i] == 0));
+        DrawMissingTable(Data.GachaFourZero.Content.Where(i => dict[i] == 0), showUnlock);
     }
 
     private void Sanctuary()
     {
-        using var tabItem = ImRaii.TabItem("Sanctuary");
-        if (!tabItem.Success)
-            return;
-
         if (!Plugin.Configuration.EnableGachaCoffers)
         {
             Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
@@ -208,21 +201,33 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Sanctuary.Content.Count} items");
-        new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+        DrawTable(unsortedList, false);
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
+        DrawMissingTable(Data.Sanctuary.Content.Where(i => dict[i] == 0), false);
+    }
+
+    private void DrawTable(IEnumerable<Utils.SortedEntry> content, bool showUnlocked)
+    {
+        new SimpleTable<Utils.SortedEntry>("##GachaTable", Utils.SortEntries, ImGuiTableFlags.Sortable)
             .EnableSortSpec()
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
             .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
-            .Draw(unsortedList);
+            .AddColumn("##unlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlocked)
+            .Draw(content);
+    }
 
-        ImGuiHelpers.ScaledDummy(10.0f);
-
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
-        new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort, withIndent: 10.0f)
+    private void DrawMissingTable(IEnumerable<uint> content, bool showUnlocked)
+    {
+        new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort)
             .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon))
             .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
-            .Draw(Data.Sanctuary.Content.Where(i => dict[i] == 0));
+            .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlocked)
+            .Draw(content);
     }
 
     private void RefreshUnlocks()
