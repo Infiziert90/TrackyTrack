@@ -177,7 +177,7 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Gil Obtained: {opened * Rarity.ToWorth():N0}");
         new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
             .EnableSortSpec()
-            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort, 0.17f)
+            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
             .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)

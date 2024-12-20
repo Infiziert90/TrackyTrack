@@ -150,7 +150,7 @@ public partial class MainWindow
 
         var unsortedList = content.Select(pair =>
         {
-            var item = Sheets.ItemSheet.GetRow(pair.Key);
+            var item = Sheets.GetItem(pair.Key);
             var count = pair.Value;
             var percentage = (double) pair.Value / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
@@ -158,7 +158,7 @@ public partial class MainWindow
 
         new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable)
             .EnableSortSpec()
-            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.NoSort | ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X)
+            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
             .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)

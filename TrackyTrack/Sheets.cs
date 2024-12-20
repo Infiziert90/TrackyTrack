@@ -19,4 +19,6 @@ public static class Sheets
         GCSupplySheet = Plugin.Data.GetExcelSheet<GCSupplyDutyReward>();
         TerritoryTransientSheet = Plugin.Data.GetExcelSheet<TerritoryTypeTransient>();
     }
+
+    public static Item GetItem(uint itemId) => ItemSheet.GetRow(Utils.NormalizeItemId(itemId));
 }

@@ -248,10 +248,10 @@ public partial class MainWindow
 
         new SimpleTable<ItemResult>("##HistoryTable", Helper.NoSort, withIndent: 10.0f)
             .HideHeaderRow()
-            .AddColumn("##icon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry.Item).Icon), initWidth: 0.2f)
+            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.ToItemRow().Icon))
             .AddColumn("##item", entry =>
             {
-                var item = Sheets.ItemSheet.GetRow(entry.Item);
+                var item = entry.ToItemRow();
                 var name = Utils.ToStr(item.Name);
                 if (ImGui.Selectable(name))
                 {
@@ -552,7 +552,7 @@ public partial class MainWindow
             return;
 
         new SimpleTable<Item>("##PossibleItemsTable", Helper.NoSort)
-            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon), ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 5.0f)
+            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Name##item", entry => Helper.SelectableClipboardText(Utils.ToStr(entry.Name)))
             .AddColumn("Item Level##iLvL", entry => Helper.RightAlignedText($"{entry.LevelItem.RowId}"), initWidth: 0.3f)
             .Draw(CatalogueCache);
@@ -650,7 +650,7 @@ public partial class MainWindow
     private static void PercentageTable(string identifier, IOrderedEnumerable<Utils.SortedEntry> sortedList)
     {
         new SimpleTable<Utils.SortedEntry>(identifier, Helper.NoSort)
-            .AddColumn("##icon", entry => Helper.DrawIcon(entry.Icon, withIndent: 10.0f), ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f)
+            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => ImGui.TextUnformatted(entry.Name))
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), initWidth: 0.25f)
             .Draw(sortedList);

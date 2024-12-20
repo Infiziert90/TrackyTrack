@@ -190,11 +190,20 @@ public static class Helper
         ImGui.Image(texture.ImGuiHandle, size);
     }
 
-    public static void HoverableText(string text)
+    internal static void Tooltip(string tooltip)
+    {
+        using (ImRaii.Tooltip())
+        using (ImRaii.TextWrapPos(ImGui.GetFontSize() * 35.0f))
+        {
+            ImGui.TextUnformatted(tooltip);
+        }
+    }
+
+    public static void HoverableText(string text, string? tooltip = null)
     {
         ImGui.TextUnformatted(text);
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(text);
+            Tooltip(tooltip ?? text);
     }
 
     public static void SelectableClipboardText(string name, float withIndent = 0.0f)
@@ -204,7 +213,7 @@ public static class Helper
             ImGui.SetClipboardText(name);
 
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Click to copy");
+            Tooltip("Click to copy");
     }
 
     public static void DrawUnlockedSymbol(bool unlocked)
@@ -294,6 +303,13 @@ public class SimpleTable<T>
             return this;
 
         Columns.Add(new TableColumn(name, flags, initWidth));
+        ColumnActions.Add(columnAction);
+        return this;
+    }
+
+    public SimpleTable<T> AddIconColumn(string name, Action<T> columnAction)
+    {
+        Columns.Add(new TableColumn(name, ImGuiTableColumnFlags.NoSort | ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X * ImGuiHelpers.GlobalScale));
         ColumnActions.Add(columnAction);
         return this;
     }

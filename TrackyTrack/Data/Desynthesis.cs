@@ -1,4 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -71,7 +72,9 @@ public record DesynthResult(uint Source, ItemResult[] Received)
 
 public record ItemResult(uint Item, uint Count, bool HQ)
 {
-    public uint[] ItemCountArray() => new[] { Item, Count };
+    public uint[] ItemCountArray() => [Item, Count];
+
+    public Item ToItemRow() => Sheets.ItemSheet.GetRow(Item);
 }
 
 public struct BulkResult

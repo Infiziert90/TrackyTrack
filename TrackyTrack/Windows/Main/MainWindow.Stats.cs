@@ -10,7 +10,7 @@ public partial class MainWindow
 
     private static void InitializeStats()
     {
-        foreach (var currency in (Currency[])Enum.GetValues(typeof(Currency)))
+        foreach (var currency in Enum.GetValues<Currency>())
             IconList[currency] = Sheets.ItemSheet.GetRow((uint)currency).Icon;
     }
 
@@ -39,6 +39,10 @@ public partial class MainWindow
             return;
         }
 
+        using var child = ImRaii.Child("ContentChild", Vector2.Zero, true);
+        if (!child.Success)
+            return;
+
         if (Configuration.EnableCurrency)
             CurrencyStats(characters);
 
@@ -51,24 +55,19 @@ public partial class MainWindow
 
     private void CurrencyStats(CharacterConfiguration[] characters)
     {
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        using var indent = ImRaii.PushIndent(10.0f);
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.CellPadding, new Vector2(0.5f, 0.5f));
-
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Currency:");
-        using var table = ImRaii.Table("##CurrencyStatsTable", 3, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
+
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.CellPadding, new Vector2(0.5f, 0.5f));
+        using var table = ImRaii.Table("##CurrencyStatsTable", 4, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
         if (!table.Success)
             return;
 
-        ImGui.TableSetupColumn("##Stat", 0, 0.7f);
-        ImGui.TableSetupColumn("##Icon", 0, 0.17f);
+        ImGui.TableSetupColumn("##Icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X);
         ImGui.TableSetupColumn("##Num");
+        ImGui.TableSetupColumn("##Icon2", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X);
+        ImGui.TableSetupColumn("##Num2");
 
-        var textHeight = ImGui.CalcTextSize("Grand Company").Y * 1.5f;
-        var iconSize = new Vector2(textHeight, textHeight);
-
-        foreach (var currency in (Currency[]) Enum.GetValues(typeof(Currency)))
+        foreach (var currency in Enum.GetValues<Currency>())
         {
             // We skip these as they are duplicates and aren't saved
             if (currency is Currency.Gil or Currency.StormSeals or Currency.SerpentSeals)
@@ -79,17 +78,12 @@ public partial class MainWindow
                 continue;
 
             ImGui.TableNextColumn();
+            Helper.DrawIcon(IconList[currency]);
+
+            ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
-            ImGui.TextColored(ImGuiColors.HealerGreen, currency.ToName());
-
-            ImGui.TableNextColumn();
-            Helper.DrawIcon(IconList[currency], iconSize);
-
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{count:N0}");
+            Helper.HoverableText($"x{count:N0}", currency.ToName());
         }
-
-        ImGuiHelpers.ScaledDummy(5.0f);
     }
 
     private void TeleportStats(CharacterConfiguration[] characters)
