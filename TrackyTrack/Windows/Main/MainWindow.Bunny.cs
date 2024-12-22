@@ -8,14 +8,13 @@ public partial class MainWindow
 {
     private CofferRarity Rarity = CofferRarity.Bronze;
 
+    private int SelectedBunnyType;
+    private static readonly string[] BunnyTabs = ["Stats", "Pagos", "Pyros", "Hydatos"];
+
     private void BunnyTab()
     {
         using var tabItem = ImRaii.TabItem("Bunny");
         if (!tabItem.Success)
-            return;
-
-        using var tabBar = ImRaii.TabBar("##BunnyTabBar");
-        if (!tabBar.Success)
             return;
 
         if (Plugin.CharacterStorage.Values.Count == 0)
@@ -31,21 +30,69 @@ public partial class MainWindow
             return;
         }
 
-        EurekaStats(characterCoffers);
+        var pos = ImGui.GetCursorPos();
 
-        Pagos(characterCoffers);
+        var nameDict = CalcHelper.TabSize(BunnyTabs);
+        var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max() + 10.0f, 0);
+        using (var tabChild = ImRaii.Child("Tabs", childSize, true))
+        {
+            if (tabChild.Success)
+            {
+                foreach (var (id, (name, _)) in nameDict)
+                {
+                    var selected = SelectedBunnyType == id;
+                    if (ImGui.Selectable(name, selected))
+                        SelectedBunnyType = id;
 
-        Pyros(characterCoffers);
+                    if (id == 0)
+                    {
+                        ImGui.Spacing();
+                        ImGui.Separator();
+                        ImGui.Spacing();
 
-        Hydatos(characterCoffers);
+                        continue;
+                    }
+
+                    using var pushedId = ImRaii.PushId(id);
+                    using var pushedIndent = ImRaii.PushIndent(10.0f);
+                    if (ImGui.Selectable("Bronze", selected && Rarity == CofferRarity.Bronze))
+                    {
+                        Rarity = CofferRarity.Bronze;
+                        SelectedBunnyType = id;
+                    }
+                    if (ImGui.Selectable("Silver", selected && Rarity == CofferRarity.Silver))
+                    {
+                        Rarity = CofferRarity.Silver;
+                        SelectedBunnyType = id;
+                    }
+                    if (ImGui.Selectable("Gold", selected && Rarity == CofferRarity.Gold))
+                    {
+                        Rarity = CofferRarity.Gold;
+                        SelectedBunnyType = id;
+                    }
+                }
+            }
+        }
+
+        ImGui.SetCursorPos(pos with {X = pos.X + childSize.X});
+        using (var contentChild = ImRaii.Child("Content", Vector2.Zero, true))
+        {
+            if (contentChild.Success)
+            {
+                if (SelectedBunnyType == 0)
+                    EurekaStats(characterCoffers);
+                else if (SelectedBunnyType == 1)
+                    Pagos(characterCoffers);
+                else if (SelectedBunnyType == 2)
+                    Pyros(characterCoffers);
+                else if (SelectedBunnyType == 3)
+                    Hydatos(characterCoffers);
+            }
+        }
     }
 
     private void EurekaStats(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("Stats");
-        if (!tabItem.Success)
-            return;
-
         var worth = 0L;
         var totalNumber = 0;
         var territoryCoffers = new Dictionary<Territory, Dictionary<CofferRarity, int>>();
@@ -62,9 +109,6 @@ public partial class MainWindow
             }
         }
 
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        ImGui.TextColored(ImGuiColors.DalamudViolet, "General:");
         using var table = ImRaii.Table("##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
         if (!table.Success)
             return;
@@ -72,7 +116,6 @@ public partial class MainWindow
         ImGui.TableSetupColumn("##stat", 0, 0.4f);
         ImGui.TableSetupColumn("##opened");
 
-        using var indent = ImRaii.PushIndent(10.0f);
         ImGui.TableNextColumn();
         ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
         ImGui.TableNextColumn();
@@ -109,51 +152,33 @@ public partial class MainWindow
 
     private void Pagos(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("Pagos");
-        if (!tabItem.Success)
-            return;
-
         CofferHistory(Territory.Pagos, characters);
     }
 
     private void Pyros(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("Pyros");
-        if (!tabItem.Success)
-            return;
-
         CofferHistory(Territory.Pyros, characters);
     }
 
     private void Hydatos(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("Hydatos");
-        if (!tabItem.Success)
-            return;
-
         CofferHistory(Territory.Hydatos, characters);
     }
 
     private void CofferHistory(Territory territory, CharacterConfiguration[] characters)
     {
-        var rarity = (int) Rarity;
-        ImGui.RadioButton("Bronze", ref rarity, (int) CofferRarity.Bronze);
-        ImGui.SameLine();
-        ImGui.RadioButton("Silver", ref rarity, (int) CofferRarity.Silver);
-        ImGui.SameLine();
-        ImGui.RadioButton("Gold", ref rarity, (int) CofferRarity.Gold);
-        Rarity = (CofferRarity) rarity;
-
         // fill dict with real values
-        var dict = new Dictionary<uint, (uint Total, uint Obtained)>();
+        var dict = new Dictionary<uint, (uint Obtained, List<uint> Amounts)>();
         foreach (var pair in characters.SelectMany(c => c.Eureka.History).Where(pair => pair.Key == territory).Select(pair => pair.Value[Rarity]))
         {
             foreach (var result in pair.Values.SelectMany(result => result.Items))
             {
-                if (!dict.TryAdd(result.Item, (result.Count, 1)))
+                if (!dict.TryAdd(result.Item, (1, [result.Count])))
                 {
                     var current = dict[result.Item];
-                    dict[result.Item] = (current.Total + result.Count, current.Obtained + 1);
+                    current.Obtained += 1;
+                    current.Amounts.Add(result.Count);
+                    dict[result.Item] = current;
                 }
             }
         }
@@ -167,20 +192,23 @@ public partial class MainWindow
         var opened = characters.Select(c => c.Eureka.History[territory][Rarity].Count).Sum();
         var unsortedList = dict.Where(pair => pair.Value.Obtained > 0).Select(pair =>
         {
-            var item = Sheets.ItemSheet.GetRow(pair.Key)!;
-            var count = pair.Value.Total;
+            var item = Sheets.GetItem(pair.Key);
+            var obtained = pair.Value.Obtained;
+            var min = pair.Value.Amounts.Min();
+            var max = pair.Value.Amounts.Max();
             var percentage = (double) pair.Value.Obtained / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), obtained, min, max, percentage);
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Gil Obtained: {opened * Rarity.ToWorth():N0}");
-        new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable, withIndent: 10.0f)
+        new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable)
             .EnableSortSpec()
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Obtained}"), initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddColumn("Min-Max##min-max", entry => ImGui.TextUnformatted($"{entry.Min}-{entry.Max}"), ImGuiTableColumnFlags.NoSort, initWidth: 0.2f)
             .Draw(unsortedList);
     }
 }

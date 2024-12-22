@@ -47,7 +47,7 @@ public partial class MainWindow
         var pos = ImGui.GetCursorPos();
 
         var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max(), 0);
-        using (var tabChild = ImRaii.Child("LockboxTabs", childSize, true))
+        using (var tabChild = ImRaii.Child("Tabs", childSize, true))
         {
             if (tabChild.Success)
             {
@@ -65,7 +65,7 @@ public partial class MainWindow
         }
 
         ImGui.SetCursorPos(pos with {X = pos.X + childSize.X});
-        using (var contentChild = ImRaii.Child("LockboxContent", Vector2.Zero, true))
+        using (var contentChild = ImRaii.Child("Content", Vector2.Zero, true))
         {
             if (contentChild.Success)
             {
@@ -153,14 +153,14 @@ public partial class MainWindow
             var item = Sheets.GetItem(pair.Key);
             var count = pair.Value;
             var percentage = (double) pair.Value / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
         });
 
         new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable)
             .EnableSortSpec()
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Obtained}"), initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
             .Draw(unsortedList);
     }

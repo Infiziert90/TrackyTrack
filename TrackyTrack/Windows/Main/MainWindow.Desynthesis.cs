@@ -464,7 +464,7 @@ public partial class MainWindow
             var item = Sheets.ItemSheet.HasRow(result.Item) ? Sheets.ItemSheet.GetRow(result.Item) : Sheets.ItemSheet.GetRow(1);
             var count = result.Received;
             var percentage = (double) count / desynthesized * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
         }).OrderByDescending(x => x.Percentage);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, "Percentages:");
@@ -505,7 +505,7 @@ public partial class MainWindow
 
             var sourceRecord = source.Results.FirstOrDefault(r => r.Item == RewardSearchResult);
             var percentage = (double) sourceRecord.Received / source.Records * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), result.Received, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), result.Received, 0, 0, percentage);
         }).OrderByDescending(x => x.Percentage);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, "Chance for each source:");

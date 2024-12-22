@@ -24,16 +24,12 @@ public partial class MainWindow
         // Refreshes the unlocked dict every 5s
         RefreshUnlocks();
 
-        var styles = ImGui.GetStyle();
-        var nameDict = new SortedDictionary<int, (string Name, float Width)>();
-        foreach (var (name, idx) in GachaTabs.WithIndex())
-            nameDict[idx] = (name, ImGui.CalcTextSize(name).X + (styles.ItemSpacing.X * 2));
-
 
         var pos = ImGui.GetCursorPos();
 
+        var nameDict = CalcHelper.TabSize(GachaTabs);
         var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max(), 0);
-        using (var tabChild = ImRaii.Child("GachaTabs", childSize, true))
+        using (var tabChild = ImRaii.Child("Tabs", childSize, true))
         {
             if (tabChild.Success)
             {
@@ -44,7 +40,7 @@ public partial class MainWindow
         }
 
         ImGui.SetCursorPos(pos with {X = pos.X + childSize.X});
-        using (var contentChild = ImRaii.Child("GachaContent", Vector2.Zero, true))
+        using (var contentChild = ImRaii.Child("Content", Vector2.Zero, true))
         {
             if (contentChild.Success)
             {
@@ -95,7 +91,7 @@ public partial class MainWindow
             var item = Sheets.ItemSheet.GetRow(pair.Key);
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
         });
 
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
@@ -148,7 +144,7 @@ public partial class MainWindow
             var item = Sheets.ItemSheet.GetRow(pair.Key);
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
         });
 
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
@@ -196,7 +192,7 @@ public partial class MainWindow
             var item = Sheets.ItemSheet.GetRow(pair.Key);
             var count = pair.Value;
             var percentage = (Data.Sanctuary.MultiRewardItems.Contains(pair.Key) ? count / 5.0 : count ) / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, percentage);
+            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
@@ -215,7 +211,7 @@ public partial class MainWindow
             .EnableSortSpec()
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), initWidth: 0.2f)
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Obtained}"), initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
             .AddColumn("##unlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry.Id, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlocked)
             .Draw(content);

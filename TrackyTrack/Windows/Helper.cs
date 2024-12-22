@@ -1,7 +1,7 @@
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-
+using OtterGui;
 using static OtterGui.Widgets.ToggleButton;
 
 namespace TrackyTrack.Windows;
@@ -269,6 +269,19 @@ public static class Helper
     }
 
     public static IOrderedEnumerable<T> NoSort<T>(IEnumerable<T> values, object _) => values.OrderBy(_ => 1);
+}
+
+public static class CalcHelper
+{
+    public static SortedDictionary<int, (string Name, float Width)> TabSize(string[] tabs)
+    {
+        var styles = ImGui.GetStyle();
+        var nameDict = new SortedDictionary<int, (string Name, float Width)>();
+        foreach (var (name, idx) in tabs.WithIndex())
+            nameDict[idx] = (name, ImGui.CalcTextSize(name).X + (styles.ItemSpacing.X * 2));
+
+        return nameDict;
+    }
 }
 
 public class SimpleTable<T>

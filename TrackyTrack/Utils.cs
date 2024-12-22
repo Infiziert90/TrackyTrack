@@ -10,7 +10,7 @@ public static class Utils
     public static string ToStr(SeString content) => content.ToString();
     public static string ToStr(ReadOnlySeString content) => content.ToDalamudString().ToString();
 
-    public record SortedEntry(uint Id, uint Icon, string Name, uint Count, double Percentage);
+    public record SortedEntry(uint Id, uint Icon, string Name, uint Obtained, uint Min, uint Max, double Percentage);
 
     public static IOrderedEnumerable<SortedEntry> SortEntries(IEnumerable<SortedEntry> unsortedList, object sortSpecsPtr)
     {
@@ -18,7 +18,7 @@ public static class Utils
         object SortFunction(SortedEntry entry) => sortSpec.ColumnIndex switch
         {
             1 => entry.Name,
-            2 => entry.Count,
+            2 => entry.Obtained,
             3 => entry.Percentage,
             _ => entry.Percentage
         };
