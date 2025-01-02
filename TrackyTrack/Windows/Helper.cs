@@ -1,7 +1,7 @@
+using System.ComponentModel;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using OtterGui;
 using static OtterGui.Widgets.ToggleButton;
 
 namespace TrackyTrack.Windows;
@@ -271,14 +271,36 @@ public static class Helper
     public static IOrderedEnumerable<T> NoSort<T>(IEnumerable<T> values, object _) => values.OrderBy(_ => 1);
 }
 
-public static class CalcHelper
+public enum Tabs
 {
-    public static SortedDictionary<int, (string Name, float Width)> TabSize(string[] tabs)
+    [Description("Stats")] Stats = 0,
+
+    [Description("Pagos")] Pagos = 100,
+    [Description("Pyros")] Pyros = 101,
+    [Description("Hydatos")] Hydatos = 102,
+
+    [Description("Gacha 3.0")] Gacha3 = 200,
+    [Description("Gacha 4.0")] Gacha4 = 201,
+    [Description("Sanctuary")] Sanctuary = 202,
+
+    [Description("Received")] Received = 300,
+    [Description("History")] History = 301,
+    [Description("Venture Coffers")] VentureCoffers = 302,
+    [Description("Advanced")] Advanced = 303,
+}
+
+public static class TabHelper
+{
+    public static SortedDictionary<Tabs, (string Name, float Width)> TabSize(Tabs[] tabs)
     {
-        var styles = ImGui.GetStyle();
-        var nameDict = new SortedDictionary<int, (string Name, float Width)>();
-        foreach (var (name, idx) in tabs.WithIndex())
-            nameDict[idx] = (name, ImGui.CalcTextSize(name).X + (styles.ItemSpacing.X * 2));
+        var doubleItemSpacingWidth = ImGui.GetStyle().ItemSpacing.X * 2;
+
+        var nameDict = new SortedDictionary<Tabs, (string Name, float Width)>();
+        foreach (var tab in tabs)
+        {
+            var name = tab.GetDescription();
+            nameDict[tab] = (name, ImGui.CalcTextSize(name).X + doubleItemSpacingWidth);
+        }
 
         return nameDict;
     }

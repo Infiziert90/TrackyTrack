@@ -8,8 +8,8 @@ public partial class MainWindow
 {
     private CofferRarity Rarity = CofferRarity.Bronze;
 
-    private int SelectedBunnyType;
-    private static readonly string[] BunnyTabs = ["Stats", "Pagos", "Pyros", "Hydatos"];
+    private Tabs SelectedBunnyTab;
+    private static readonly Tabs[] BunnyTabs = [Tabs.Pagos, Tabs.Pyros, Tabs.Hydatos];
 
     private void BunnyTab()
     {
@@ -32,43 +32,41 @@ public partial class MainWindow
 
         var pos = ImGui.GetCursorPos();
 
-        var nameDict = CalcHelper.TabSize(BunnyTabs);
+        var nameDict = TabHelper.TabSize(BunnyTabs);
         var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max() + 10.0f, 0);
         using (var tabChild = ImRaii.Child("Tabs", childSize, true))
         {
             if (tabChild.Success)
             {
+                if (ImGui.Selectable("Stats", SelectedBunnyTab == Tabs.Stats))
+                    SelectedBunnyTab = Tabs.Stats;
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
                 foreach (var (id, (name, _)) in nameDict)
                 {
-                    var selected = SelectedBunnyType == id;
+                    var selected = SelectedBunnyTab == id;
                     if (ImGui.Selectable(name, selected))
-                        SelectedBunnyType = id;
+                        SelectedBunnyTab = id;
 
-                    if (id == 0)
-                    {
-                        ImGui.Spacing();
-                        ImGui.Separator();
-                        ImGui.Spacing();
-
-                        continue;
-                    }
-
-                    using var pushedId = ImRaii.PushId(id);
+                    using var pushedId = ImRaii.PushId((int) id);
                     using var pushedIndent = ImRaii.PushIndent(10.0f);
                     if (ImGui.Selectable("Bronze", selected && Rarity == CofferRarity.Bronze))
                     {
                         Rarity = CofferRarity.Bronze;
-                        SelectedBunnyType = id;
+                        SelectedBunnyTab = id;
                     }
                     if (ImGui.Selectable("Silver", selected && Rarity == CofferRarity.Silver))
                     {
                         Rarity = CofferRarity.Silver;
-                        SelectedBunnyType = id;
+                        SelectedBunnyTab = id;
                     }
                     if (ImGui.Selectable("Gold", selected && Rarity == CofferRarity.Gold))
                     {
                         Rarity = CofferRarity.Gold;
-                        SelectedBunnyType = id;
+                        SelectedBunnyTab = id;
                     }
                 }
             }
@@ -79,14 +77,21 @@ public partial class MainWindow
         {
             if (contentChild.Success)
             {
-                if (SelectedBunnyType == 0)
-                    EurekaStats(characterCoffers);
-                else if (SelectedBunnyType == 1)
-                    Pagos(characterCoffers);
-                else if (SelectedBunnyType == 2)
-                    Pyros(characterCoffers);
-                else if (SelectedBunnyType == 3)
-                    Hydatos(characterCoffers);
+                switch (SelectedBunnyTab)
+                {
+                    case Tabs.Stats:
+                        EurekaStats(characterCoffers);
+                        break;
+                    case Tabs.Pagos:
+                        Pagos(characterCoffers);
+                        break;
+                    case Tabs.Pyros:
+                        Pyros(characterCoffers);
+                        break;
+                    case Tabs.Hydatos:
+                        Hydatos(characterCoffers);
+                        break;
+                }
             }
         }
     }

@@ -12,8 +12,8 @@ public partial class MainWindow
 
     private readonly Dictionary<uint, bool> Unlocked = [];
 
-    private int SelectedGachaType;
-    private static readonly string[] GachaTabs = ["Gacha 3.0", "Gacha 4.0", "Sanctuary"];
+    private Tabs SelectedGachaTab = Tabs.Gacha3;
+    private static readonly Tabs[] GachaTabs = [Tabs.Gacha3, Tabs.Gacha4, Tabs.Sanctuary];
 
     private void GachaTab()
     {
@@ -24,18 +24,17 @@ public partial class MainWindow
         // Refreshes the unlocked dict every 5s
         RefreshUnlocks();
 
-
         var pos = ImGui.GetCursorPos();
 
-        var nameDict = CalcHelper.TabSize(GachaTabs);
+        var nameDict = TabHelper.TabSize(GachaTabs);
         var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max(), 0);
         using (var tabChild = ImRaii.Child("Tabs", childSize, true))
         {
             if (tabChild.Success)
             {
                 foreach (var (id, (name, _)) in nameDict)
-                    if (ImGui.Selectable(name, SelectedGachaType == id))
-                        SelectedGachaType = id;
+                    if (ImGui.Selectable(name, SelectedGachaTab == id))
+                        SelectedGachaTab = id;
             }
         }
 
@@ -44,12 +43,18 @@ public partial class MainWindow
         {
             if (contentChild.Success)
             {
-                if (SelectedGachaType == 0)
-                    GachaThreeZero();
-                else if (SelectedGachaType == 1)
-                    GachaFourZero();
-                else if (SelectedGachaType == 2)
-                    Sanctuary();
+                switch (SelectedGachaTab)
+                {
+                    case Tabs.Gacha3:
+                        GachaThreeZero();
+                        break;
+                    case Tabs.Gacha4:
+                        GachaFourZero();
+                        break;
+                    case Tabs.Sanctuary:
+                        Sanctuary();
+                        break;
+                }
             }
         }
     }

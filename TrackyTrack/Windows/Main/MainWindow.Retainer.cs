@@ -30,17 +30,13 @@ public partial class MainWindow
     private int LastRetainerHistoryCount;
     private readonly ConcurrentDictionary<uint, uint> AllItemsHistory = new();
 
-    // limits
-    private readonly long DateLimit = DateTime.Now.AddMonths(-1).Ticks;
+    private Tabs SelectedRetainerTab;
+    private static readonly Tabs[] RetainerTabs = [Tabs.Received, Tabs.History, Tabs.VentureCoffers, Tabs.Advanced];
 
     private void CofferTab()
     {
         using var tabItem = ImRaii.TabItem("Retainer");
         if (!tabItem.Success)
-            return;
-
-        using var tabBar = ImRaii.TabBar("##RetainerTabBar");
-        if (!tabBar.Success)
             return;
 
         var characters = Plugin.CharacterStorage.Values.ToArray();
@@ -53,23 +49,56 @@ public partial class MainWindow
         // Fills history cache if total has changed
         FillRetainerItemHistory(characters);
 
-        RetainerStats(characters);
+        var pos = ImGui.GetCursorPos();
 
-        RetainerAllOverview();
+        var nameDict = TabHelper.TabSize(RetainerTabs);
+        var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max(), 0);
+        using (var tabChild = ImRaii.Child("Tabs", childSize, true))
+        {
+            if (tabChild.Success)
+            {
+                if (ImGui.Selectable("Stats", SelectedRetainerTab == Tabs.Stats))
+                    SelectedRetainerTab = Tabs.Stats;
 
-        RetainerHistory(characters);
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
 
-        VentureCoffers(characters);
+                foreach (var (id, (name, _)) in nameDict)
+                    if (ImGui.Selectable(name, SelectedRetainerTab == id))
+                        SelectedRetainerTab = id;
+            }
+        }
 
-        RetainerAdvanced();
+        ImGui.SetCursorPos(pos with {X = pos.X + childSize.X});
+        using (var contentChild = ImRaii.Child("Content", Vector2.Zero, true))
+        {
+            if (contentChild.Success)
+            {
+                switch (SelectedRetainerTab)
+                {
+                    case Tabs.Stats:
+                        RetainerStats(characters);
+                        break;
+                    case Tabs.Received:
+                        RetainerAllOverview();
+                        break;
+                    case Tabs.History:
+                        RetainerHistory(characters);
+                        break;
+                    case Tabs.VentureCoffers:
+                        VentureCoffers(characters);
+                        break;
+                    case Tabs.Advanced:
+                        RetainerAdvanced();
+                        break;
+                }
+            }
+        }
     }
 
     private void RetainerStats(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("Stats");
-        if (!tabItem.Success)
-            return;
-
         var history = characters.SelectMany(c => c.VentureStorage.History.Values).ToArray();
         var quickHistory = history.Where(v => v.IsQuickVenture).ToArray();
 
@@ -98,8 +127,6 @@ public partial class MainWindow
             });
         }
 
-        ImGuiHelpers.ScaledDummy(5.0f);
-
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Types:");
         using var table = ImRaii.Table("##TotalStatsTable", 2);
         if (!table.Success)
@@ -108,44 +135,46 @@ public partial class MainWindow
         ImGui.TableSetupColumn("##stat", 0, 0.6f);
         ImGui.TableSetupColumn("##amount");
 
-        ImGui.Indent(10.0f);
-        ImGui.TableNextColumn();
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Normal");
-        ImGui.TableNextColumn();
-        ImGui.TextUnformatted($"{totalNormal:N0} time{(totalNormal > 1 ? "s" : "")}");
-        ImGui.TableNextColumn();
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Quick");
-        ImGui.TableNextColumn();
-        ImGui.TextUnformatted($"{totalQuick:N0} time{(totalQuick > 1 ? "s" : "")}");
-        ImGui.Unindent(10.0f);
+        using (ImRaii.PushIndent(10.0f))
+        {
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Normal");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{totalNormal:N0} time{(totalNormal > 1 ? "s" : "")}");
+            ImGui.TableNextColumn();
+            ImGui.TextColored(ImGuiColors.HealerGreen, "Quick");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{totalQuick:N0} time{(totalQuick > 1 ? "s" : "")}");
+        }
 
         if (TotalQuick > 0)
         {
             ImGui.TableNextColumn();
             ImGuiHelpers.ScaledDummy(5.0f);
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Average:");
-            ImGui.Indent(10.0f);
 
             ImGui.TableNextRow();
 
-            var avgLvL = TotalLvl / TotalQuick;
-            ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "iLvL");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{avgLvL:F2}");
+            using (ImRaii.PushIndent(10.0f))
+            {
+                var avgLvL = TotalLvl / TotalQuick;
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "iLvL");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avgLvL:F2}");
 
-            var avgFCPoints = TotalFCPoints / TotalQuick;
-            ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "FC Points");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{avgFCPoints:F2}");
+                var avgFCPoints = TotalFCPoints / TotalQuick;
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "FC Points");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avgFCPoints:F2}");
 
-            var avgSeals = TotalSeals / TotalQuick;
-            ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "GC Seals");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{avgSeals:F2}");
-            ImGui.Unindent(10.0f);
+                var avgSeals = TotalSeals / TotalQuick;
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "GC Seals");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avgSeals:F2}");
+            }
         }
 
         if (CofferVentures > 0)
@@ -153,42 +182,37 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGuiHelpers.ScaledDummy(5.0f);
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Coffers:");
-            ImGui.Indent(10.0f);
 
             ImGui.TableNextRow();
 
-            ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Obtained");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{TotalCoffers:N0}");
+            using (ImRaii.PushIndent(10.0f))
+            {
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Obtained");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{TotalCoffers:N0}");
 
-            ImGui.TableNextColumn();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Valid");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{CofferVentures:N0} venture{(CofferVentures > 1 ? "s" : "")}");
+                ImGui.TableNextColumn();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Valid");
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{CofferVentures:N0} venture{(CofferVentures > 1 ? "s" : "")}");
 
-            ImGui.TableNextColumn();
-            var width = ImGui.CalcTextSize("10000").X * 1.2f;
-            var avg = (TotalCoffers/ (double) CofferVentures) * RetainerAvgInput;
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextColored(ImGuiColors.HealerGreen, "Chance in");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(width);
-            ImGui.InputInt("##AvgInput", ref RetainerAvgInput, 0);
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{avg:F2} coffer{(avg > 1 ? "s" : "")}");
-            ImGui.Unindent(10.0f);
+                ImGui.TableNextColumn();
+                var width = ImGui.CalcTextSize("10000").X * 1.2f;
+                var avg = (TotalCoffers / (double)CofferVentures) * RetainerAvgInput;
+                ImGui.AlignTextToFramePadding();
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Chance in");
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(width);
+                ImGui.InputInt("##AvgInput", ref RetainerAvgInput, 0);
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted($"{avg:F2} coffer{(avg > 1 ? "s" : "")}");
+            }
         }
     }
 
     private void RetainerAllOverview()
     {
-        using var tabItem = ImRaii.TabItem("All");
-        if (!tabItem.Success)
-            return;
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-
         if (RetainerTaskRunning)
         {
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Rebuilding Cache...");
@@ -203,12 +227,11 @@ public partial class MainWindow
         if (!table.Success)
             return;
 
-        ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
+        ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X);
         ImGui.TableSetupColumn("##item");
         ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
         var items = AllItemsHistory.OrderByDescending(pair => pair.Value).ToArray();
-        using var indent = ImRaii.PushIndent(10.0f);
         using var clipper = new ListClipper(items.Length, itemHeight: Helper.IconSize.Y * ImGuiHelpers.GlobalScale);
         foreach (var i in clipper.Rows)
         {
@@ -235,10 +258,6 @@ public partial class MainWindow
 
     private void RetainerHistory(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("History");
-        if (!tabItem.Success)
-            return;
-
         characters = characters.Where(c => c.VentureStorage.History.Count != 0).ToArray();
         if (characters.Length == 0)
         {
@@ -272,7 +291,6 @@ public partial class MainWindow
         ImGui.TableSetupColumn("##item");
         ImGui.TableSetupColumn("##amount", 0, 0.2f);
 
-        using var indent = ImRaii.PushIndent(10.0f);
         foreach (var ventureItem in ventureResult.Items)
         {
             if (!ventureItem.Valid)
@@ -295,10 +313,6 @@ public partial class MainWindow
 
     private void VentureCoffers(CharacterConfiguration[] characters)
     {
-        using var tabItem = ImRaii.TabItem("Venture Coffers");
-        if (!tabItem.Success)
-            return;
-
         if (!Plugin.Configuration.EnableVentureCoffers)
         {
             Helper.TrackingDisabled("Venture Coffer tracking has been disabled in the config.");
@@ -347,11 +361,6 @@ public partial class MainWindow
 
     private void RetainerAdvanced()
     {
-        using var tabItem = ImRaii.TabItem("Advanced");
-        if (!tabItem.Success)
-            return;
-
-        ImGuiHelpers.ScaledDummy(5.0f);
         Helper.WrappedError("This interface is for resetting your retainer history.\nBe careful and read the tooltips before doing anything.");
 
         ImGuiHelpers.ScaledDummy(5.0f);

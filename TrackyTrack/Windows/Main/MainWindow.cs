@@ -6,8 +6,8 @@ namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow : Window, IDisposable
 {
-    private Plugin Plugin;
-    private Configuration Configuration;
+    private readonly Plugin Plugin;
+    private readonly Configuration Configuration;
 
     public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky##TrackyTrack")
     {
