@@ -45,8 +45,8 @@ public class Plugin : IDalamudPlugin
 
     private readonly PluginCommandManager<Plugin> CommandManager;
 
-    public ConfigurationBase ConfigurationBase;
-    public ConcurrentDictionary<ulong, CharacterConfiguration> CharacterStorage = new();
+    public readonly ConfigurationBase ConfigurationBase;
+    public readonly ConcurrentDictionary<ulong, CharacterConfiguration> CharacterStorage = new();
 
     public readonly TimerManager TimerManager;
     public readonly FrameworkManager FrameworkManager;
@@ -200,8 +200,8 @@ public class Plugin : IDalamudPlugin
         CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
         var character = CharacterStorage[ClientState.LocalContentId];
 
-        var isMaxLevel = retainer->GetActiveRetainer()->Level == 90;
-        character.VentureStorage.History.Add(DateTime.Now, new VentureResult(venture, new List<VentureItem>{primary, additional}, isMaxLevel));
+        var isMaxLevel = retainer->GetActiveRetainer()->Level == Sheets.MaxLevel;
+        character.VentureStorage.History.Add(DateTime.Now, new VentureResult(venture, [primary, additional], isMaxLevel));
 
         ConfigurationBase.SaveCharacterConfig();
     }
