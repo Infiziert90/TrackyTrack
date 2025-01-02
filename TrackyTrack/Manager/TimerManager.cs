@@ -32,7 +32,7 @@ public class TimerManager
 
     public void StartBulk()
     {
-        LastBulkResult = new();
+        LastBulkResult = new BulkResult();
         AwaitingBulkDesynth.Start();
     }
 
@@ -203,7 +203,7 @@ public class TimerManager
 
         if (!result.IsValid)
         {
-            Plugin.Log.Warning($"No items received, invalid result");
+            Plugin.Log.Warning("No items received, invalid result");
             return;
         }
 

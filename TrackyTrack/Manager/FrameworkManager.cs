@@ -58,52 +58,49 @@ public class FrameworkManager
     public unsafe void RetainerPreChecker(AddonEvent addonEvent, AddonArgs addonArgs)
     {
         var manager = RetainerManager.Instance();
-        if (manager != null)
+        if (manager == null)
+            return;
+
+        try
         {
-            try
-            {
-                var retainer = manager->GetActiveRetainer();
-                if (addonArgs.AddonName == "SelectString" && retainer != null)
-                    LastSeenVentureId = retainer->VentureId;
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.Warning(e.Message);
-                Plugin.Log.Warning(e.StackTrace ?? "Unknown");
-            }
+            var retainer = manager->GetActiveRetainer();
+            if (addonArgs.AddonName == "SelectString" && retainer != null)
+                LastSeenVentureId = retainer->VentureId;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning(e, "Unable to store retainer pre result.");
         }
     }
 
     public unsafe void RetainerChecker(AddonEvent addonEvent, AddonArgs addonArgs)
     {
         var venture = AgentRetainerTask.Instance();
-        if (venture != null)
+        if (venture == null)
+            return;
+
+        if (addonArgs.AddonName != "RetainerTaskResult")
+            return;
+
+        try
         {
-            if (addonArgs.AddonName == "RetainerTaskResult")
-            {
-                try
-                {
-                    var primary = venture->RewardItemIds[0];
-                    var primaryHQ = primary > 1_000_000;
-                    if (primaryHQ)
-                        primary -= 1_000_000;
-                    var primaryCount = (short) venture->RewardItemCount[0];
+            var primary = venture->RewardItemIds[0];
+            var primaryHQ = primary > 1_000_000;
+            if (primaryHQ)
+                primary -= 1_000_000;
+            var primaryCount = (short) venture->RewardItemCount[0];
 
-                    var additionalItem = venture->RewardItemIds[1];
-                    var additionalHQ = additionalItem > 1_000_000;
-                    if (additionalHQ)
-                        additionalItem -= 1_000_000;
-                    var additionalCount = (short) venture->RewardItemCount[1];
+            var additionalItem = venture->RewardItemIds[1];
+            var additionalHQ = additionalItem > 1_000_000;
+            if (additionalHQ)
+                additionalItem -= 1_000_000;
+            var additionalCount = (short) venture->RewardItemCount[1];
 
-                    Plugin.RetainerHandler(LastSeenVentureId, new VentureItem(primary, primaryCount, primaryHQ),
-                                           new VentureItem(additionalItem, additionalCount, additionalHQ));
-                }
-                catch (Exception e)
-                {
-                    Plugin.Log.Warning(e.Message);
-                    Plugin.Log.Warning(e.StackTrace ?? "Unknown");
-                }
-            }
+            Plugin.RetainerHandler(LastSeenVentureId, new VentureItem(primary, primaryCount, primaryHQ), new VentureItem(additionalItem, additionalCount, additionalHQ));
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning(e, "Unable to track retainer result.");
         }
     }
 

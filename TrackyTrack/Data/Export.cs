@@ -1,5 +1,4 @@
 ﻿// ReSharper disable ExplicitCallerInfoArgument
-
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -106,6 +105,55 @@ public static class Export
             foreach (var reward in result.Received)
                 r.AddRange(reward.ItemCountArray());
             Rewards = r.ToArray();
+        }
+    }
+
+    public class VentureLoot : Upload
+    {
+        [JsonProperty("venture_type")]
+        public uint VentureType;
+
+        [JsonProperty("primary_id")]
+        public uint PrimaryId;
+
+        [JsonProperty("primary_count")]
+        public short PrimaryCount;
+
+        [JsonProperty("primary_hq")]
+        public bool PrimaryHq;
+
+        [JsonProperty("additional_id")]
+        public uint AdditionalId;
+
+        [JsonProperty("additional_count")]
+        public short AdditionalCount;
+
+        [JsonProperty("additional_hq")]
+        public bool AdditionalHq;
+
+        [JsonProperty("max_level")]
+        public bool MaxLevel;
+
+        [JsonProperty("quick_venture")]
+        public bool QuickVenture;
+
+
+        public VentureLoot(VentureResult venture) : base("Ventures")
+        {
+            VentureType = venture.VentureType;
+
+            var primary = venture.Items[0];
+            PrimaryId = primary.Item;
+            PrimaryCount = primary.Count;
+            PrimaryHq = primary.HQ;
+
+            var additional = venture.Items[1];
+            AdditionalId = additional.Item;
+            AdditionalCount = additional.Count;
+            AdditionalHq = additional.HQ;
+
+            MaxLevel = venture.MaxLevel;
+            QuickVenture = venture.IsQuickVenture;
         }
     }
 

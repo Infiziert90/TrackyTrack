@@ -200,10 +200,11 @@ public class Plugin : IDalamudPlugin
         CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
         var character = CharacterStorage[ClientState.LocalContentId];
 
-        var isMaxLevel = retainer->GetActiveRetainer()->Level == Sheets.MaxLevel;
-        character.VentureStorage.History.Add(DateTime.Now, new VentureResult(venture, [primary, additional], isMaxLevel));
-
+        var ventureResult = new VentureResult(venture, [primary, additional], retainer->GetActiveRetainer()->Level == Sheets.MaxLevel);
+        character.VentureStorage.History.Add(DateTime.Now, ventureResult);
         ConfigurationBase.SaveCharacterConfig();
+
+        UploadEntry(new Export.VentureLoot(ventureResult));
     }
 
     public void CurrencyHandler(Currency currency, int increase)
@@ -296,9 +297,10 @@ public class Plugin : IDalamudPlugin
                 character.TeleportsVesperBay += 1;
                 break;
             case 28064:
-                character.TeleportsVesperBay += 1;
+                character.TeleportsFirmament += 1;
                 break;
         }
+
         character.Teleports += 1;
         ConfigurationBase.SaveCharacterConfig();
     }

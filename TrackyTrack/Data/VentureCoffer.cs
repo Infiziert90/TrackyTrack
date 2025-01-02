@@ -8,8 +8,8 @@ public class VentureCoffer
     public Dictionary<uint, uint> Obtained = new();
 
     [JsonIgnore]
-    public static readonly List<uint> Content = new()
-    {
+    public static readonly List<uint> Content =
+    [
         13114, // Pure White
         13115, // Jet Black
         13708, // Pastel Pink
@@ -34,6 +34,6 @@ public class VentureCoffer
         13116, // Metallic Silver
         13117, // Metallic Gold
 
-        8841, // Retainer Fantasia
-    };
+        8841 // Retainer Fantasia
+    ];
 }

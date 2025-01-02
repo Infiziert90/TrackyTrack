@@ -27,7 +27,8 @@ public class InventoryChanged
             if (e.Item.ContainerType == GameInventoryType.DamagedGear)
                 continue;
 
-            switch (type) {
+            switch (type)
+            {
                 case GameInventoryEvent.Added when e is InventoryItemAddedArgs { Item: var item }:
                     if (!changes.TryAdd(item.ItemId, (item.Quantity, 0)))
                         changes[item.ItemId] = (changes[item.ItemId].NewQuantity + item.Quantity, changes[item.ItemId].OldQuantity);

@@ -20,7 +20,7 @@ public static class TeleportBuffExtension
 {
     public static string ToName(this TeleportBuff buff)
     {
-        return (buff) switch
+        return buff switch
         {
             TeleportBuff.None => "None",
             TeleportBuff.ReducedRatesI => "Reduced Rates (20%)",
@@ -59,7 +59,7 @@ public static class TeleportBuffExtension
 
     public static uint ToOriginalCost(this TeleportBuff buff, uint discountedCost)
     {
-        return (buff) switch
+        return buff switch
         {
             // I think FFXIV rounds down to the nearest gil when discounting,
             // so round up when calculating original cost
