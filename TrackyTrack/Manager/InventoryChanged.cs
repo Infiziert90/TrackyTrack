@@ -62,15 +62,16 @@ public class InventoryChanged
 
         if (changes.Count != 0)
         {
-            // Coffer checks added and removed
-            OnItemsChanged?.Invoke(changes.Select(pair => (pair.Key, pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray());
+            var processedChanges = changes.Select(pair => (pair.Key, pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray();
 
-            foreach (var (itemId, (newQuantity, oldQuantity)) in changes)
+            // Coffer checks added and removed
+            OnItemsChanged?.Invoke(processedChanges);
+
+            foreach (var (itemId, changedQuantity) in processedChanges)
             {
                 if (itemId == 1)
                     continue;
 
-                var changedQuantity = newQuantity - oldQuantity;
                 switch (changedQuantity)
                 {
                     case > 0:

@@ -132,7 +132,7 @@ public partial class MainWindow
         if (!table.Success)
             return;
 
-        ImGui.TableSetupColumn("##stat", 0, 0.6f);
+        ImGui.TableSetupColumn("##stat", ImGuiTableColumnFlags.WidthStretch, 0.6f);
         ImGui.TableSetupColumn("##amount");
 
         using (ImRaii.PushIndent(10.0f))
@@ -153,10 +153,10 @@ public partial class MainWindow
             ImGuiHelpers.ScaledDummy(5.0f);
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Average:");
 
-            ImGui.TableNextRow();
-
             using (ImRaii.PushIndent(10.0f))
             {
+                ImGui.TableNextRow();
+
                 var avgLvL = TotalLvl / TotalQuick;
                 ImGui.TableNextColumn();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "iLvL");
@@ -183,10 +183,10 @@ public partial class MainWindow
             ImGuiHelpers.ScaledDummy(5.0f);
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Venture Coffers:");
 
-            ImGui.TableNextRow();
-
             using (ImRaii.PushIndent(10.0f))
             {
+                ImGui.TableNextRow();
+
                 ImGui.TableNextColumn();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Obtained");
                 ImGui.TableNextColumn();

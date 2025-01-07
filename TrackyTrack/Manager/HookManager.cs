@@ -3,6 +3,7 @@ using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -27,6 +28,10 @@ public unsafe class HookManager
     private delegate byte LootAddedDelegate(Loot* a1, uint chestObjectId, uint chestItemIndex, uint itemId, ushort itemCount, nint materia, nint glamourStainIds, uint glamourItemId, RollState rollState, RollResult rollResult, float time, float maxTime, byte rollValue, byte a14, LootMode lootMode, int a16);
     private Hook<LootAddedDelegate> LootAddedHook;
 
+    private const string RetainerTaskResultSig = "E8 ?? ?? ?? ?? 48 89 9B ?? ?? ?? ?? 48 8B CF 48 8B 17 FF 52 40 89 83 ?? ?? ?? ?? 33 D2 48 8D 4D A0";
+    private delegate void RetainerTaskResultDelegate(AgentRetainerTask* agent, nint someLuaPointer, nint packet);
+    private Hook<RetainerTaskResultDelegate> RetainerTaskHook;
+
     public uint LastSeenItemId;
 
     public HookManager(Plugin plugin)
@@ -48,6 +53,10 @@ public unsafe class HookManager
         var lootAddedPtr = Plugin.SigScanner.ScanText(LootAddedSig);
         LootAddedHook = Plugin.Hook.HookFromAddress<LootAddedDelegate>(lootAddedPtr, LootAddedDetour);
         LootAddedHook.Enable();
+
+        var retainerTaskPtr = Plugin.SigScanner.ScanText(RetainerTaskResultSig);
+        RetainerTaskHook = Plugin.Hook.HookFromAddress<RetainerTaskResultDelegate>(retainerTaskPtr, RetainerTaskDetour);
+        RetainerTaskHook.Enable();
     }
 
     public void Dispose()
@@ -56,6 +65,7 @@ public unsafe class HookManager
         ActorControlSelfHook.Dispose();
         OpenInspectHook.Dispose();
         LootAddedHook.Dispose();
+        RetainerTaskHook.Dispose();
     }
 
     private void OpenInspect(nint inspectAgent, int something, InventoryItem* item)
@@ -179,5 +189,46 @@ public unsafe class HookManager
         }
 
         return r;
+    }
+
+    private void RetainerTaskDetour(AgentRetainerTask* agent, nint someLuaPointer, nint packet)
+    {
+        RetainerTaskHook.Original(agent, someLuaPointer, packet);
+
+        var retainer = RetainerManager.Instance();
+        var venture = AgentRetainerTask.Instance();
+        if (venture == null || retainer == null)
+            return;
+
+        try
+        {
+            var activeRetainer = retainer->GetActiveRetainer();
+            if (activeRetainer == null)
+                return;
+
+            if (venture->RetainerTaskId == 0)
+            {
+                Plugin.Log.Warning("RetainerTaskId was 0?");
+                return;
+            }
+
+            var primary = venture->RewardItemIds[0];
+            var primaryHQ = primary > 1_000_000;
+            if (primaryHQ)
+                primary -= 1_000_000;
+            var primaryCount = (short) venture->RewardItemCount[0];
+
+            var additionalItem = venture->RewardItemIds[1];
+            var additionalHQ = additionalItem > 1_000_000;
+            if (additionalHQ)
+                additionalItem -= 1_000_000;
+            var additionalCount = (short) venture->RewardItemCount[1];
+
+            Plugin.RetainerHandler(venture->RetainerTaskId, activeRetainer->Level, new VentureItem(primary, primaryCount, primaryHQ), new VentureItem(additionalItem, additionalCount, additionalHQ));
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning(e, "Unable to track retainer result.");
+        }
     }
 }

@@ -35,10 +35,10 @@ public class EurekaTracker
 
 public record EurekaResult
 {
-    public readonly List<EurekaItem> Items = new();
+    public readonly List<EurekaItem> Items = [];
 
     public void AddItem(uint item, uint count) => Items.Add(new EurekaItem(item, count));
-    [JsonIgnore] public bool IsValid => Items.Any();
+    [JsonIgnore] public bool IsValid => Items.Count != 0;
 }
 
 public record EurekaItem(uint Item, uint Count);
@@ -55,6 +55,30 @@ public enum CofferRarity : uint
     Gold = 2009530,
     Silver = 2009531,
     Bronze = 2009532
+}
+
+public static class EurekaUtil
+{
+    public static (long Worth, long Total, Dictionary<Territory, Dictionary<CofferRarity, int>> Dict) GetAmounts(IEnumerable<CharacterConfiguration> characters)
+    {
+        var worth = 0L;
+        var totalNumber = 0;
+        var territoryCoffers = new Dictionary<Territory, Dictionary<CofferRarity, int>>();
+        foreach (var (territory, rarityDictionary) in characters.SelectMany(c => c.Eureka.History))
+        {
+            territoryCoffers.TryAdd(territory, new Dictionary<CofferRarity, int>());
+            foreach (var (rarity, history) in rarityDictionary)
+            {
+                totalNumber += history.Count;
+                worth += history.Count * rarity.ToWorth();
+
+                if (!territoryCoffers[territory].TryAdd(rarity, history.Count))
+                    territoryCoffers[territory][rarity] += history.Count;
+            }
+        }
+
+        return (worth, totalNumber, territoryCoffers);
+    }
 }
 
 public static class EurekaExtensions

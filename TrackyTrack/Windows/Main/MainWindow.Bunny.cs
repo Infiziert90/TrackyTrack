@@ -98,21 +98,7 @@ public partial class MainWindow
 
     private void EurekaStats(CharacterConfiguration[] characters)
     {
-        var worth = 0L;
-        var totalNumber = 0;
-        var territoryCoffers = new Dictionary<Territory, Dictionary<CofferRarity, int>>();
-        foreach (var (territory, rarityDictionary) in characters.SelectMany(c => c.Eureka.History))
-        {
-            territoryCoffers.TryAdd(territory, new Dictionary<CofferRarity, int>());
-            foreach (var (rarity, history) in rarityDictionary)
-            {
-                totalNumber += history.Count;
-                worth += history.Count * rarity.ToWorth();
-
-                if (!territoryCoffers[territory].TryAdd(rarity, history.Count))
-                    territoryCoffers[territory][rarity] += history.Count;
-            }
-        }
+        var (worth, total, territoryCoffers) = EurekaUtil.GetAmounts(characters);
 
         using var table = ImRaii.Table("##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
         if (!table.Success)
@@ -124,7 +110,7 @@ public partial class MainWindow
         ImGui.TableNextColumn();
         ImGui.TextColored(ImGuiColors.HealerGreen, "Opened");
         ImGui.TableNextColumn();
-        ImGui.TextUnformatted($"{totalNumber:N0} Coffer{(totalNumber > 1 ? "s" : "")}");
+        ImGui.TextUnformatted($"{total:N0} Coffer{(total > 1 ? "s" : "")}");
 
         ImGui.TableNextRow();
         ImGui.TableNextColumn();

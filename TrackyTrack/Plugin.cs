@@ -3,11 +3,9 @@ using System.Threading.Tasks;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game;
-using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using TrackyTrack.Attributes;
 using TrackyTrack.Data;
 using TrackyTrack.Windows.Main;
@@ -55,6 +53,9 @@ public class Plugin : IDalamudPlugin
 
     public readonly Importer Importer;
 
+    public SessionState SessionCopyState = SessionState.NotLoaded;
+    public readonly ConcurrentDictionary<ulong, CharacterConfiguration> SessionCharacterCopy = new();
+
     public Plugin()
     {
         ConfigurationBase = new ConfigurationBase(this);
@@ -93,9 +94,6 @@ public class Plugin : IDalamudPlugin
         ConfigurationBase.Load();
         Export.Init();
 
-        AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
-        AddonLifecycle.RegisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
-
         ClientState.Login += Login;
         ClientState.TerritoryChanged += TerritoryChanged;
 
@@ -107,9 +105,6 @@ public class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, FrameworkManager.RetainerChecker);
-        AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, FrameworkManager.RetainerPreChecker);
-
         ClientState.Login -= Login;
         ClientState.TerritoryChanged -= TerritoryChanged;
 
@@ -188,19 +183,15 @@ public class Plugin : IDalamudPlugin
         UploadEntry(new Export.DesynthesisResult(desynthResult));
     }
 
-    public unsafe void RetainerHandler(uint venture, VentureItem primary, VentureItem additional)
+    public void RetainerHandler(uint venture, byte level, VentureItem primary, VentureItem additional)
     {
         if (!Configuration.EnableRetainer)
-            return;
-
-        var retainer = RetainerManager.Instance();
-        if (retainer == null)
             return;
 
         CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
         var character = CharacterStorage[ClientState.LocalContentId];
 
-        var ventureResult = new VentureResult(venture, [primary, additional], retainer->GetActiveRetainer()->Level == Sheets.MaxLevel);
+        var ventureResult = new VentureResult(venture, [primary, additional], level == Sheets.MaxLevel);
         character.VentureStorage.History.Add(DateTime.Now, ventureResult);
         ConfigurationBase.SaveCharacterConfig();
 

@@ -22,6 +22,7 @@ public partial class MainWindow : Window, IDisposable
 
         InitializeStats();
         InitializeDesynth();
+        InitSession();
     }
 
     public void Dispose() { }
@@ -47,6 +48,8 @@ public partial class MainWindow : Window, IDisposable
                     BunnyTab();
 
                     LockboxTab();
+
+                    SessionTab();
                 }
             }
         }

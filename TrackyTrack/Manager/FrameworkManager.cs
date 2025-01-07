@@ -1,8 +1,5 @@
-﻿using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -27,7 +24,6 @@ public class FrameworkManager
     };
 
     public bool IsSafe;
-    private uint LastSeenVentureId;
 
     public FrameworkManager(Plugin plugin)
     {
@@ -53,55 +49,6 @@ public class FrameworkManager
             CurrencyCounts[currency] = instance->GetInventoryItemCount((uint) currency, false, false, false);
 
         IsSafe = true;
-    }
-
-    public unsafe void RetainerPreChecker(AddonEvent addonEvent, AddonArgs addonArgs)
-    {
-        var manager = RetainerManager.Instance();
-        if (manager == null)
-            return;
-
-        try
-        {
-            var retainer = manager->GetActiveRetainer();
-            if (addonArgs.AddonName == "SelectString" && retainer != null)
-                LastSeenVentureId = retainer->VentureId;
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.Warning(e, "Unable to store retainer pre result.");
-        }
-    }
-
-    public unsafe void RetainerChecker(AddonEvent addonEvent, AddonArgs addonArgs)
-    {
-        var venture = AgentRetainerTask.Instance();
-        if (venture == null)
-            return;
-
-        if (addonArgs.AddonName != "RetainerTaskResult")
-            return;
-
-        try
-        {
-            var primary = venture->RewardItemIds[0];
-            var primaryHQ = primary > 1_000_000;
-            if (primaryHQ)
-                primary -= 1_000_000;
-            var primaryCount = (short) venture->RewardItemCount[0];
-
-            var additionalItem = venture->RewardItemIds[1];
-            var additionalHQ = additionalItem > 1_000_000;
-            if (additionalHQ)
-                additionalItem -= 1_000_000;
-            var additionalCount = (short) venture->RewardItemCount[1];
-
-            Plugin.RetainerHandler(LastSeenVentureId, new VentureItem(primary, primaryCount, primaryHQ), new VentureItem(additionalItem, additionalCount, additionalHQ));
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.Warning(e, "Unable to track retainer result.");
-        }
     }
 
     public unsafe void CurrencyTracker(IFramework _)

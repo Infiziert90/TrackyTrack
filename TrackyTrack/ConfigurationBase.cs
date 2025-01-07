@@ -282,6 +282,19 @@ public class ConfigurationBase : IDisposable
                     }
                 }
             }
+
+            if (Plugin.SessionCopyState == SessionState.NotLoaded)
+            {
+                Plugin.SessionCopyState = SessionState.Loading;
+
+                foreach (var (key, characterConfig) in Plugin.CharacterStorage)
+                {
+                    var config = JsonConvert.DeserializeObject<CharacterConfiguration>(JsonConvert.SerializeObject(characterConfig, Formatting.Indented));
+                    Plugin.SessionCharacterCopy[key] = config ?? CharacterConfiguration.CreateNew();
+                }
+
+                Plugin.SessionCopyState = SessionState.Done;
+            }
         }
     }
 
