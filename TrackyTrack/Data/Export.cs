@@ -12,16 +12,15 @@ namespace TrackyTrack.Data;
 
 public static class Export
 {
-    private const string BaseUrl = "https://xzwnvwjxgmaqtrxewngh.supabase.co/rest/v1/";
-    private const string SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6d252d2p4Z21hcXRyeGV3bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk3NzcwMDIsImV4cCI6MjAwNTM1MzAwMn0.aNYTnhY_Sagi9DyH5Q9tCz9lwaRCYzMC12SZ7q7jZBc";
+    private const string BaseUrl = "https://infi.ovh/api/";
+    private const string AnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.Ur6wgi_rD4dr3uLLvbLoaEvfLCu4QFWdrF-uHRtbl_s";
     private static readonly HttpClient Client = new();
 
     private static readonly CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
 
-    public static void Init()
+    static Export()
     {
-        Client.DefaultRequestHeaders.Add("apikey", SupabaseAnonKey);
-        Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {SupabaseAnonKey}");
+        Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {AnonKey}");
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
     }
 

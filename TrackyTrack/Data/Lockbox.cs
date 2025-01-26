@@ -126,23 +126,6 @@ public static class LockboxExtensions
         };
     }
 
-    public static (LockboxTypes Main, LockboxTypes Secondary) ToMultiple(this LockboxTypes type)
-    {
-        return type switch
-        {
-            LockboxTypes.Pagos => (LockboxTypes.Pagos, LockboxTypes.ColdWarped),
-            LockboxTypes.Pyros => (LockboxTypes.Pyros, LockboxTypes.HeatWarped),
-            LockboxTypes.Hydatos => (LockboxTypes.Hydatos, LockboxTypes.MoistureWarped),
-            LockboxTypes.SouthernFront => (LockboxTypes.SouthernFront, LockboxTypes.Zadnor),
-            _ => (LockboxTypes.Anemos, LockboxTypes.Anemos)
-        };
-    }
-
-    public static bool HasMultiple(this LockboxTypes type)
-    {
-        return type != LockboxTypes.Anemos;
-    }
-
     public static string TerritoryToContainerName(string territory)
     {
         return territory switch

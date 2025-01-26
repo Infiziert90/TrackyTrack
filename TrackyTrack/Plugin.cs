@@ -27,7 +27,6 @@ public class Plugin : IDalamudPlugin
     [PluginService] public static IGameInteropProvider Hook { get; private set; } = null!;
     [PluginService] public static IGameGui GameGui { get; private set; } = null!;
     [PluginService] public static IPluginLog Log { get; private set; } = null!;
-    [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
     [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
     [PluginService] public static IGameInventory GameInventory { get; private set; } = null!;
     [PluginService] public static INotificationManager NotificationManager { get; private set; } = null!;
@@ -92,7 +91,6 @@ public class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
 
         ConfigurationBase.Load();
-        Export.Init();
 
         ClientState.Login += Login;
         ClientState.TerritoryChanged += TerritoryChanged;
