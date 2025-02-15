@@ -37,7 +37,7 @@ public record EurekaResult
 {
     public readonly List<EurekaItem> Items = [];
 
-    public void AddItem(uint item, uint count) => Items.Add(new EurekaItem(item, count));
+    public void AddItem(uint item, uint count) => Items.Add(new EurekaItem(Utils.NormalizeItemId(item), count));
     [JsonIgnore] public bool IsValid => Items.Count != 0;
 }
 
@@ -109,7 +109,7 @@ public static class EurekaExtensions
 
     public static uint ToWorth(this CofferRarity rarity)
     {
-        return (rarity) switch
+        return rarity switch
         {
             CofferRarity.Gold => 100_000,
             CofferRarity.Silver => 25_000,

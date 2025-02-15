@@ -93,7 +93,7 @@ public partial class MainWindow
         var opened = characterGacha.Select(c => c.GachaThreeZero.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = Sheets.ItemSheet.GetRow(pair.Key);
+            var item = Sheets.GetItem(pair.Key);
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
@@ -146,7 +146,7 @@ public partial class MainWindow
         var opened = characterGacha.Select(c => c.GachaFourZero.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = Sheets.ItemSheet.GetRow(pair.Key);
+            var item = Sheets.GetItem(pair.Key);
             var count = pair.Value;
             var percentage = (double) count / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
@@ -194,7 +194,7 @@ public partial class MainWindow
         var opened = characterGacha.Select(c => c.GachaSanctuary.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = Sheets.ItemSheet.GetRow(pair.Key);
+            var item = Sheets.GetItem(pair.Key);
             var count = pair.Value;
             var percentage = (Data.Sanctuary.MultiRewardItems.Contains(pair.Key) ? count / 5.0 : count ) / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
@@ -225,8 +225,8 @@ public partial class MainWindow
     private void DrawMissingTable(IEnumerable<uint> content, bool showUnlocked)
     {
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort)
-            .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.ItemSheet.GetRow(entry).Icon))
-            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.ItemSheet.GetRow(entry).Name.ExtractText()))
+            .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.GetItem(entry).Icon))
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.GetItem(entry).Name.ExtractText()))
             .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlocked)
             .Draw(content);
     }

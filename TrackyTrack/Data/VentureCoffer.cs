@@ -8,7 +8,7 @@ public class VentureCoffer
     public Dictionary<uint, uint> Obtained = new();
 
     [JsonIgnore]
-    public static readonly List<uint> Content =
+    public static readonly HashSet<uint> Content =
     [
         13114, // Pure White
         13115, // Jet Black

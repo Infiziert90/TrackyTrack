@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Utility;
 using Lumina.Text.ReadOnly;
 
 namespace TrackyTrack;
@@ -9,7 +8,7 @@ namespace TrackyTrack;
 public static class Utils
 {
     public static string ToStr(SeString content) => content.ToString();
-    public static string ToStr(ReadOnlySeString content) => content.ToDalamudString().ToString();
+    public static string ToStr(ReadOnlySeString content) => content.ExtractText();
 
     public record SortedEntry(uint Id, uint Icon, string Name, uint Obtained, uint Min, uint Max, double Percentage);
 

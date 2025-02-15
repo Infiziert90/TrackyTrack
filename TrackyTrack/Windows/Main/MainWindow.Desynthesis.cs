@@ -9,7 +9,7 @@ namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
-    private static readonly string[] Jobs = { "CRP", "BSM", "ARM", "GSM", "LTW", "WVR", "ALC", "CUL" };
+    private static readonly string[] Jobs = ["CRP", "BSM", "ARM", "GSM", "LTW", "WVR", "ALC", "CUL"];
 
     private Item[] DesynthCache = null!;
 
@@ -46,7 +46,7 @@ public partial class MainWindow
         HighestILvL = DesynthCache.Select(i => (int)i.LevelItem.RowId).Max();
 
         LowestValidID = 100;
-        HighestValidID = Sheets.ItemSheet.Where(i => i.Icon != 0).MaxBy(i => i.RowId)!.RowId;
+        HighestValidID = Sheets.ItemSheet.Where(i => i.Icon != 0).MaxBy(i => i.RowId).RowId;
 
         // Fill once
         CatalogueCache = BuildCatalogue();
@@ -136,7 +136,7 @@ public partial class MainWindow
         ImGui.TableNextColumn();
 
         var destroyed = SourceHistory.MaxBy(pair => pair.Value);
-        var item = Sheets.ItemSheet.GetRow(destroyed.Key);
+        var item = Sheets.GetItem(destroyed.Key);
 
         using (ImRaii.PushIndent(10.0f))
         {
@@ -147,7 +147,7 @@ public partial class MainWindow
             ImGui.TextUnformatted($"x{destroyed.Value:N0}");
 
             var bestItem = RewardHistory.Where(pair => pair.Key is > 20 and < 100_000).MaxBy(pair => pair.Value);
-            item = Sheets.ItemSheet.GetRow(bestItem.Key);
+            item = Sheets.GetItem(bestItem.Key);
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Rewarded");
             ImGui.TableNextColumn();
@@ -156,7 +156,7 @@ public partial class MainWindow
             ImGui.TextUnformatted($"x{bestItem.Value:N0}");
 
             var bestCrystal = RewardHistory.Where(pair => pair.Key is > 0 and < 20).MaxBy(pair => pair.Value);
-            item = Sheets.ItemSheet.GetRow(bestCrystal.Key);
+            item = Sheets.GetItem(bestCrystal.Key);
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Crystal");
             ImGui.TableNextColumn();
@@ -228,7 +228,7 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(5.0f);
 
         var resultPair = selectedHistory[SelectedHistory];
-        var source = Sheets.ItemSheet.GetRow(resultPair.Value.Source);
+        var source = Sheets.GetItem(resultPair.Value.Source);
         Helper.DrawIcon(source.Icon);
         ImGui.SameLine();
 
@@ -299,7 +299,7 @@ public partial class MainWindow
         foreach (var i in clipper.Rows)
         {
             var (itemId, count) = items[i];
-            var item = Sheets.ItemSheet.GetRow(itemId);
+            var item = Sheets.GetItem(itemId);
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -355,7 +355,7 @@ public partial class MainWindow
         foreach (var i in clipper.Rows)
         {
             var (itemId, count) = items[i];
-            var item = Sheets.ItemSheet.GetRow(itemId);
+            var item = Sheets.GetItem(itemId);
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -445,7 +445,7 @@ public partial class MainWindow
             dict = LocalSourcesCache!;
         }
 
-        var sourceItem = Sheets.ItemSheet.GetRow(SourceSearchResult)!;
+        var sourceItem = Sheets.GetItem(SourceSearchResult);
         Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), Utils.ToStr(sourceItem.Name), ImGuiColors.ParsedOrange);
         if (!dict.TryGetValue(SourceSearchResult, out var history))
         {
@@ -461,10 +461,12 @@ public partial class MainWindow
 
         var sortedList = history.Results.Where(result => result.Item > 20).Select(result =>
         {
-            var item = Sheets.ItemSheet.HasRow(result.Item) ? Sheets.ItemSheet.GetRow(result.Item) : Sheets.ItemSheet.GetRow(1);
+            if (!Sheets.ItemSheet.TryGetRow(result.Item, out var itemRow))
+                itemRow = Sheets.GetItem(1);
+
             var count = result.Received;
             var percentage = (double) count / desynthesized * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
+            return new Utils.SortedEntry(itemRow.RowId, itemRow.Icon, Utils.ToStr(itemRow.Name), count, 0, 0, percentage);
         }).OrderByDescending(x => x.Percentage);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, "Percentages:");
@@ -482,7 +484,7 @@ public partial class MainWindow
             dict = LocalRewardsCache!;
         }
 
-        var sourceItem = Sheets.ItemSheet.GetRow(RewardSearchResult);
+        var sourceItem = Sheets.GetItem(RewardSearchResult);
         Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), Utils.ToStr(sourceItem.Name), ImGuiColors.ParsedOrange);
         if (!dict.TryGetValue(RewardSearchResult, out var history))
         {
@@ -498,14 +500,16 @@ public partial class MainWindow
 
         var sortedList = history.Results.Select(result =>
         {
-            var item = Sheets.ItemSheet.HasRow(result.Item) ? Sheets.ItemSheet.GetRow(result.Item) : Sheets.ItemSheet.GetRow(1);
+            if (!Sheets.ItemSheet.TryGetRow(result.Item, out var itemRow))
+                itemRow = Sheets.GetItem(1);
+
             var source = Plugin.Importer.SourcedData.Sources[result.Item];
             if (DataSourceSelection == 1 && LocalSourcesCache != null)
                 source = LocalSourcesCache[result.Item];
 
             var sourceRecord = source.Results.FirstOrDefault(r => r.Item == RewardSearchResult);
             var percentage = (double) sourceRecord.Received / source.Records * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), result.Received, 0, 0, percentage);
+            return new Utils.SortedEntry(itemRow.RowId, itemRow.Icon, Utils.ToStr(itemRow.Name), result.Received, 0, 0, percentage);
         }).OrderByDescending(x => x.Percentage);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, "Chance for each source:");

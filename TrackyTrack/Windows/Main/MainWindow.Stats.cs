@@ -11,7 +11,7 @@ public partial class MainWindow
     private static void InitializeStats()
     {
         foreach (var currency in Enum.GetValues<Currency>())
-            IconList[currency] = Sheets.ItemSheet.GetRow((uint)currency).Icon;
+            IconList[currency] = Sheets.GetItem((uint)currency).Icon;
     }
 
     private void StatsTab()

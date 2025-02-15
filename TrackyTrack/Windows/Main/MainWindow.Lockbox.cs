@@ -40,7 +40,7 @@ public partial class MainWindow
         var nameDict = new SortedDictionary<uint, (string Name, float Width)>();
         foreach (var lockboxId in LockboxContent.Keys)
         {
-            var name = Sheets.ItemSheet.GetRow(lockboxId).Name.ExtractText();
+            var name = Sheets.GetItem(lockboxId).Name.ExtractText();
             nameDict[lockboxId] = (name, ImGui.CalcTextSize(name).X + (styles.ItemSpacing.X * 2));
         }
 

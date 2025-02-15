@@ -114,7 +114,7 @@ public partial class MainWindow
             TotalCoffers = quickHistory.Count(v => v.Primary.Item == 32161);
 
             // All valid gear is rarity green or higher
-            (Item Item, bool HQ)[] validGear = quickHistory.Select(v => (Sheets.ItemSheet.GetRow(v.Primary.Item)!, v.Primary.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
+            (Item Item, bool HQ)[] validGear = quickHistory.Select(v => (Sheets.GetItem(v.Primary.Item), v.Primary.HQ)).Where(i => i.Item1.Rarity > 1).ToArray();
             TotalLvl = validGear.Sum(i => i.Item.LevelItem.RowId);
             TotalSeals = validGear.Sum(i => Sheets.GCSupplySheet.GetRow(i.Item.LevelItem.RowId).SealsExpertDelivery);
             TotalFCPoints = validGear.Sum(i =>
@@ -236,7 +236,7 @@ public partial class MainWindow
         foreach (var i in clipper.Rows)
         {
             var (itemId, count) = items[i];
-            var item = Sheets.ItemSheet.GetRow(itemId)!;
+            var item = Sheets.GetItem(itemId);
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -296,7 +296,7 @@ public partial class MainWindow
             if (!ventureItem.Valid)
                 continue;
 
-            var item = Sheets.ItemSheet.GetRow(ventureItem.Item)!;
+            var item = Sheets.GetItem(ventureItem.Item);
 
             ImGui.TableNextColumn();
             Helper.DrawIcon(item.Icon);
@@ -338,7 +338,7 @@ public partial class MainWindow
         var opened = characterCoffers.Select(c => c.Coffer.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = Sheets.ItemSheet.GetRow(pair.Key)!;
+            var item = Sheets.GetItem(pair.Key);
             var count = pair.Value;
             var percentage = (pair.Key != 8841 ? count / 2.0 : count) / opened * 100.0;
             return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);

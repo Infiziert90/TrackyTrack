@@ -57,9 +57,9 @@ public static class Export
         public GachaLoot(uint coffer, uint id, uint amount) : base("Gacha")
         {
             Coffer = coffer;
-            ItemId = id;
+            ItemId = Utils.NormalizeItemId(id);
             Amount = amount;
-            Name = Utils.ToStr(Sheets.ItemSheet.GetRow(ItemId).Name);
+            Name = Utils.ToStr(Sheets.GetItem(ItemId).Name);
         }
     }
 
@@ -79,7 +79,7 @@ public static class Export
         {
             Rarity = rarity;
             Territory = territory;
-            Items = items.Select(i => i.Item).ToArray();
+            Items = items.Select(i => Utils.NormalizeItemId(i.Item)).ToArray();
         }
     }
 
@@ -93,16 +93,17 @@ public static class Export
 
         public DesynthesisResult(uint source, uint[] rewards) : base("Desynthesis")
         {
-            Source = source;
-            Rewards = rewards;
+            Source = Utils.NormalizeItemId(source);
+            Rewards = rewards.Select(Utils.NormalizeItemId).ToArray();
         }
 
         public DesynthesisResult(DesynthResult result) : base("Desynthesis")
         {
-            Source = result.Source;
+            Source = Utils.NormalizeItemId(result.Source);
             var r = new List<uint>();
             foreach (var reward in result.Received)
                 r.AddRange(reward.ItemCountArray());
+
             Rewards = r.ToArray();
         }
     }
@@ -142,12 +143,12 @@ public static class Export
             VentureType = venture.VentureType;
 
             var primary = venture.Items[0];
-            PrimaryId = primary.Item;
+            PrimaryId = Utils.NormalizeItemId(primary.Item);
             PrimaryCount = primary.Count;
             PrimaryHq = primary.HQ;
 
             var additional = venture.Items[1];
-            AdditionalId = additional.Item;
+            AdditionalId = Utils.NormalizeItemId(additional.Item);
             AdditionalCount = additional.Count;
             AdditionalHq = additional.HQ;
 
