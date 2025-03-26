@@ -12,7 +12,7 @@ public unsafe class HookManager
 {
     private readonly Plugin Plugin;
 
-    private const string DesynthResultSig = "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 44 0F B6 43 ?? 4C 8D 4B 17";
+    private const string DesynthResultSig = "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 44 0F B6 46 ?? 4C 8D 4E 17";
     private delegate void DesynthResultDelegate(uint param1, ushort param2, sbyte param3, nint param4, char param5);
     private Hook<DesynthResultDelegate> DesynthResultHook;
 
@@ -28,7 +28,7 @@ public unsafe class HookManager
     private delegate byte LootAddedDelegate(Loot* a1, uint chestObjectId, uint chestItemIndex, uint itemId, ushort itemCount, nint materia, nint glamourStainIds, uint glamourItemId, RollState rollState, RollResult rollResult, float time, float maxTime, byte rollValue, byte a14, LootMode lootMode, int a16, uint a17);
     private Hook<LootAddedDelegate> LootAddedHook;
 
-    private const string RetainerTaskResultSig = "E8 ?? ?? ?? ?? 48 89 9B ?? ?? ?? ?? 48 8B CF 48 8B 17 FF 52 40 89 83 ?? ?? ?? ?? 33 D2 48 8D 4D A0";
+    private const string RetainerTaskResultSig = "E8 ?? ?? ?? ?? 48 89 9B ?? ?? ?? ?? 48 8B CF 48 8B 17 FF 52 48 89 83 ?? ?? ?? ?? 33 D2 48 8D 4D A0";
     private delegate void RetainerTaskResultDelegate(AgentRetainerTask* agent, nint someLuaPointer, nint packet);
     private Hook<RetainerTaskResultDelegate> RetainerTaskHook;
 

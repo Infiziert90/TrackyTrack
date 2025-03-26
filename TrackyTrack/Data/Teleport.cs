@@ -42,7 +42,7 @@ public static class TeleportBuffExtension
             // "Reduced Rates"
             if (status.StatusId == 364)
             {
-                switch (status.StackCount)
+                switch (status.Param)
                 {
                     case 40:
                         return TeleportBuff.ReducedRatesIII;
