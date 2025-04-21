@@ -2,7 +2,7 @@
 <Project Sdk="Dalamud.NET.Sdk/12.0.2">
     <PropertyGroup>
         <Authors>Infi</Authors>
-        <Version>1.5.8.1</Version>
+        <Version>1.5.9.0</Version>
         <Description>Tracking data is fun</Description>
         <PackageProjectUrl>https://github.com/Infiziert90/TrackyTrack</PackageProjectUrl>
     </PropertyGroup>

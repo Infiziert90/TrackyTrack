@@ -1,5 +1,4 @@
 ﻿using Dalamud.Hooking;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -160,32 +159,42 @@ public unsafe class HookManager
     {
         var r = LootAddedHook.Original(a1, chestObjectId, chestItemIndex, itemId, itemCount, materia, glamourStainIds, glamourItemId, rollState, rollResult, time, maxTime, rollValue, a14, lootMode, a16, a17);
 
-        #if RELEASE
-        return r;
-        #endif
-
         try
         {
-            Plugin.Log.Information($"Loot added: {r} ID1 {GroupManager.Instance()->MainGroup.PartyId} ID2 {GroupManager.Instance()->MainGroup.PartyId_2}");
-            Plugin.Log.Information($"chestObjectId {chestObjectId:X} itemId {itemId} itemCount {itemCount} roll {rollValue} a14 {a14} a16 {a16}");
+            var group = GroupManager.Instance();
+            var lowestContentId = ulong.MaxValue;
+            foreach (var member in group->MainGroup.PartyMembers)
+            {
+                if (member.ContentId != 0 && member.ContentId < lowestContentId)
+                    lowestContentId = member.ContentId;
+            }
+
+            if (group->MainGroup.IsAlliance)
+            {
+                foreach (var member in group->MainGroup.AllianceMembers)
+                {
+                    if (member.ContentId != 0 && member.ContentId < lowestContentId)
+                        lowestContentId = member.ContentId;
+                }
+            }
 
             var chestObject = Plugin.ObjectTable.SearchByEntityId(chestObjectId);
-            if (chestObject != null && chestObject.IsValid())
-            {
-                Plugin.Log.Information($"Chest Info: {chestObject.Name} BaseId {chestObject.DataId} Field7 {Sheets.TreasureSheet.GetRow(chestObject.DataId).Unknown7}");
-                Plugin.Log.Information($"Chest Position: {chestObject.Position.X} {chestObject.Position.Y} {chestObject.Position.Z}");
+            if (chestObject == null || !chestObject.IsValid())
+                return r;
 
-                var map = Sheets.MapSheet.GetRow(Plugin.ClientState.MapId)!;
-                var transient = Sheets.TerritoryTransientSheet.GetRow(Plugin.ClientState.TerritoryType)!;
-
-                var mapPos = MapUtil.WorldToMap(chestObject.Position, map, transient);
-                Plugin.Log.Information($"Mao Info: {map.PlaceName.Value!.Name} | {map.PlaceNameRegion.Value!.Name} | {map.PlaceNameSub.Value!.Name}");
-                Plugin.Log.Information($"Map Position: {mapPos.X} {mapPos.Y} {mapPos.Z}");
-            }
+            Plugin.UploadEntry(new Export.DutyLoot(
+                itemId,
+                itemCount,
+                Plugin.ClientState.MapId,
+                Plugin.ClientState.TerritoryType,
+                chestObject.Position,
+                chestObject.DataId,
+                chestObjectId,
+                lowestContentId));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e, "Error while parsing actor control packet");
+            Plugin.Log.Error(ex, "Error while parsing loot result.");
         }
 
         return r;

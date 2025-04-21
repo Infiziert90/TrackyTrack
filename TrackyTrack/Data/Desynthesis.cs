@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 
@@ -36,16 +37,14 @@ public class Desynth
     };
 }
 
-public record DesynthResult(uint Source, ItemResult[] Received)
+public record DesynthResult(uint Source, ItemResult[] Received, ushort ClassLevel = 0)
 {
     [JsonConstructor]
     public DesynthResult() : this(0, []) {}
 
     public unsafe DesynthResult(AgentSalvage* result) : this(0, [])
     {
-        var sourceId = Utils.NormalizeItemId(result->DesynthItemId);
-
-        Source = sourceId;
+        Source = Utils.NormalizeItemId(result->DesynthItemId);
         Received = result->DesynthResults.ToArray()
                                          .Where(r => r.ItemId > 0)
                                          .Select(r =>
@@ -55,12 +54,15 @@ public record DesynthResult(uint Source, ItemResult[] Received)
                                              return new ItemResult(Utils.NormalizeItemId(r.ItemId), (uint)r.Quantity, isHQ);
                                          })
                                          .ToArray();
+
+        ClassLevel = (ushort) PlayerState.Instance()->GetDesynthesisLevel(Sheets.GetItem(Source).ClassJobRepair.RowId);
     }
 
-    public DesynthResult(BulkResult result) : this(0, [])
+    public unsafe DesynthResult(BulkResult result) : this(0, [])
     {
         Source = result.Source;
         Received = result.Received.ToArray();
+        ClassLevel = (ushort) PlayerState.Instance()->GetDesynthesisLevel(Sheets.GetItem(Source).ClassJobRepair.RowId);
     }
 }
 

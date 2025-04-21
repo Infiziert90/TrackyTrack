@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -24,18 +25,13 @@ public static class Export
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
     }
 
-    public class Upload
+    public class Upload(string table)
     {
         [JsonIgnore]
-        public string Table;
+        public string Table = table;
 
         [JsonProperty("version")]
         public string Version = Plugin.PluginInterface.Manifest.AssemblyVersion.ToString();
-
-        public Upload(string table)
-        {
-            Table = table;
-        }
     }
 
     public class GachaLoot : Upload
@@ -91,10 +87,14 @@ public static class Export
         [JsonProperty("rewards")]
         public uint[] Rewards;
 
-        public DesynthesisResult(uint source, uint[] rewards) : base("Desynthesis")
+        [JsonProperty("class_level")]
+        public ushort ClassLevel;
+
+        public DesynthesisResult(uint source, uint[] rewards, ushort classLevel = 0) : base("Desynthesis")
         {
             Source = Utils.NormalizeItemId(source);
             Rewards = rewards.Select(Utils.NormalizeItemId).ToArray();
+            ClassLevel = classLevel;
         }
 
         public DesynthesisResult(DesynthResult result) : base("Desynthesis")
@@ -105,6 +105,7 @@ public static class Export
                 r.AddRange(reward.ItemCountArray());
 
             Rewards = r.ToArray();
+            ClassLevel = result.ClassLevel;
         }
     }
 
@@ -154,6 +155,66 @@ public static class Export
 
             MaxLevel = venture.MaxLevel;
             QuickVenture = venture.IsQuickVenture;
+        }
+    }
+
+    public class DutyLoot : Upload
+    {
+        [JsonProperty("item_id")]
+        public uint ItemId;
+
+        [JsonProperty("amount")]
+        public uint Amount;
+
+        [JsonProperty("map")]
+        public uint MapId;
+
+        [JsonProperty("territory")]
+        public uint TerritoryId;
+
+        [JsonProperty("chest_id")]
+        public uint ChestBaseId;
+
+        [JsonProperty("chest_x")]
+        public float ChestPosX;
+
+        [JsonProperty("chest_y")]
+        public float ChestPosY;
+
+        [JsonProperty("chest_z")]
+        public float ChestPosZ;
+
+        [JsonProperty("hashed")]
+        public string Hashed;
+
+
+        public DutyLoot(uint itemId, ushort amount, uint mapId, uint territoryType, Vector3 chestPos, uint chestBaseId, uint chestObjectId, ulong lowestContentId) : base("DutyLoot")
+        {
+            ItemId = itemId;
+            Amount = amount;
+
+            MapId = mapId;
+            TerritoryId = territoryType;
+            ChestBaseId = chestBaseId;
+
+            ChestPosX = chestPos.X;
+            ChestPosY = chestPos.Y;
+            ChestPosZ = chestPos.Z;
+
+            using var stream = new MemoryStream();
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                writer.Write(chestBaseId);
+                writer.Write(chestObjectId);
+                writer.Write(lowestContentId);
+            }
+            stream.Position = 0;
+
+            using (var hash = SHA256.Create())
+            {
+                var result = hash.ComputeHash(stream);
+                Hashed = string.Join("", result.Select(b => $"{b:X2}"));
+            }
         }
     }
 

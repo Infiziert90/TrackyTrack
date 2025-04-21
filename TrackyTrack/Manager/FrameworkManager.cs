@@ -93,7 +93,7 @@ public class FrameworkManager
     public void TicketTracker(IFramework _)
     {
         var local = Plugin.ClientState.LocalPlayer;
-        if (local == null || !local.IsCasting)
+        if (local is not { IsCasting: true })
             return;
 
         switch (local)
