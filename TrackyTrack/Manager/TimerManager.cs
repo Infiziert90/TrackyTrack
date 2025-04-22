@@ -15,6 +15,9 @@ public class TimerManager
     public uint Repaired;
     private readonly Timer RepairTimer = new(1 * 500);
 
+    public readonly Dictionary<uint, Export.DutyLoot> LootCache = [];
+    private readonly Timer LootTimer = new(1 * 1000);
+
     public TimerManager(Plugin plugin)
     {
         Plugin = plugin;
@@ -26,6 +29,9 @@ public class TimerManager
 
         RepairTimer.AutoReset = false;
         RepairTimer.Elapsed += (_, _) => Repaired = 0;
+
+        LootTimer.AutoReset = false;
+        LootTimer.Elapsed += StoreLootResults;
     }
 
     public void Dispose() { }
@@ -44,6 +50,12 @@ public class TimerManager
     public void StartRepair()
     {
         RepairTimer.Start();
+    }
+
+    public void StartLoot()
+    {
+        LootTimer.Stop();
+        LootTimer.Start();
     }
 
     public void RepairResult(int gilDifference)
@@ -216,5 +228,16 @@ public class TimerManager
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
         Plugin.UploadEntry(new Export.BunnyLoot((uint)rarity, (uint)territory, result.Items));
+    }
+
+    private void StoreLootResults(object? _, ElapsedEventArgs __)
+    {
+        if (LootCache.Count == 0)
+            return;
+
+        foreach (var lootEntry in LootCache.Values)
+            Plugin.UploadEntry(lootEntry);
+
+        LootCache.Clear();
     }
 }

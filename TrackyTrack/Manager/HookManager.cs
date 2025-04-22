@@ -182,15 +182,13 @@ public unsafe class HookManager
             if (chestObject == null || !chestObject.IsValid())
                 return r;
 
-            Plugin.UploadEntry(new Export.DutyLoot(
-                itemId,
-                itemCount,
-                Plugin.ClientState.MapId,
-                Plugin.ClientState.TerritoryType,
-                chestObject.Position,
-                chestObject.DataId,
-                chestObjectId,
-                lowestContentId));
+            Plugin.TimerManager.StartLoot();
+
+            if (!Plugin.TimerManager.LootCache.TryGetValue(chestObjectId, out var dutyLoot))
+                dutyLoot = new Export.DutyLoot(chestObject.Position, chestObject.DataId, chestObjectId, lowestContentId);
+
+            dutyLoot.AddContent(itemId, itemCount);
+            Plugin.TimerManager.LootCache[chestObjectId] = dutyLoot;
         }
         catch (Exception ex)
         {

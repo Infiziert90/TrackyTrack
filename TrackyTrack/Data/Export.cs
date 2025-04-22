@@ -160,12 +160,6 @@ public static class Export
 
     public class DutyLoot : Upload
     {
-        [JsonProperty("item_id")]
-        public uint ItemId;
-
-        [JsonProperty("amount")]
-        public uint Amount;
-
         [JsonProperty("map")]
         public uint MapId;
 
@@ -184,17 +178,17 @@ public static class Export
         [JsonProperty("chest_z")]
         public float ChestPosZ;
 
+        [JsonProperty("content")]
+        public List<uint> ContentPairs = [];
+
         [JsonProperty("hashed")]
         public string Hashed;
 
 
-        public DutyLoot(uint itemId, ushort amount, uint mapId, uint territoryType, Vector3 chestPos, uint chestBaseId, uint chestObjectId, ulong lowestContentId) : base("DutyLoot")
+        public DutyLoot(Vector3 chestPos, uint chestBaseId, uint chestObjectId, ulong lowestContentId) : base("DutyLootV2")
         {
-            ItemId = itemId;
-            Amount = amount;
-
-            MapId = mapId;
-            TerritoryId = territoryType;
+            MapId = Plugin.ClientState.MapId;
+            TerritoryId = Plugin.ClientState.TerritoryType;
             ChestBaseId = chestBaseId;
 
             ChestPosX = chestPos.X;
@@ -215,6 +209,12 @@ public static class Export
                 var result = hash.ComputeHash(stream);
                 Hashed = string.Join("", result.Select(b => $"{b:X2}"));
             }
+        }
+
+        public void AddContent(uint itemId, ushort amount)
+        {
+            ContentPairs.Add(Utils.NormalizeItemId(itemId));
+            ContentPairs.Add(amount);
         }
     }
 
