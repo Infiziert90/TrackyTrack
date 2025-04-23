@@ -166,6 +166,161 @@ public class Importer
             Plugin.Log.Error(e, "Can't build desynthesis history.");
         }
     }
+
+    public class DutyLootImport
+    {
+        [Name("id")] public uint Id { get; set; }
+        [Name("map")] public uint Map { get; set; }
+        [Name("territory")] public uint Territory { get; set; }
+        [Name("chest_id")] public uint ChestId { get; set; }
+        [Name("content")] public string Content { get; set; }
+        [Name("hashed")] public string Hashed { get; set; }
+        [Name("created_at")] public DateTime CreatedAt { get; set; }
+
+        [Name("chest_x")] public float ChestX { get; set; }
+        [Name("chest_y")] public float ChestY { get; set; }
+        [Name("chest_z")] public float ChestZ { get; set; }
+
+        public uint[] GetContent()
+        {
+            var spl = Content.Trim('[', ']').Split(",");
+            if (spl.Length % 2 != 0)
+            {
+                Plugin.Log.Information($"Invalid length found, ID: {Id}");
+                return [];
+            }
+
+            return spl.Select(uint.Parse).ToArray();
+        }
+    }
+
+    public struct DutyLoot(string dutyName)
+    {
+        public string DutyName = dutyName;
+        public Dictionary<uint, ChestLoot> Chests = [];
+
+        public int Records;
+
+        public override string ToString()
+        {
+            var txt = $"{DutyName} [Records: {Records}]:\n";
+            foreach (var (_, chest) in Chests.OrderBy(pair => pair.Key))
+            {
+                var map = Sheets.MapSheet.GetRow(chest.MapId);
+                txt += $"{map.PlaceNameSub.Value.Name.ExtractText()} ({chest.ChestId} | {chest.Position.X:F2}/{chest.Position.Y:F2}/{chest.Position.Z:F2}) [Records: {chest.Records} | Unique Items: {chest.Rewards.Count}]:\n";
+
+                foreach (var (itemId, loot) in chest.Rewards.OrderBy(pair => pair.Key))
+                    txt += $"{Sheets.GetItem(itemId).Name.ExtractText()} = {loot.Obtained} [{(float)loot.Obtained / chest.Records * 100.0f:##0.00}%] [Min: {loot.Min} Max: {loot.Max}]\n";
+            }
+
+            return txt;
+        }
+
+        public struct ChestLoot(string chestName, uint chestId, float x, float y, float z, uint territory, uint map)
+        {
+            public uint ChestId = chestId;
+            public string ChestName = chestName;
+            public Dictionary<uint, LootStats> Rewards = [];
+
+            public uint MapId = map;
+            public uint TerritoryId = territory;
+            public Vector3 Position = new(x, y, z);
+
+            public int Records;
+        }
+
+        public struct LootStats()
+        {
+            public uint Obtained = 0;
+            public uint Total = 0;
+            public uint Min = uint.MaxValue;
+            public uint Max = uint.MinValue;
+
+            public void AdjustAmount(uint amount)
+            {
+                Obtained += 1;
+                Total += amount;
+                Min = Math.Min(amount, Min);
+                Max = Math.Max(amount, Max);
+            }
+        }
+    }
+
+    public void ImportDutyLoot(string inputFile)
+    {
+        try
+        {
+            var records = new Dictionary<uint, DutyLoot>();
+            var hashes = new Dictionary<string, DutyLootImport>();
+
+            using var reader = new FileInfo(inputFile).OpenText();
+            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture) { HasHeaderRecord = true });
+            foreach (var import in csv.GetRecords<DutyLootImport>())
+            {
+                if (!hashes.TryAdd(import.Hashed, import))
+                {
+                    var existing = hashes[import.Hashed];
+                    Plugin.Log.Warning($"Duplicated hash found, ID: {import.Id} vs {existing.Id} | {import.CreatedAt} vs {existing.CreatedAt} | {import.Content} vs {existing.Content}");
+                    continue;
+                }
+
+                if (!Sheets.TerritoryTypeSheet.TryGetRow(import.Territory, out var territoryType))
+                {
+                    Plugin.Log.Information($"Invalid territory found, ID: {import.Id}");
+                    continue;
+                }
+
+                if (!Sheets.MapSheet.HasRow(import.Map))
+                {
+                    Plugin.Log.Error($"Invalid map found, ID: {import.Id}");
+                    continue;
+                }
+
+                if (!Sheets.TreasureSheet.TryGetRow(import.ChestId, out var treasure))
+                {
+                    Plugin.Log.Information($"Invalid treasure found, ID: {import.Id}");
+                    continue;
+                }
+
+                if (territoryType.ContentFinderCondition.RowId == 0)
+                {
+                    Plugin.Log.Information($"Invalid duty found, ID: {import.Id}");
+                    continue;
+                }
+
+                if (!records.TryGetValue(territoryType.ContentFinderCondition.RowId, out var dutyLoot))
+                    dutyLoot = new DutyLoot(territoryType.ContentFinderCondition.Value.Name.ExtractText());
+
+                if (!dutyLoot.Chests.TryGetValue(import.ChestId, out var chest))
+                    chest = new DutyLoot.ChestLoot(treasure.Unknown0.ExtractText(), import.ChestId, import.ChestX, import.ChestY, import.ChestZ, import.Territory, import.Map);
+
+                dutyLoot.Records++;
+                chest.Records++;
+
+                var content = import.GetContent();
+                for (var i = 0; i < content.Length / 2; i++)
+                {
+                    var item = content[2 * i];
+                    var amount = content[(2 * i) + 1];
+
+                    chest.Rewards.TryAdd(item, new DutyLoot.LootStats());
+                    var loot = chest.Rewards[item];
+                    loot.AdjustAmount(amount);
+                    chest.Rewards[item] = loot;
+                }
+
+                dutyLoot.Chests[import.ChestId] = chest;
+                records[territoryType.ContentFinderCondition.RowId] = dutyLoot;
+            }
+
+            foreach (var dutyLoot in records.Values.OrderBy(l => l.Records))
+                Plugin.Log.Information(dutyLoot.ToString());
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Can't build duty loot history.");
+        }
+    }
     #endif
     #endregion
 }

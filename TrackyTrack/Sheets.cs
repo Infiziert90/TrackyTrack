@@ -10,6 +10,7 @@ public static class Sheets
     public static readonly ExcelSheet<Treasure> TreasureSheet;
     public static readonly ExcelSheet<ParamGrow> ParamGrowSheets;
     public static readonly ExcelSheet<GCSupplyDutyReward> GCSupplySheet;
+    public static readonly ExcelSheet<TerritoryType> TerritoryTypeSheet;
     public static readonly ExcelSheet<TerritoryTypeTransient> TerritoryTransientSheet;
 
     public static readonly uint MaxLevel;
@@ -21,6 +22,7 @@ public static class Sheets
         TreasureSheet = Plugin.Data.GetExcelSheet<Treasure>();
         ParamGrowSheets = Plugin.Data.GetExcelSheet<ParamGrow>();
         GCSupplySheet = Plugin.Data.GetExcelSheet<GCSupplyDutyReward>();
+        TerritoryTypeSheet = Plugin.Data.GetExcelSheet<TerritoryType>();
         TerritoryTransientSheet = Plugin.Data.GetExcelSheet<TerritoryTypeTransient>();
 
         MaxLevel = ParamGrowSheets.Where(l => l.ExpToNext > 0).Max(l => l.RowId);

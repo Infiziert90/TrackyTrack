@@ -54,6 +54,15 @@ public partial class ConfigWindow
                         Utils.AddNotification("Import Done", NotificationType.Success);
                     });
                 }
+
+                if (ImGui.Button("Import Duty Data"))
+                {
+                    Task.Run(() =>
+                    {
+                        Plugin.Importer.ImportDutyLoot(InputPath);
+                        Utils.AddNotification("ImportDutyLoot Done", NotificationType.Success);
+                    });
+                }
                 #endif
             }
         }

@@ -159,6 +159,10 @@ public unsafe class HookManager
     {
         var r = LootAddedHook.Original(a1, chestObjectId, chestItemIndex, itemId, itemCount, materia, glamourStainIds, glamourItemId, rollState, rollResult, time, maxTime, rollValue, a14, lootMode, a16, a17);
 
+        // This hook can be called multiple times for different scenarios, but we only care about the initial one
+        if (time < maxTime)
+            return r;
+
         try
         {
             var group = GroupManager.Instance();
