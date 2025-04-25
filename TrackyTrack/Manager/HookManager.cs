@@ -191,7 +191,7 @@ public unsafe class HookManager
             if (!Plugin.TimerManager.LootCache.TryGetValue(chestObjectId, out var dutyLoot))
                 dutyLoot = new Export.DutyLoot(chestObject.Position, chestObject.DataId, chestObjectId, lowestContentId);
 
-            dutyLoot.AddContent(itemId, itemCount);
+            dutyLoot.AddContent(itemId, itemCount, chestItemIndex);
             Plugin.TimerManager.LootCache[chestObjectId] = dutyLoot;
         }
         catch (Exception ex)

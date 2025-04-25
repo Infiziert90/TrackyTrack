@@ -16,7 +16,7 @@ public class TimerManager
     private readonly Timer RepairTimer = new(1 * 500);
 
     public readonly Dictionary<uint, Export.DutyLoot> LootCache = [];
-    private readonly Timer LootTimer = new(1 * 1000);
+    private readonly Timer LootTimer = new(1 * 500);
 
     public TimerManager(Plugin plugin)
     {

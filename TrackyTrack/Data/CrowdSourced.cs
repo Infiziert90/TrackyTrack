@@ -7,6 +7,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using CsvHelper.Configuration.Attributes;
 using MessagePack;
+using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
 
@@ -204,13 +205,19 @@ public class Importer
         public override string ToString()
         {
             var txt = $"{DutyName} [Records: {Records}]:\n";
-            foreach (var (_, chest) in Chests.OrderBy(pair => pair.Key))
+            foreach (var (_, chest) in Chests.OrderBy(pair => pair.Value.MapId).ThenBy(pair => pair.Key))
             {
                 var map = Sheets.MapSheet.GetRow(chest.MapId);
                 txt += $"{map.PlaceNameSub.Value.Name.ExtractText()} ({chest.ChestId} | {chest.Position.X:F2}/{chest.Position.Y:F2}/{chest.Position.Z:F2}) [Records: {chest.Records} | Unique Items: {chest.Rewards.Count}]:\n";
 
                 foreach (var (itemId, loot) in chest.Rewards.OrderBy(pair => pair.Key))
-                    txt += $"{Sheets.GetItem(itemId).Name.ExtractText()} = {loot.Obtained} [{(float)loot.Obtained / chest.Records * 100.0f:##0.00}%] [Min: {loot.Min} Max: {loot.Max}]\n";
+                {
+                    txt += $"{Sheets.GetItem(itemId).Name.ExtractText()} = {loot.Obtained} [{(float)loot.Obtained / chest.Records * 100.0f:##0.00}%]";
+                    if (loot.Min != 1 || loot.Max != 1)
+                        txt += $" [Min: {loot.Min} Max: {loot.Max}]\n";
+                    else
+                        txt += "\n";
+                }
             }
 
             return txt;
@@ -315,6 +322,12 @@ public class Importer
 
             foreach (var dutyLoot in records.Values.OrderBy(l => l.Records))
                 Plugin.Log.Information(dutyLoot.ToString());
+
+            var path = Path.Combine(FullPath, "test.json");
+            if (File.Exists(path))
+                File.Delete(path);
+
+            File.WriteAllText(path, JsonConvert.SerializeObject(records, Formatting.Indented));
         }
         catch (Exception ex)
         {

@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Dalamud.Interface.ImGuiNotification;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -184,6 +185,9 @@ public static class Export
         [JsonProperty("hashed")]
         public string Hashed;
 
+        [JsonIgnore]
+        private readonly HashSet<uint> SeenLootIndex = [];
+
 
         public DutyLoot(Vector3 chestPos, uint chestBaseId, uint chestObjectId, ulong lowestContentId) : base("DutyLootV2")
         {
@@ -211,8 +215,17 @@ public static class Export
             }
         }
 
-        public void AddContent(uint itemId, ushort amount)
+        public void AddContent(uint itemId, ushort amount, uint lootIndex)
         {
+            // Loot at this specific index was already added
+            if (!SeenLootIndex.Add(lootIndex))
+            {
+                var errorText = "Loot with the same index was passed in? Please report this to the developer.";
+                Plugin.Log.Error(errorText);
+                Utils.AddNotification(errorText, NotificationType.Error);
+                return;
+            }
+
             ContentPairs.Add(Utils.NormalizeItemId(itemId));
             ContentPairs.Add(amount);
         }
