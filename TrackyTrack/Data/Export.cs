@@ -219,12 +219,7 @@ public static class Export
         {
             // Loot at this specific index was already added
             if (!SeenLootIndex.Add(lootIndex))
-            {
-                var errorText = "Loot with the same index was passed in? Please report this to the developer.";
-                Plugin.Log.Error(errorText);
-                Utils.AddNotification(errorText, NotificationType.Error);
                 return;
-            }
 
             ContentPairs.Add(Utils.NormalizeItemId(itemId));
             ContentPairs.Add(amount);

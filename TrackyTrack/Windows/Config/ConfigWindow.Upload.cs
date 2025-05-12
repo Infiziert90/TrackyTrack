@@ -32,7 +32,7 @@ public partial class ConfigWindow
 
         ImGui.TextColored(ImGuiColors.DalamudViolet, "If you'd like to see the results");
         if (ImGui.Button("Click Me"))
-            Dalamud.Utility.Util.OpenLink("https://docs.google.com/spreadsheets/d/1VfncSL5gf9E7ehgND5nZgguUyUAmZiAMbQllLKcoxTQ/edit?usp=sharing");
+            Dalamud.Utility.Util.OpenLink("https://gacha.infi.ovh/");
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.Separator();

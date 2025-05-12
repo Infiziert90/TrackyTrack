@@ -207,17 +207,20 @@ public class Importer
             var txt = $"{DutyName} [Records: {Records}]:\n";
             foreach (var (_, chest) in Chests.OrderBy(pair => pair.Value.MapId).ThenBy(pair => pair.Key))
             {
-                var map = Sheets.MapSheet.GetRow(chest.MapId);
-                txt += $"{map.PlaceNameSub.Value.Name.ExtractText()} ({chest.ChestId} | {chest.Position.X:F2}/{chest.Position.Y:F2}/{chest.Position.Z:F2}) [Records: {chest.Records} | Unique Items: {chest.Rewards.Count}]:\n";
+                // var map = Sheets.MapSheet.GetRow(chest.MapId);
+                // txt += $"{map.PlaceNameSub.Value.Name.ExtractText()} ({chest.ChestId} | {chest.Position.X:F2}/{chest.Position.Y:F2}/{chest.Position.Z:F2}) [Records: {chest.Records} | Unique Items: {chest.Rewards.Count}]:\n";
+                //
+                // foreach (var (itemId, loot) in chest.Rewards.OrderBy(pair => pair.Key))
+                // {
+                //     txt += $"{Sheets.GetItem(itemId).Name.ExtractText()} = {loot.Obtained} [{(float)loot.Obtained / chest.Records * 100.0f:##0.00}%]";
+                //     if (loot.Min != 1 || loot.Max != 1)
+                //         txt += $" [Min: {loot.Min} Max: {loot.Max}]\n";
+                //     else
+                //         txt += "\n";
+                // }
 
-                foreach (var (itemId, loot) in chest.Rewards.OrderBy(pair => pair.Key))
-                {
-                    txt += $"{Sheets.GetItem(itemId).Name.ExtractText()} = {loot.Obtained} [{(float)loot.Obtained / chest.Records * 100.0f:##0.00}%]";
-                    if (loot.Min != 1 || loot.Max != 1)
-                        txt += $" [Min: {loot.Min} Max: {loot.Max}]\n";
-                    else
-                        txt += "\n";
-                }
+                foreach (var (pos, count) in chest.Positions)
+                    txt += $"Id: {chest.ChestId} Position: {pos.X}/{pos.Y}/{pos.Z} | Count: {count}\n";
             }
 
             return txt;
@@ -232,6 +235,7 @@ public class Importer
             public uint MapId = map;
             public uint TerritoryId = territory;
             public Vector3 Position = new(x, y, z);
+            public Dictionary<Vector3, uint> Positions = [];
 
             public int Records;
         }
@@ -255,6 +259,7 @@ public class Importer
 
     public void ImportDutyLoot(string inputFile)
     {
+        var errorCounter = 0;
         try
         {
             var records = new Dictionary<uint, DutyLoot>();
@@ -267,7 +272,8 @@ public class Importer
                 if (!hashes.TryAdd(import.Hashed, import))
                 {
                     var existing = hashes[import.Hashed];
-                    Plugin.Log.Warning($"Duplicated hash found, ID: {import.Id} vs {existing.Id} | {import.CreatedAt} vs {existing.CreatedAt} | {import.Content} vs {existing.Content}");
+                    if (!existing.GetContent().SequenceEqual(import.GetContent()))
+                        Plugin.Log.Warning($"Duplicated hash found, ID: {import.Id} vs {existing.Id} | {import.CreatedAt} vs {existing.CreatedAt} | {import.Content} vs {existing.Content}");
                     continue;
                 }
 
@@ -316,6 +322,10 @@ public class Importer
                     chest.Rewards[item] = loot;
                 }
 
+                var pos = new Vector3(import.ChestX, import.ChestY, import.ChestZ);
+                if (!chest.Positions.TryAdd(pos, 1))
+                    chest.Positions[pos]++;
+
                 dutyLoot.Chests[import.ChestId] = chest;
                 records[territoryType.ContentFinderCondition.RowId] = dutyLoot;
             }
@@ -333,6 +343,8 @@ public class Importer
         {
             Plugin.Log.Error(ex, "Can't build duty loot history.");
         }
+
+        Plugin.Log.Information($"Wrongly formatted positions: {errorCounter}");
     }
     #endif
     #endregion
