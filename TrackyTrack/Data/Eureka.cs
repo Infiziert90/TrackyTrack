@@ -83,7 +83,7 @@ public static class EurekaUtil
 
 public static class EurekaExtensions
 {
-    public static readonly uint[] AsArray = (uint[]) Enum.GetValues(typeof(Territory));
+    public static readonly uint[] AsArray = Enum.GetValues<Territory>().Select(t => (uint) t).ToArray();
 
     public static string ToName(this Territory territory)
     {

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using TrackyTrack.Data;
@@ -31,6 +32,10 @@ public unsafe class HookManager
     private delegate void RetainerTaskResultDelegate(AgentRetainerTask* agent, nint someLuaPointer, nint packet);
     private Hook<RetainerTaskResultDelegate> RetainerTaskHook;
 
+    private const string TreasureInteractSig = "E9 ?? ?? ?? ?? 8B 05 ?? ?? ?? ?? 85 C0";
+    private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
+    private Hook<TreasureInteractDelegate> TreasureInteractHook;
+
     public uint LastSeenItemId;
 
     public HookManager(Plugin plugin)
@@ -56,6 +61,10 @@ public unsafe class HookManager
         var retainerTaskPtr = Plugin.SigScanner.ScanText(RetainerTaskResultSig);
         RetainerTaskHook = Plugin.Hook.HookFromAddress<RetainerTaskResultDelegate>(retainerTaskPtr, RetainerTaskDetour);
         RetainerTaskHook.Enable();
+
+        var treasureInteractPtr = Plugin.SigScanner.ScanText(TreasureInteractSig);
+        TreasureInteractHook = Plugin.Hook.HookFromAddress<TreasureInteractDelegate>(treasureInteractPtr, TreasureInteractDetour);
+        TreasureInteractHook.Enable();
     }
 
     public void Dispose()
@@ -65,6 +74,7 @@ public unsafe class HookManager
         OpenInspectHook.Dispose();
         LootAddedHook.Dispose();
         RetainerTaskHook.Dispose();
+        TreasureInteractHook.Dispose();
     }
 
     private void OpenInspect(nint inspectAgent, int starRating, InventoryItem* reward)
@@ -239,6 +249,25 @@ public unsafe class HookManager
         catch (Exception e)
         {
             Plugin.Log.Warning(e, "Unable to track retainer result.");
+        }
+    }
+
+    private void TreasureInteractDetour(Loot* loot, Treasure* treasureObj)
+    {
+        TreasureInteractHook.Original(loot, treasureObj);
+
+        try
+        {
+            if (treasureObj == null || loot == null)
+                return;
+
+            Plugin.TimerManager.LastBaseId = treasureObj->BaseId;
+            Plugin.TimerManager.ChestPosition = treasureObj->Position;
+            Plugin.TimerManager.StartOccult();
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Unable to track treasure interaction.");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin.Services;
+﻿using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using TrackyTrack.Data;
 
@@ -95,6 +96,14 @@ public class FrameworkManager
         var local = Plugin.ClientState.LocalPlayer;
         if (local is not { IsCasting: true })
             return;
+
+        // Read possible chest position for bunny
+        var target = Plugin.TargetManager.Target;
+        if (target is { ObjectKind: ObjectKind.EventObj })
+        {
+            Plugin.TimerManager.LastTargetBaseId = target.DataId;
+            Plugin.TimerManager.LastTargetPosition = target.Position;
+        }
 
         switch (local)
         {

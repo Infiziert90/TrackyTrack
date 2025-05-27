@@ -22,6 +22,9 @@ public class TimerManager
     public Vector3 ChestPosition;
     private readonly Timer OccultTreasureTimer = new(1 * 500);
 
+    public uint LastTargetBaseId;
+    public Vector3 LastTargetPosition;
+
     public TimerManager(Plugin plugin)
     {
         Plugin = plugin;
@@ -274,7 +277,47 @@ public class TimerManager
             return;
         }
 
+        Plugin.Log.Information($"LastBaseId: {LastBaseId}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
         Plugin.UploadEntry(new Export.OccultTreasure(LastBaseId, result.Items, ChestPosition));
+    }
+
+    public void StoreOccultBunny((uint ItemId, int Quantity)[] changes)
+    {
+        if (Plugin.ClientState.TerritoryType != 1252)
+            return;
+
+        var gil = changes.FirstOrDefault(c => c.ItemId == 1);
+        if (gil.Quantity != 1_000 && gil.Quantity != 5_000 && gil.Quantity != 30_000)
+            return;
+
+        var result = new OccultResult();
+        foreach (var (itemId, quantity) in changes.Where(c => c.ItemId != 1))
+        {
+            if (quantity < 1)
+            {
+                Plugin.Log.Warning($"Occult Bunny Result: {itemId} with {quantity}");
+                return;
+            }
+
+            result.AddItem(itemId, (uint) quantity);
+        }
+
+        if (!result.IsValid)
+        {
+            Plugin.Log.Warning("No items received, invalid result");
+            return;
+        }
+
+        var rarity = OccultExtensions.FromWorth(gil.Quantity);
+        var territory = (OccultTerritory) Plugin.ClientState.TerritoryType;
+
+        var pos = Vector3.Zero;
+        if (OccultExtensions.AsArray.Contains(LastTargetBaseId))
+            pos = LastTargetPosition;
+
+        LastTargetBaseId = 0;
+        LastTargetPosition = Vector3.Zero;
+        Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos));
     }
 
     private void StoreLootResults(object? _, ElapsedEventArgs __)

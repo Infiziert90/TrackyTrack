@@ -260,6 +260,45 @@ public static class Export
         }
     }
 
+    public class OccultBunny : Upload
+    {
+        [JsonProperty("coffer")]
+        public uint Rarity;
+
+        [JsonProperty("territory")]
+        public uint Territory;
+
+        [JsonProperty("rewards")]
+        public uint[] Rewards;
+
+        [JsonProperty("pos_x")]
+        public float ChestPosX;
+
+        [JsonProperty("pos_y")]
+        public float ChestPosY;
+
+        [JsonProperty("pos_z")]
+        public float ChestPosZ;
+
+        public OccultBunny(uint rarity, uint territory, List<OccultItem> rewards, Vector3 chestPos) : base("OccultBunny")
+        {
+            Rarity = rarity;
+            Territory = territory;
+
+            var l = new List<uint>();
+            foreach (var r in rewards)
+            {
+                l.Add(r.Item);
+                l.Add(r.Count);
+            }
+            Rewards = l.ToArray();
+
+            ChestPosX = chestPos.X;
+            ChestPosY = chestPos.Y;
+            ChestPosZ = chestPos.Z;
+        }
+    }
+
     public sealed class ExportMap : ClassMap<GachaLoot>
     {
         public ExportMap()

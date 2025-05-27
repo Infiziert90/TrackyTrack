@@ -3,8 +3,7 @@ using System.Threading.Tasks;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game;
-using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.Network;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
@@ -33,7 +32,7 @@ public class Plugin : IDalamudPlugin
     [PluginService] public static IGameInventory GameInventory { get; private set; } = null!;
     [PluginService] public static INotificationManager NotificationManager { get; private set; } = null!;
     [PluginService] public static IObjectTable ObjectTable { get; private set; } = null!;
-    [PluginService] public static IGameNetwork Network { get; private set; } = null!;
+    [PluginService] public static ITargetManager TargetManager { get; private set; } = null!;
 
     public static FileDialogManager FileDialogManager { get; private set; } = null!;
 
@@ -76,6 +75,7 @@ public class Plugin : IDalamudPlugin
         InventoryChanged.OnItemsChanged += TimerManager.StoreCofferResult;
         InventoryChanged.OnItemsChanged += TimerManager.StoreEurekaResult;
         InventoryChanged.OnItemsChanged += TimerManager.StoreOccultResult;
+        InventoryChanged.OnItemsChanged += TimerManager.StoreOccultBunny;
 
         InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
 
@@ -103,20 +103,17 @@ public class Plugin : IDalamudPlugin
 
         // Delay load and save tasks, ensuring that everything has loaded
         ConfigurationBase.StartTasks();
-
-        Network.NetworkMessage += OnNetworkEvent;
     }
 
     public void Dispose()
     {
-        Network.NetworkMessage -= OnNetworkEvent;
-
         ClientState.Login -= Login;
         ClientState.TerritoryChanged -= TerritoryChanged;
 
         InventoryChanged.OnItemsChanged -= TimerManager.StoreCofferResult;
         InventoryChanged.OnItemsChanged -= TimerManager.StoreEurekaResult;
         InventoryChanged.OnItemsChanged -= TimerManager.StoreOccultResult;
+        InventoryChanged.OnItemsChanged -= TimerManager.StoreOccultBunny;
 
         InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
 
@@ -411,32 +408,4 @@ public class Plugin : IDalamudPlugin
         return Configuration.UploadPermission && Configuration.UploadNotificationReceived < DateTime.Now;
     }
     #endregion
-
-    private unsafe void OnNetworkEvent(nint dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
-    {
-        if (direction != NetworkMessageDirection.ZoneUp)
-            return;
-
-        if (opCode != 394)
-            return;
-
-        var entityId = *(uint*)dataPtr;
-        var chestObject = ObjectTable.SearchByEntityId(entityId);
-
-        if (chestObject == null)
-        {
-            Log.Error("Could not find chestObject");
-            return;
-        }
-
-        if (chestObject.ObjectKind != ObjectKind.Treasure)
-        {
-            Log.Error("Object was not treasure");
-            return;
-        }
-
-        TimerManager.LastBaseId = chestObject.DataId;
-        TimerManager.ChestPosition = chestObject.Position;
-        TimerManager.StartOccult();
-    }
 }
