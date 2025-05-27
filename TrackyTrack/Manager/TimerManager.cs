@@ -18,6 +18,10 @@ public class TimerManager
     public readonly Dictionary<uint, Export.DutyLoot> LootCache = [];
     private readonly Timer LootTimer = new(1 * 500);
 
+    public uint LastBaseId;
+    public Vector3 ChestPosition;
+    private readonly Timer OccultTreasureTimer = new(1 * 500);
+
     public TimerManager(Plugin plugin)
     {
         Plugin = plugin;
@@ -32,6 +36,9 @@ public class TimerManager
 
         LootTimer.AutoReset = false;
         LootTimer.Elapsed += StoreLootResults;
+
+        OccultTreasureTimer.AutoReset = false;
+        OccultTreasureTimer.Elapsed += OccultElapsed;
     }
 
     public void Dispose() { }
@@ -56,6 +63,17 @@ public class TimerManager
     {
         LootTimer.Stop();
         LootTimer.Start();
+    }
+
+    public void StartOccult()
+    {
+        OccultTreasureTimer.Stop();
+        OccultTreasureTimer.Start();
+    }
+
+    public void OccultElapsed(object? _, ElapsedEventArgs __)
+    {
+        LastBaseId = 0;
     }
 
     public void RepairResult(int gilDifference)
@@ -228,6 +246,35 @@ public class TimerManager
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
         Plugin.UploadEntry(new Export.BunnyLoot((uint)rarity, (uint)territory, result.Items));
+    }
+
+    public void StoreOccultResult((uint ItemId, int Quantity)[] changes)
+    {
+        if (LastBaseId == 0 || !OccultTreasureTimer.Enabled)
+            return;
+
+        if (Plugin.ClientState.TerritoryType != 1252)
+            return;
+
+        var result = new OccultResult();
+        foreach (var (itemId, quantity) in changes)
+        {
+            if (quantity < 1)
+            {
+                Plugin.Log.Warning($"Occult Result: {itemId} with {quantity}");
+                return;
+            }
+
+            result.AddItem(itemId, (uint) quantity);
+        }
+
+        if (!result.IsValid)
+        {
+            Plugin.Log.Warning("No items received, invalid result");
+            return;
+        }
+
+        Plugin.UploadEntry(new Export.OccultTreasure(LastBaseId, result.Items, ChestPosition));
     }
 
     private void StoreLootResults(object? _, ElapsedEventArgs __)

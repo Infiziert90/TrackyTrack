@@ -7,7 +7,6 @@ using System.Security.Cryptography;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
-using Dalamud.Interface.ImGuiNotification;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -223,6 +222,41 @@ public static class Export
 
             ContentPairs.Add(Utils.NormalizeItemId(itemId));
             ContentPairs.Add(amount);
+        }
+    }
+
+    public class OccultTreasure : Upload
+    {
+        [JsonProperty("base_id")]
+        public uint BaseId;
+
+        [JsonProperty("rewards")]
+        public uint[] Rewards;
+
+        [JsonProperty("pos_x")]
+        public float ChestPosX;
+
+        [JsonProperty("pos_y")]
+        public float ChestPosY;
+
+        [JsonProperty("pos_z")]
+        public float ChestPosZ;
+
+        public OccultTreasure(uint baseId, List<OccultItem> rewards, Vector3 chestPos) : base("OccultTreasure")
+        {
+            BaseId = baseId;
+
+            var l = new List<uint>();
+            foreach (var r in rewards)
+            {
+                l.Add(r.Item);
+                l.Add(r.Count);
+            }
+            Rewards = l.ToArray();
+
+            ChestPosX = chestPos.X;
+            ChestPosY = chestPos.Y;
+            ChestPosZ = chestPos.Z;
         }
     }
 
