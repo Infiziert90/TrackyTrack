@@ -272,7 +272,7 @@ public class TimerManager
             return;
 
         var gil = changes.FirstOrDefault(c => c.ItemId == 1);
-        if (gil.Quantity != 1_000 && gil.Quantity != 5_000 && gil.Quantity != 30_000)
+        if (gil.Quantity != 1_000 && gil.Quantity != 5_000 && gil.Quantity != 30_000 && gil.Quantity != 200_000)
             return;
 
         var result = new OccultResult();

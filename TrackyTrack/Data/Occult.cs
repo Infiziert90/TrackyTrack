@@ -21,7 +21,9 @@ public enum OccultCofferRarity : uint
 {
     Gold = 2014741,
     Silver = 2014742,
-    Bronze = 2014743
+    Bronze = 2014743,
+
+    BunnyGold = 2012936,
 }
 
 public static class OccultExtensions
@@ -44,6 +46,7 @@ public static class OccultExtensions
             OccultCofferRarity.Bronze => "Bronze",
             OccultCofferRarity.Silver => "Silver",
             OccultCofferRarity.Gold => "Gold",
+            OccultCofferRarity.BunnyGold => "Gold",
             _ => "Unknown"
         };
     }
@@ -52,6 +55,7 @@ public static class OccultExtensions
     {
         return rarity switch
         {
+            OccultCofferRarity.BunnyGold => 200_000,
             OccultCofferRarity.Gold => 30_000,
             OccultCofferRarity.Silver => 5_000,
             OccultCofferRarity.Bronze => 1_000,
@@ -63,6 +67,7 @@ public static class OccultExtensions
     {
         return worth switch
         {
+            200_000 => OccultCofferRarity.BunnyGold,
             30_000 => OccultCofferRarity.Gold,
             5_000 => OccultCofferRarity.Silver,
             1_000 => OccultCofferRarity.Bronze,
