@@ -238,8 +238,11 @@ public class TimerManager
 
     public void StoreOccultResult((uint ItemId, int Quantity)[] changes)
     {
-        if (LastBaseId == 0 || Plugin.ClientState.TerritoryType != 1252)
+        if (Plugin.ClientState.TerritoryType != 1252 || LastBaseId == 0)
             return;
+
+        var lastBaseId = LastBaseId;
+        LastBaseId = 0;
 
         var result = new OccultResult();
         foreach (var (itemId, quantity) in changes)
@@ -259,10 +262,8 @@ public class TimerManager
             return;
         }
 
-        Plugin.UploadEntry(new Export.OccultTreasure(LastBaseId, result.Items, ChestPosition));
-        Plugin.Log.Information($"LastBaseId: {LastBaseId}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
-
-        LastBaseId = 0;
+        Plugin.UploadEntry(new Export.OccultTreasure(lastBaseId, result.Items, ChestPosition));
+        Plugin.Log.Information($"LastBaseId: {lastBaseId}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
     }
 
     public void StoreOccultBunny((uint ItemId, int Quantity)[] changes)

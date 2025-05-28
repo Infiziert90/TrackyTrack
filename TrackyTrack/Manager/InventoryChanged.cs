@@ -16,7 +16,7 @@ public class InventoryChanged
     public delegate void ItemsChangedEvent((uint ItemId, int Quantity)[] changedItems);
 
     private ulong FrameCountAdd;
-    private List<(uint ItemId, int Quantity)> DelayedChanges = [];
+    private readonly List<(uint ItemId, int Quantity)> DelayedChanges = [];
 
     public event DelayedItemsChangedEvent? OnDelayedItemsChanged;
     public delegate void DelayedItemsChangedEvent((uint ItemId, int Quantity)[] changedItems);
@@ -78,6 +78,16 @@ public class InventoryChanged
         {
             var processedChanges = changes.Select(pair => (pair.Key, pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray();
 
+            foreach (var processedChange in processedChanges)
+            {
+                if (!Sheets.ItemSheet.TryGetRow(processedChange.Key, out var itemRow))
+                    continue;
+
+                // Check if the changed item is the soul crystal and return
+                if (itemRow.ItemUICategory.RowId == 62)
+                    return;
+            }
+
             // Check if there isn't a frame delay running
             // Otherwise add the current loot changes to the list
             if (FrameCountAdd == 0)
@@ -108,7 +118,7 @@ public class InventoryChanged
 
     private void ProcessFrameDelayedLoot(IFramework _)
     {
-        if (FrameCountAdd + 5 <= Plugin.PluginInterface.UiBuilder.FrameCount)
+        if (FrameCountAdd + 30 <= Plugin.PluginInterface.UiBuilder.FrameCount)
             return;
 
         FrameCountAdd = 0;
