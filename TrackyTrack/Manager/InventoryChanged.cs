@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Inventory;
 using Dalamud.Game.Inventory.InventoryEventArgTypes;
+using Dalamud.Plugin.Services;
 
 namespace TrackyTrack.Manager;
 
@@ -14,9 +15,22 @@ public class InventoryChanged
     public event ItemsChangedEvent? OnItemsChanged;
     public delegate void ItemsChangedEvent((uint ItemId, int Quantity)[] changedItems);
 
+    private ulong FrameCountAdd;
+    private List<(uint ItemId, int Quantity)> DelayedChanges = [];
+
+    public event DelayedItemsChangedEvent? OnDelayedItemsChanged;
+    public delegate void DelayedItemsChangedEvent((uint ItemId, int Quantity)[] changedItems);
+
     public InventoryChanged()
     {
         Plugin.GameInventory.InventoryChangedRaw += TriggerInventoryChanged;
+        Plugin.Framework.Update += ProcessFrameDelayedLoot;
+    }
+
+    public void Dispose()
+    {
+        Plugin.GameInventory.InventoryChangedRaw -= TriggerInventoryChanged;
+        Plugin.Framework.Update -= ProcessFrameDelayedLoot;
     }
 
     public void TriggerInventoryChanged(IReadOnlyCollection<InventoryEventArgs> events)
@@ -64,6 +78,13 @@ public class InventoryChanged
         {
             var processedChanges = changes.Select(pair => (pair.Key, pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray();
 
+            // Check if there isn't a frame delay running
+            // Otherwise add the current loot changes to the list
+            if (FrameCountAdd == 0)
+                FrameCountAdd = Plugin.PluginInterface.UiBuilder.FrameCount;
+
+            DelayedChanges.AddRange(processedChanges);
+
             // Coffer checks added and removed
             OnItemsChanged?.Invoke(processedChanges);
 
@@ -85,8 +106,17 @@ public class InventoryChanged
         }
     }
 
-    public void Dispose()
+    private void ProcessFrameDelayedLoot(IFramework _)
     {
-        Plugin.GameInventory.InventoryChangedRaw -= TriggerInventoryChanged;
+        if (FrameCountAdd + 5 <= Plugin.PluginInterface.UiBuilder.FrameCount)
+            return;
+
+        FrameCountAdd = 0;
+        if (DelayedChanges.Count == 0)
+            return;
+
+        OnDelayedItemsChanged?.Invoke(DelayedChanges.ToArray());
+
+        DelayedChanges.Clear();
     }
 }

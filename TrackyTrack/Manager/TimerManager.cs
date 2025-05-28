@@ -20,7 +20,6 @@ public class TimerManager
 
     public uint LastBaseId;
     public Vector3 ChestPosition;
-    private readonly Timer OccultTreasureTimer = new(1 * 500);
 
     public uint LastTargetBaseId;
     public Vector3 LastTargetPosition;
@@ -39,9 +38,6 @@ public class TimerManager
 
         LootTimer.AutoReset = false;
         LootTimer.Elapsed += StoreLootResults;
-
-        OccultTreasureTimer.AutoReset = false;
-        OccultTreasureTimer.Elapsed += OccultElapsed;
     }
 
     public void Dispose() { }
@@ -66,17 +62,6 @@ public class TimerManager
     {
         LootTimer.Stop();
         LootTimer.Start();
-    }
-
-    public void StartOccult()
-    {
-        OccultTreasureTimer.Stop();
-        OccultTreasureTimer.Start();
-    }
-
-    public void OccultElapsed(object? _, ElapsedEventArgs __)
-    {
-        LastBaseId = 0;
     }
 
     public void RepairResult(int gilDifference)
@@ -253,10 +238,7 @@ public class TimerManager
 
     public void StoreOccultResult((uint ItemId, int Quantity)[] changes)
     {
-        if (LastBaseId == 0 || !OccultTreasureTimer.Enabled)
-            return;
-
-        if (Plugin.ClientState.TerritoryType != 1252)
+        if (LastBaseId == 0 || Plugin.ClientState.TerritoryType != 1252)
             return;
 
         var result = new OccultResult();
@@ -277,8 +259,10 @@ public class TimerManager
             return;
         }
 
-        Plugin.Log.Information($"LastBaseId: {LastBaseId}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
         Plugin.UploadEntry(new Export.OccultTreasure(LastBaseId, result.Items, ChestPosition));
+        Plugin.Log.Information($"LastBaseId: {LastBaseId}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
+
+        LastBaseId = 0;
     }
 
     public void StoreOccultBunny((uint ItemId, int Quantity)[] changes)
@@ -318,6 +302,7 @@ public class TimerManager
         LastTargetBaseId = 0;
         LastTargetPosition = Vector3.Zero;
         Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos));
+        Plugin.Log.Information($"Rarity: {rarity}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
     }
 
     private void StoreLootResults(object? _, ElapsedEventArgs __)

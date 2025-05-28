@@ -263,7 +263,6 @@ public unsafe class HookManager
 
             Plugin.TimerManager.LastBaseId = treasureObj->BaseId;
             Plugin.TimerManager.ChestPosition = treasureObj->Position;
-            Plugin.TimerManager.StartOccult();
         }
         catch (Exception ex)
         {

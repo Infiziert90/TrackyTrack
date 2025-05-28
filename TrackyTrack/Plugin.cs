@@ -74,8 +74,8 @@ public class Plugin : IDalamudPlugin
 
         InventoryChanged.OnItemsChanged += TimerManager.StoreCofferResult;
         InventoryChanged.OnItemsChanged += TimerManager.StoreEurekaResult;
-        InventoryChanged.OnItemsChanged += TimerManager.StoreOccultResult;
-        InventoryChanged.OnItemsChanged += TimerManager.StoreOccultBunny;
+        InventoryChanged.OnDelayedItemsChanged += TimerManager.StoreOccultResult;
+        InventoryChanged.OnDelayedItemsChanged += TimerManager.StoreOccultBunny;
 
         InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
 
@@ -112,8 +112,8 @@ public class Plugin : IDalamudPlugin
 
         InventoryChanged.OnItemsChanged -= TimerManager.StoreCofferResult;
         InventoryChanged.OnItemsChanged -= TimerManager.StoreEurekaResult;
-        InventoryChanged.OnItemsChanged -= TimerManager.StoreOccultResult;
-        InventoryChanged.OnItemsChanged -= TimerManager.StoreOccultBunny;
+        InventoryChanged.OnDelayedItemsChanged -= TimerManager.StoreOccultResult;
+        InventoryChanged.OnDelayedItemsChanged -= TimerManager.StoreOccultBunny;
 
         InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
 
