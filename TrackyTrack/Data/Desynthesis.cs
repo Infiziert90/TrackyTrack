@@ -1,4 +1,6 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
@@ -44,14 +46,18 @@ public record DesynthResult(uint Source, ItemResult[] Received, ushort ClassLeve
 
     public unsafe DesynthResult(AgentSalvage* result) : this(0, [])
     {
-        Source = Utils.NormalizeItemId(result->DesynthItemId);
+        var adjustedId = ItemUtil.GetBaseId(result->DesynthItemId);
+        if (adjustedId.Kind == ItemPayload.ItemKind.EventItem)
+            return;
+
+        Source = adjustedId.ItemId;
         Received = result->DesynthResults.ToArray()
                                          .Where(r => r.ItemId > 0)
                                          .Select(r =>
                                          {
                                              // HQ items are Item + 1,000,000
                                              var isHQ = r.ItemId > 1_000_000;
-                                             return new ItemResult(Utils.NormalizeItemId(r.ItemId), (uint)r.Quantity, isHQ);
+                                             return new ItemResult(ItemUtil.GetBaseId(r.ItemId).ItemId, (uint)r.Quantity, isHQ);
                                          })
                                          .ToArray();
 
@@ -68,7 +74,7 @@ public record DesynthResult(uint Source, ItemResult[] Received, ushort ClassLeve
 
 public record ItemResult(uint Item, uint Count, bool HQ)
 {
-    public uint[] ItemCountArray() => [Utils.NormalizeItemId(Item), Count];
+    public uint[] ItemCountArray() => [ItemUtil.GetBaseId(Item).ItemId, Count];
 
     public Item ToItemRow() => Sheets.GetItem(Item);
 }
@@ -85,7 +91,7 @@ public struct BulkResult
     }
 
     public void AddSource(uint source) => Source = source;
-    public void AddItem(uint item, uint count, bool isHQ) => Received[0] = new ItemResult(Utils.NormalizeItemId(item), count, isHQ);
+    public void AddItem(uint item, uint count, bool isHQ) => Received[0] = new ItemResult(ItemUtil.GetBaseId(item).ItemId, count, isHQ);
     public void AddCrystal(uint item, uint count) => Received.Add(new ItemResult(item, count, false));
 
     public bool IsValid => Source is > 100 and < 100_000 && Received[0].Item is > 100 and < 100_000 && Received.Count <= 3;

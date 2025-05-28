@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Dalamud.Utility;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -53,7 +54,7 @@ public static class Export
         public GachaLoot(uint coffer, uint id, uint amount) : base("Gacha")
         {
             Coffer = coffer;
-            ItemId = Utils.NormalizeItemId(id);
+            ItemId = ItemUtil.GetBaseId(id).ItemId;
             Amount = amount;
             Name = Utils.ToStr(Sheets.GetItem(ItemId).Name);
         }
@@ -75,7 +76,7 @@ public static class Export
         {
             Rarity = rarity;
             Territory = territory;
-            Items = items.Select(i => Utils.NormalizeItemId(i.Item)).ToArray();
+            Items = items.Select(i => ItemUtil.GetBaseId(i.Item).ItemId).ToArray();
         }
     }
 
@@ -92,14 +93,14 @@ public static class Export
 
         public DesynthesisResult(uint source, uint[] rewards, ushort classLevel = 0) : base("Desynthesis")
         {
-            Source = Utils.NormalizeItemId(source);
-            Rewards = rewards.Select(Utils.NormalizeItemId).ToArray();
+            Source = ItemUtil.GetBaseId(source).ItemId;
+            Rewards = rewards.Select(s => ItemUtil.GetBaseId(s).ItemId).ToArray();
             ClassLevel = classLevel;
         }
 
         public DesynthesisResult(DesynthResult result) : base("Desynthesis")
         {
-            Source = Utils.NormalizeItemId(result.Source);
+            Source = ItemUtil.GetBaseId(result.Source).ItemId;
             var r = new List<uint>();
             foreach (var reward in result.Received)
                 r.AddRange(reward.ItemCountArray());
@@ -144,12 +145,12 @@ public static class Export
             VentureType = venture.VentureType;
 
             var primary = venture.Items[0];
-            PrimaryId = Utils.NormalizeItemId(primary.Item);
+            PrimaryId = ItemUtil.GetBaseId(primary.Item).ItemId;
             PrimaryCount = primary.Count;
             PrimaryHq = primary.HQ;
 
             var additional = venture.Items[1];
-            AdditionalId = Utils.NormalizeItemId(additional.Item);
+            AdditionalId = ItemUtil.GetBaseId(additional.Item).ItemId;
             AdditionalCount = additional.Count;
             AdditionalHq = additional.HQ;
 
@@ -220,7 +221,7 @@ public static class Export
             if (!SeenLootIndex.Add(lootIndex))
                 return;
 
-            ContentPairs.Add(Utils.NormalizeItemId(itemId));
+            ContentPairs.Add(ItemUtil.GetBaseId(itemId).ItemId);
             ContentPairs.Add(amount);
         }
     }

@@ -1,4 +1,7 @@
 ﻿using System.Timers;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Utility;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -84,13 +87,12 @@ public class TimerManager
             return;
 
         // 19 and below are crystals
-        var isHQ = changedItem.ItemId > 1_000_000;
-        var itemId = Utils.NormalizeItemId(changedItem.ItemId);
+        var item = ItemUtil.GetBaseId(changedItem.ItemId);
 
-        if (itemId > 19)
-            LastBulkResult.AddItem(itemId, changedItem.Quantity, isHQ);
+        if (item.ItemId > 19)
+            LastBulkResult.AddItem(item.ItemId, changedItem.Quantity, item.Kind == ItemPayload.ItemKind.Hq);
         else
-            LastBulkResult.AddCrystal(itemId, changedItem.Quantity);
+            LastBulkResult.AddCrystal(item.ItemId, changedItem.Quantity);
     }
 
     public void DesynthItemRemoved((uint ItemId, uint Quantity) changedItem)
@@ -99,11 +101,11 @@ public class TimerManager
             return;
 
         // Impossible to bulk desynth collectables
-        if (changedItem.ItemId is > 500_000 and < 1_000_000)
+        var item = ItemUtil.GetBaseId(changedItem.ItemId);
+        if (item.Kind == ItemPayload.ItemKind.Collectible)
             return;
 
-        var itemId = Utils.NormalizeItemId(changedItem.ItemId);
-        LastBulkResult.AddSource(itemId);
+        LastBulkResult.AddSource(item.ItemId);
     }
 
     public void StoreBulkResult(object? _, ElapsedEventArgs __)
@@ -253,7 +255,15 @@ public class TimerManager
                 return;
             }
 
-            result.AddItem(itemId, (uint) quantity);
+            var item = ItemUtil.GetBaseId(itemId);
+            if (item.Kind == ItemPayload.ItemKind.EventItem)
+            {
+                Plugin.Log.Error($"Found event item as reward. {item.ItemId}");
+                Utils.AddNotification("Invalid item found as reward, please report to the developer.", NotificationType.Error);
+                return;
+            }
+
+            result.AddItem(item.ItemId, (uint) quantity);
         }
 
         if (!result.IsValid)
@@ -284,7 +294,15 @@ public class TimerManager
                 return;
             }
 
-            result.AddItem(itemId, (uint) quantity);
+            var item = ItemUtil.GetBaseId(itemId);
+            if (item.Kind == ItemPayload.ItemKind.EventItem)
+            {
+                Plugin.Log.Error($"Found event item as reward. {item.ItemId}");
+                Utils.AddNotification("Invalid item found as reward, please report to the developer.", NotificationType.Error);
+                return;
+            }
+
+            result.AddItem(item.ItemId, (uint) quantity);
         }
 
         if (!result.IsValid)

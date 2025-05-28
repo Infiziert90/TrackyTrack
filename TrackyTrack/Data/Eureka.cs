@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Dalamud.Utility;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -37,7 +38,7 @@ public record EurekaResult
 {
     public readonly List<EurekaItem> Items = [];
 
-    public void AddItem(uint item, uint count) => Items.Add(new EurekaItem(Utils.NormalizeItemId(item), count));
+    public void AddItem(uint item, uint count) => Items.Add(new EurekaItem(ItemUtil.GetBaseId(item).ItemId, count));
     [JsonIgnore] public bool IsValid => Items.Count != 0;
 }
 

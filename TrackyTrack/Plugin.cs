@@ -7,6 +7,7 @@ using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using TrackyTrack.Attributes;
 using TrackyTrack.Data;
 using TrackyTrack.Windows.Main;
@@ -342,7 +343,7 @@ public class Plugin : IDalamudPlugin
         if (changedItem.Quantity > 1)
             return;
 
-        HookManager.LastSeenItemId = Utils.NormalizeItemId(changedItem.ItemId);
+        HookManager.LastSeenItemId = ItemUtil.GetBaseId(changedItem.ItemId).ItemId;
     }
 
     #region Draws

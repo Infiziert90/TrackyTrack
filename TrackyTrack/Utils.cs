@@ -61,11 +61,6 @@ public static class Utils
         return val;
     }
 
-    public static uint NormalizeItemId(uint itemId)
-    {
-        return itemId > 1_000_000 ? itemId - 1_000_000 : itemId > 500_000 ? itemId - 500_000 : itemId;
-    }
-
     public static void AddNotification(string content, NotificationType type)
     {
         Plugin.NotificationManager.AddNotification(new Notification{Content = content, Type = type, Minimized = false});

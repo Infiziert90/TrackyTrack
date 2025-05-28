@@ -1,4 +1,5 @@
-﻿using Lumina.Excel;
+﻿using Dalamud.Utility;
+using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
 namespace TrackyTrack;
@@ -26,5 +27,5 @@ public static class Sheets
         MaxLevel = ParamGrowSheets.Where(l => l.ExpToNext > 0).Max(l => l.RowId);
     }
 
-    public static Item GetItem(uint itemId) => ItemSheet.GetRow(Utils.NormalizeItemId(itemId));
+    public static Item GetItem(uint itemId) => ItemSheet.GetRow(ItemUtil.GetBaseId(itemId).ItemId);
 }
