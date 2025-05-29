@@ -118,7 +118,7 @@ public class InventoryChanged
 
     private void ProcessFrameDelayedLoot(IFramework _)
     {
-        if (FrameCountAdd + 30 <= Plugin.PluginInterface.UiBuilder.FrameCount)
+        if (FrameCountAdd + 10 <= Plugin.PluginInterface.UiBuilder.FrameCount)
             return;
 
         FrameCountAdd = 0;

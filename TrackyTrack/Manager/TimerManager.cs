@@ -23,6 +23,7 @@ public class TimerManager
 
     public uint LastBaseId;
     public Vector3 ChestPosition;
+    private readonly Timer TreasureResetTimer = new(1 * 1500);
 
     public uint LastTargetBaseId;
     public Vector3 LastTargetPosition;
@@ -41,6 +42,9 @@ public class TimerManager
 
         LootTimer.AutoReset = false;
         LootTimer.Elapsed += StoreLootResults;
+
+        TreasureResetTimer.AutoReset = false;
+        TreasureResetTimer.Elapsed += TreasureResetTimerOnElapsed;
     }
 
     public void Dispose() { }
@@ -65,6 +69,21 @@ public class TimerManager
     {
         LootTimer.Stop();
         LootTimer.Start();
+    }
+
+    public void StartTreasure(uint lastBaseId, Vector3 chestPosition)
+    {
+        LastBaseId = lastBaseId;
+        ChestPosition = chestPosition;
+
+        TreasureResetTimer.Stop();
+        TreasureResetTimer.Start();
+    }
+
+    void TreasureResetTimerOnElapsed(object? sender, ElapsedEventArgs e)
+    {
+        LastBaseId = 0;
+        ChestPosition =  Vector3.Zero;
     }
 
     public void RepairResult(int gilDifference)

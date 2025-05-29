@@ -261,8 +261,12 @@ public unsafe class HookManager
             if (treasureObj == null || loot == null)
                 return;
 
-            Plugin.TimerManager.LastBaseId = treasureObj->BaseId;
-            Plugin.TimerManager.ChestPosition = treasureObj->Position;
+            // This range should include all random coffer
+            var baseId = treasureObj->BaseId;
+            if (baseId is > 1856 or < 1789)
+                return;
+
+            Plugin.TimerManager.StartTreasure(baseId, treasureObj->Position);
         }
         catch (Exception ex)
         {
