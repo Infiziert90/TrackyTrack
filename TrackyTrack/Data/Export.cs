@@ -281,7 +281,10 @@ public static class Export
         [JsonProperty("pos_z")]
         public float ChestPosZ;
 
-        public OccultBunny(uint rarity, uint territory, List<OccultItem> rewards, Vector3 chestPos) : base("OccultBunny")
+        [JsonProperty("fate_id")]
+        public ushort FateId;
+
+        public OccultBunny(uint rarity, uint territory, List<OccultItem> rewards, Vector3 chestPos, ushort fateId) : base("OccultBunny")
         {
             Rarity = rarity;
             Territory = territory;
@@ -297,6 +300,8 @@ public static class Export
             ChestPosX = chestPos.X;
             ChestPosY = chestPos.Y;
             ChestPosZ = chestPos.Z;
+
+            FateId = fateId;
         }
     }
 

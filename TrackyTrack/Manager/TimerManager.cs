@@ -27,6 +27,7 @@ public class TimerManager
 
     public uint LastTargetBaseId;
     public Vector3 LastTargetPosition;
+    public ushort LastBunnyFateId;
 
     public TimerManager(Plugin plugin)
     {
@@ -336,11 +337,17 @@ public class TimerManager
         var pos = Vector3.Zero;
         if (OccultExtensions.AsArray.Contains(LastTargetBaseId))
             pos = LastTargetPosition;
+        var lastFateId = LastBunnyFateId;
+        var lastBaseId = LastTargetBaseId;
 
         LastTargetBaseId = 0;
         LastTargetPosition = Vector3.Zero;
-        Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos));
-        Plugin.Log.Information($"Rarity: {rarity}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
+        LastBunnyFateId = 0;
+
+        Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos, lastFateId));
+        Plugin.Log.Information($"Rarity: {rarity}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))} BaseId: {lastBaseId} FateId: {lastFateId}");
+        if (pos ==  Vector3.Zero)
+            Plugin.Log.Error($"Pos was zero? {lastBaseId} {rarity}");
     }
 
     private void StoreLootResults(object? _, ElapsedEventArgs __)

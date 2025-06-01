@@ -49,6 +49,12 @@ public static class Helper
     public static void NoEurekaCofferData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("No data stored for lockboxes\nPlease open any lockbox.");
+    }
+
+    public static void NoEurekaBunnyData()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
         WrappedError("No data stored for bunny coffers\nPlease open a bunny coffer in eureka.");
     }
 

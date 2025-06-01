@@ -19,14 +19,14 @@ public partial class MainWindow
 
         if (Plugin.CharacterStorage.Values.Count == 0)
         {
-            Helper.NoEurekaCofferData();
+            Helper.NoEurekaBunnyData();
             return;
         }
 
         var characterCoffers = Plugin.CharacterStorage.Values.Where(c => c.Eureka.Opened > 0).ToArray();
         if (characterCoffers.Length == 0)
         {
-            Helper.NoEurekaCofferData();
+            Helper.NoEurekaBunnyData();
             return;
         }
 

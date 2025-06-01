@@ -91,6 +91,7 @@ public class FrameworkManager
         }
     }
 
+    public readonly ushort[] OccultBunnyFates = [1976, 1977];
     public void TicketTracker(IFramework _)
     {
         var local = Plugin.ClientState.LocalPlayer;
@@ -101,9 +102,17 @@ public class FrameworkManager
         var target = Plugin.TargetManager.Target;
         if (target is { ObjectKind: ObjectKind.EventObj })
         {
-            Plugin.TimerManager.LastTargetBaseId = target.DataId;
-            Plugin.TimerManager.LastTargetPosition = target.Position;
+            // 300ms before cast finish is when cast counts as successful
+            if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
+            {
+                Plugin.TimerManager.LastTargetBaseId = target.DataId;
+                Plugin.TimerManager.LastTargetPosition = target.Position;
+            }
         }
+
+        var activeBunnyFate = Plugin.FateTable.FirstOrDefault(f => OccultBunnyFates.Contains(f.FateId));
+        if (activeBunnyFate != null)
+            Plugin.TimerManager.LastBunnyFateId = activeBunnyFate.FateId;
 
         switch (local)
         {

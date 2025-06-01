@@ -34,6 +34,7 @@ public class Plugin : IDalamudPlugin
     [PluginService] public static INotificationManager NotificationManager { get; private set; } = null!;
     [PluginService] public static IObjectTable ObjectTable { get; private set; } = null!;
     [PluginService] public static ITargetManager TargetManager { get; private set; } = null!;
+    [PluginService] public static IFateTable FateTable { get; private set; } = null!;
 
     public static FileDialogManager FileDialogManager { get; private set; } = null!;
 
