@@ -345,7 +345,7 @@ public class TimerManager
         LastBunnyFateId = 0;
 
         Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos, lastFateId));
-        Plugin.Log.Information($"Rarity: {rarity}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))} BaseId: {lastBaseId} FateId: {lastFateId}");
+        Plugin.Log.Information($"Rarity: {rarity}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))} BaseId: {lastBaseId} Pos: {pos} FateId: {lastFateId}");
         if (pos ==  Vector3.Zero)
             Plugin.Log.Error($"Pos was zero? {lastBaseId} {rarity}");
     }

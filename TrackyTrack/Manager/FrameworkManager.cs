@@ -32,15 +32,17 @@ public class FrameworkManager
 
         Plugin.Framework.Update += TicketTracker;
         Plugin.Framework.Update += CurrencyTracker;
+        Plugin.Framework.Update += OccultTracker;
     }
 
     public void Dispose()
     {
         Plugin.Framework.Update -= TicketTracker;
         Plugin.Framework.Update -= CurrencyTracker;
+        Plugin.Framework.Update -= OccultTracker;
     }
 
-    public unsafe void ScanCurrentCharacter()
+    private unsafe void ScanCurrentCharacter()
     {
         var instance = InventoryManager.Instance();
         if (instance == null)
@@ -52,7 +54,7 @@ public class FrameworkManager
         IsSafe = true;
     }
 
-    public unsafe void CurrencyTracker(IFramework _)
+    private unsafe void CurrencyTracker(IFramework _)
     {
         // Only run for real characters
         if (Plugin.ClientState.LocalContentId == 0)
@@ -91,28 +93,11 @@ public class FrameworkManager
         }
     }
 
-    public readonly ushort[] OccultBunnyFates = [1976, 1977];
-    public void TicketTracker(IFramework _)
+    private void TicketTracker(IFramework _)
     {
         var local = Plugin.ClientState.LocalPlayer;
         if (local is not { IsCasting: true })
             return;
-
-        // Read possible chest position for bunny
-        var target = Plugin.TargetManager.Target;
-        if (target is { ObjectKind: ObjectKind.EventObj })
-        {
-            // 300ms before cast finish is when cast counts as successful
-            if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
-            {
-                Plugin.TimerManager.LastTargetBaseId = target.DataId;
-                Plugin.TimerManager.LastTargetPosition = target.Position;
-            }
-        }
-
-        var activeBunnyFate = Plugin.FateTable.FirstOrDefault(f => OccultBunnyFates.Contains(f.FateId));
-        if (activeBunnyFate != null)
-            Plugin.TimerManager.LastBunnyFateId = activeBunnyFate.FateId;
 
         switch (local)
         {
@@ -131,6 +116,38 @@ public class FrameworkManager
                     Plugin.CastedTicketHandler(local.CastActionId);
                 break;
             }
+        }
+    }
+
+    private readonly ushort[] OccultBunnyFates = [1976, 1977];
+    private void OccultTracker(IFramework _)
+    {
+        var local = Plugin.ClientState.LocalPlayer;
+        if (local is null)
+            return;
+
+        var activeBunnyFate = Plugin.FateTable.FirstOrDefault(f => OccultBunnyFates.Contains(f.FateId));
+        if (activeBunnyFate != null)
+            Plugin.TimerManager.LastBunnyFateId = activeBunnyFate.FateId;
+
+        // Opening a chest is counted as cast animation, so early return if no cast
+        if (!local.IsCasting)
+            return;
+
+        // Check if target is an EventObject, all bunny coffers are
+        if (Plugin.TargetManager.Target is not { ObjectKind: ObjectKind.EventObj } target)
+            return;
+
+        // Check that current target is an occult coffer
+        if (!OccultExtensions.AsArray.Contains(target.DataId))
+            return;
+
+        // 300ms before cast finish is when cast counts as successful
+        if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
+        {
+            Plugin.TimerManager.LastTargetBaseId = target.DataId;
+            Plugin.TimerManager.LastTargetPosition = target.Position;
+            Plugin.Log.Information($"LastBaseId set to: {target.DataId} {target.Position}");
         }
     }
 }

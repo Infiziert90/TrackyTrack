@@ -15,7 +15,8 @@ public class InventoryChanged
     public event ItemsChangedEvent? OnItemsChanged;
     public delegate void ItemsChangedEvent((uint ItemId, int Quantity)[] changedItems);
 
-    private ulong FrameCountAdd;
+    private const int Delay = 300; // 300ms
+    private long CurrentTickDelay;
     private readonly List<(uint ItemId, int Quantity)> DelayedChanges = [];
 
     public event DelayedItemsChangedEvent? OnDelayedItemsChanged;
@@ -90,8 +91,8 @@ public class InventoryChanged
 
             // Check if there isn't a frame delay running
             // Otherwise add the current loot changes to the list
-            if (FrameCountAdd == 0)
-                FrameCountAdd = Plugin.PluginInterface.UiBuilder.FrameCount;
+            if (CurrentTickDelay == 0)
+                CurrentTickDelay = Environment.TickCount64;
 
             DelayedChanges.AddRange(processedChanges);
 
@@ -118,15 +119,18 @@ public class InventoryChanged
 
     private void ProcessFrameDelayedLoot(IFramework _)
     {
-        if (FrameCountAdd + 10 <= Plugin.PluginInterface.UiBuilder.FrameCount)
+        // Early return if no delay is required at this time
+        if (CurrentTickDelay == 0)
             return;
 
-        FrameCountAdd = 0;
+        if (Environment.TickCount64 < CurrentTickDelay + Delay)
+            return;
+        CurrentTickDelay = 0;
+
         if (DelayedChanges.Count == 0)
             return;
 
         OnDelayedItemsChanged?.Invoke(DelayedChanges.ToArray());
-
         DelayedChanges.Clear();
     }
 }
