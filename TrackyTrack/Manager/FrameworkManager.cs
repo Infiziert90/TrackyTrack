@@ -147,7 +147,6 @@ public class FrameworkManager
         {
             Plugin.TimerManager.LastTargetBaseId = target.DataId;
             Plugin.TimerManager.LastTargetPosition = target.Position;
-            Plugin.Log.Information($"LastBaseId set to: {target.DataId} {target.Position}");
         }
     }
 }

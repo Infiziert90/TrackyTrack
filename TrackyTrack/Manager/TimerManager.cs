@@ -316,11 +316,7 @@ public class TimerManager
 
             var item = ItemUtil.GetBaseId(itemId);
             if (item.Kind == ItemPayload.ItemKind.EventItem)
-            {
-                Plugin.Log.Error($"Found event item as reward. {item.ItemId}");
-                Utils.AddNotification("Invalid item found as reward, please report to the developer.", NotificationType.Error);
                 return;
-            }
 
             result.AddItem(item.ItemId, (uint) quantity);
         }
@@ -337,17 +333,17 @@ public class TimerManager
         var pos = Vector3.Zero;
         if (OccultExtensions.AsArray.Contains(LastTargetBaseId))
             pos = LastTargetPosition;
+
         var lastFateId = LastBunnyFateId;
-        var lastBaseId = LastTargetBaseId;
 
         LastTargetBaseId = 0;
         LastTargetPosition = Vector3.Zero;
-        LastBunnyFateId = 0;
+        if (rarity is OccultCofferRarity.BunnyGold)
+            lastFateId = 0;
+        else
+            LastBunnyFateId = 0; // this will also set it to 0 for a second chance pot, which is preferred
 
         Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos, lastFateId));
-        Plugin.Log.Information($"Rarity: {rarity}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))} BaseId: {lastBaseId} Pos: {pos} FateId: {lastFateId}");
-        if (pos ==  Vector3.Zero)
-            Plugin.Log.Error($"Pos was zero? {lastBaseId} {rarity}");
     }
 
     private void StoreLootResults(object? _, ElapsedEventArgs __)
