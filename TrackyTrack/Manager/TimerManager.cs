@@ -1,5 +1,4 @@
 ﻿using System.Timers;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Utility;
 using TrackyTrack.Data;
@@ -110,7 +109,7 @@ public class TimerManager
         var item = ItemUtil.GetBaseId(changedItem.ItemId);
 
         if (item.ItemId > 19)
-            LastBulkResult.AddItem(item.ItemId, changedItem.Quantity, item.Kind == ItemPayload.ItemKind.Hq);
+            LastBulkResult.AddItem(item.ItemId, changedItem.Quantity, item.Kind == ItemKind.Hq);
         else
             LastBulkResult.AddCrystal(item.ItemId, changedItem.Quantity);
     }
@@ -122,7 +121,7 @@ public class TimerManager
 
         // Impossible to bulk desynth collectables
         var item = ItemUtil.GetBaseId(changedItem.ItemId);
-        if (item.Kind == ItemPayload.ItemKind.Collectible)
+        if (item.Kind == ItemKind.Collectible)
             return;
 
         LastBulkResult.AddSource(item.ItemId);
@@ -276,7 +275,7 @@ public class TimerManager
             }
 
             var item = ItemUtil.GetBaseId(itemId);
-            if (item.Kind == ItemPayload.ItemKind.EventItem)
+            if (item.Kind == ItemKind.EventItem)
             {
                 Plugin.Log.Error($"Found event item as reward. {item.ItemId}");
                 Utils.AddNotification("Invalid item found as reward, please report to the developer.", NotificationType.Error);
@@ -315,7 +314,7 @@ public class TimerManager
             }
 
             var item = ItemUtil.GetBaseId(itemId);
-            if (item.Kind == ItemPayload.ItemKind.EventItem)
+            if (item.Kind == ItemKind.EventItem)
                 return;
 
             result.AddItem(item.ItemId, (uint) quantity);

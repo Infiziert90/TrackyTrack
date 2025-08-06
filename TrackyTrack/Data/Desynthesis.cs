@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Utility;
+﻿using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
@@ -47,7 +46,7 @@ public record DesynthResult(uint Source, ItemResult[] Received, ushort ClassLeve
     public unsafe DesynthResult(AgentSalvage* result) : this(0, [])
     {
         var adjustedId = ItemUtil.GetBaseId(result->DesynthItemId);
-        if (adjustedId.Kind == ItemPayload.ItemKind.EventItem)
+        if (adjustedId.Kind == ItemKind.EventItem)
             return;
 
         Source = adjustedId.ItemId;
@@ -55,9 +54,8 @@ public record DesynthResult(uint Source, ItemResult[] Received, ushort ClassLeve
                                          .Where(r => r.ItemId > 0)
                                          .Select(r =>
                                          {
-                                             // HQ items are Item + 1,000,000
-                                             var isHQ = r.ItemId > 1_000_000;
-                                             return new ItemResult(ItemUtil.GetBaseId(r.ItemId).ItemId, (uint)r.Quantity, isHQ);
+                                             var item = ItemUtil.GetBaseId(r.ItemId);
+                                             return new ItemResult(item.ItemId, (uint)r.Quantity, item.Kind == ItemKind.Hq);
                                          })
                                          .ToArray();
 

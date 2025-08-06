@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using OtterGui;
 
 namespace TrackyTrack.Windows.Main;
 

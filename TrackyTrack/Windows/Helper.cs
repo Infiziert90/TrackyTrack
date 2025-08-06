@@ -1,14 +1,22 @@
 using System.ComponentModel;
+using System.Text;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using static OtterGui.Widgets.ToggleButton;
 
 namespace TrackyTrack.Windows;
 
 public static class Helper
 {
     public static readonly Vector2 IconSize = new(28, 28);
+
+    public const float SeparatorPadding = 1.0f;
+    public static float GetSeparatorPaddingHeight => SeparatorPadding * ImGuiHelpers.GlobalScale;
+
+    public static float CalculateChildHeight()
+    {
+        return ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + GetSeparatorPaddingHeight;
+    }
 
     public static void NoCharacters()
     {
@@ -179,7 +187,7 @@ public static class Helper
             return;
         }
 
-        ImGui.Image(texture.ImGuiHandle, size);
+        ImGui.Image(texture.Handle, size);
     }
 
     public static void DrawIcon(uint iconId, Vector2 size, float withIndent = 0.0f)
@@ -193,7 +201,7 @@ public static class Helper
             return;
         }
 
-        ImGui.Image(texture.ImGuiHandle, size);
+        ImGui.Image(texture.Handle, size);
     }
 
     internal static void Tooltip(string tooltip)
@@ -256,7 +264,7 @@ public static class Helper
                                       .Push(ImGuiCol.ButtonHovered, colors[(int) ImGuiCol.ButtonActive], check)
                                       .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.ButtonHovered]  with { W = 0.4f }, !check);
 
-        if (ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners))
+        if (ToggleButtonNative.ButtonEx(buttonText, size, ImGuiButtonFlags.None, corners))
             selected = number;
     }
 
@@ -275,6 +283,116 @@ public static class Helper
     }
 
     public static IOrderedEnumerable<T> NoSort<T>(IEnumerable<T> values, object _) => values.OrderBy(_ => 1);
+}
+
+// Taken from: https://github.com/Ottermandias/OtterGui
+public static class ToggleButtonNative
+{
+    private const int MaxStackAlloc = 2047;
+
+    private const ImGuiButtonFlags AlignTextBaseLine = (ImGuiButtonFlags)(1 << 15);
+
+    public static bool ButtonEx(ReadOnlySpan<char> label, Vector2 sizeArg, ImGuiButtonFlags flags, ImDrawFlags corners)
+    {
+        // Copied from ImGui proper.
+        var window = ImGuiP.GetCurrentWindow();
+        if (window.SkipItems)
+            return false;
+
+        var style = ImGui.GetStyle();
+        var (visibleEnd, textSize, id) = ComputeSizeAndId(label);
+        var screenPos = window.DC.CursorPos;
+        // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
+        if (flags.HasFlag(AlignTextBaseLine) && style.FramePadding.Y < window.DC.CurrLineTextBaseOffset)
+            screenPos.Y += window.DC.CurrLineTextBaseOffset - style.FramePadding.Y;
+
+        var size = ImGuiP.CalcItemSize(sizeArg, textSize.X + style.FramePadding.X * 2, textSize.Y + style.FramePadding.Y * 2);
+        var boundingBox = new ImRect(screenPos, screenPos + size);
+        ImGuiP.ItemSize(boundingBox, style.FramePadding.Y);
+        if (!ImGuiP.ItemAdd(boundingBox, id))
+            return false;
+
+        // Custom.
+        var hovered = false;
+        var held = false;
+        var clicked = ImGuiP.ButtonBehavior(boundingBox, id, ref hovered, ref held, flags);
+        var color   = ImGui.GetColorU32(held ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button);
+        ImGuiP.RenderNavHighlight(boundingBox, id, 0);
+        ImGui.GetWindowDrawList().AddRectFilled(boundingBox.Min, boundingBox.Max, color, style.FrameRounding, corners);
+        ImGuiP.RenderTextClipped(boundingBox.Min + style.FramePadding, boundingBox.Max - style.FramePadding, label[..visibleEnd], textSize, style.ButtonTextAlign, boundingBox);
+        return clicked;
+    }
+
+    private static unsafe (int VisibleEnd, Vector2 Size, uint Id) ComputeSizeAndId(ReadOnlySpan<char> text, float wrapWidth = 0, bool withNullChecking = true)
+    {
+        var (visibleEnd, labelStart, labelEnd) = SplitString(text, withNullChecking);
+        var biggerSize      = Math.Max(visibleEnd, labelEnd - labelStart) * 4;
+        var bytes           = biggerSize > MaxStackAlloc ? new byte[biggerSize] : stackalloc byte[biggerSize];
+        var numBytesTotal   = Encoding.UTF8.GetBytes(text[..labelEnd], bytes);
+        var numBytesVisible = visibleEnd == text.Length ? numBytesTotal : Encoding.UTF8.GetByteCount(text[..visibleEnd]);
+        fixed (byte* start = bytes)
+        {
+            var size = Vector2.Zero;
+            if (numBytesVisible > 0)
+                ImGuiNative.CalcTextSize(&size, start, start + numBytesVisible, 0, wrapWidth);
+            var id = ImGuiNative.GetID(labelStart == 0 ? start : start + numBytesVisible, start + numBytesTotal);
+            return (visibleEnd, size, id);
+        }
+    }
+
+    private static (int VisibleEnd, int LabelStart, int LabelEnd) SplitString(ReadOnlySpan<char> text, bool withNullChecking = true)
+    {
+        if (withNullChecking)
+            return SplitStringWithNull(text);
+
+        var (visibleEnd, labelStart) = SplitStringWithoutNull(text);
+        return (visibleEnd, labelStart, text.Length);
+    }
+
+    private static (int VisibleEnd, int LabelStart, int LabelEnd) SplitStringWithNull(ReadOnlySpan<char> text)
+    {
+        var idx        = 0;
+        var labelStart = 0;
+        while (idx >= 0)
+        {
+            var newIdx = text[idx..].IndexOfAny("#\0");
+            if (newIdx < 0)
+                break;
+
+            idx += newIdx;
+            // We have not encountered ## before since that leads to a return.
+            if (text[idx] == '\0')
+                return (idx, 0, idx);
+
+            // Check for ##
+            if (idx < text.Length - 1 && text[idx + 1] == '#')
+            {
+                // Check for ###
+                if (idx < text.Length - 2 && text[idx + 2] == '#')
+                    labelStart = idx;
+
+                // check End.
+                newIdx = text[idx..].IndexOf('\0');
+                return (idx, labelStart, newIdx >= 0 ? newIdx : text.Length);
+            }
+
+            ++idx;
+        }
+
+        return (text.Length, labelStart, text.Length);
+    }
+
+    private static (int VisibleEnd, int LabelStart) SplitStringWithoutNull(ReadOnlySpan<char> text)
+    {
+        var idx = text.IndexOf("##");
+        if (idx < 0)
+            return (text.Length, 0);
+
+        if (idx < text.Length - 2 && text[idx + 2] == '#')
+            return (idx, idx);
+
+        return (idx, 0);
+    }
 }
 
 public enum Tabs
@@ -350,7 +468,7 @@ public class SimpleTable<T>
 
     public SimpleTable<T> AddIconColumn(string name, Action<T> columnAction)
     {
-        Columns.Add(new TableColumn(name, ImGuiTableColumnFlags.NoSort | ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X * ImGuiHelpers.GlobalScale));
+        Columns.Add(new TableColumn(name, ImGuiTableColumnFlags.NoSort | ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X * ImGuiHelpers.GlobalScale + WithIndent));
         ColumnActions.Add(columnAction);
         return this;
     }

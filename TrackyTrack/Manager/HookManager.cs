@@ -12,8 +12,8 @@ public unsafe class HookManager
 {
     private readonly Plugin Plugin;
 
-    private const string DesynthResultSig = "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 44 0F B6 46 ?? 4C 8D 4E 17";
-    private delegate void DesynthResultDelegate(uint param1, ushort param2, sbyte param3, nint param4, char param5);
+    private const string DesynthResultSig = "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D9 41 0F B6 F8 0F B7 F2 8B E9 E8 ?? ?? ?? ?? 44 0F B6 54 24 ?? 44 0F B6 CF 44 88 54 24 ?? 44 0F B7 C6 8B D5";
+    private delegate void DesynthResultDelegate(nuint a1, ushort eventId, byte responseId, uint* args, byte argCount);
     private Hook<DesynthResultDelegate> DesynthResultHook;
 
     private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
@@ -103,12 +103,12 @@ public unsafe class HookManager
         }
     }
 
-    private void DesynthResultPacket(uint param1, ushort param2, sbyte param3, nint param4, char param5)
+    private void DesynthResultPacket(nuint a1, ushort eventId, byte responseId, uint* args, byte argCount)
     {
-        DesynthResultHook.Original(param1, param2, param3, param4, param5);
+        DesynthResultHook.Original(a1, eventId, responseId, args, argCount);
 
         // DesynthResult is triggered by multiple events
-        if (param1 != 3735552)
+        if (a1 != 3735552)
             return;
 
         try

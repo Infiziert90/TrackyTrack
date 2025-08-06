@@ -11,7 +11,7 @@ public partial class MainWindow : Window, IDisposable
 
     public MainWindow(Plugin plugin, Configuration configuration) : base("Tracky##TrackyTrack")
     {
-        this.SizeConstraints = new WindowSizeConstraints
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(420, 630),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
@@ -29,7 +29,7 @@ public partial class MainWindow : Window, IDisposable
 
     public override void Draw()
     {
-        var buttonHeight = ImGui.CalcTextSize("RRRR").Y + (20.0f * ImGuiHelpers.GlobalScale);
+        var buttonHeight = Helper.CalculateChildHeight();
         using (var contentChild = ImRaii.Child("SubContent", new Vector2(0, -buttonHeight)))
         {
             if (contentChild.Success)
@@ -55,7 +55,7 @@ public partial class MainWindow : Window, IDisposable
         }
 
         ImGui.Separator();
-        ImGuiHelpers.ScaledDummy(1.0f);
+        ImGuiHelpers.ScaledDummy(Helper.GetSeparatorPaddingHeight);
 
         using var bottomChild = ImRaii.Child("BottomBar", Vector2.Zero, false, 0);
         if (!bottomChild.Success)
