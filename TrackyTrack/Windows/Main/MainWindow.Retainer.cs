@@ -239,7 +239,7 @@ public partial class MainWindow
             var item = Sheets.GetItem(itemId);
 
             ImGui.TableNextColumn();
-            Helper.DrawIcon(item.Icon);
+            Helper.DrawIcon(Utils.CheckItemAction(item));
 
             ImGui.TableNextColumn();
             var name = Utils.ToStr(item.Name);
@@ -299,7 +299,7 @@ public partial class MainWindow
             var item = Sheets.GetItem(ventureItem.Item);
 
             ImGui.TableNextColumn();
-            Helper.DrawIcon(item.Icon);
+            Helper.DrawIcon(Utils.CheckItemAction(item));
             ImGui.TableNextColumn();
 
             var name = Utils.ToStr(item.Name);
@@ -341,7 +341,7 @@ public partial class MainWindow
             var item = Sheets.GetItem(pair.Key);
             var count = pair.Value;
             var percentage = (pair.Key != 8841 ? count / 2.0 : count) / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
+            return new Utils.SortedEntry(item.RowId, Utils.CheckItemAction(item), Utils.ToStr(item.Name), count, 0, 0, percentage);
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");

@@ -206,7 +206,7 @@ public partial class MainWindow
     private void DrawMissingTable(IEnumerable<uint> content, bool showUnlocked)
     {
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort)
-            .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Sheets.GetItem(entry).Icon))
+            .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Utils.CheckItemAction(Sheets.GetItem(entry))))
             .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.GetItem(entry).Name.ExtractText()))
             .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlocked)
             .Draw(content);
