@@ -11,8 +11,6 @@ public partial class MainWindow
 {
     private static readonly string[] Jobs = ["CRP", "BSM", "ARM", "GSM", "LTW", "WVR", "ALC", "CUL"];
 
-    private Item[] DesynthCache = null!;
-
     private int SelectedCharacter;
     private int SelectedHistory;
 
@@ -22,7 +20,6 @@ public partial class MainWindow
     private int SearchForSelection;
     private int ILvLSearchResult = 1;
 
-    private int HighestILvL;
     private int SelectedJob;
     private bool ExcludeGear = true;
     private bool ExcludeNonMB = true;
@@ -37,17 +34,8 @@ public partial class MainWindow
     public Dictionary<uint, History>? LocalSourcesCache;
     public Dictionary<uint, History>? LocalRewardsCache;
 
-    public uint LowestValidID;
-    public uint HighestValidID;
-
     public void InitializeDesynth()
     {
-        DesynthCache = Sheets.ItemSheet.Where(i => i.Desynth > 0).ToArray();
-        HighestILvL = DesynthCache.Select(i => (int)i.LevelItem.RowId).Max();
-
-        LowestValidID = 100;
-        HighestValidID = Sheets.ItemSheet.Where(i => i.Icon != 0).MaxBy(i => i.RowId).RowId;
-
         // Fill once
         CatalogueCache = BuildCatalogue();
     }
@@ -55,13 +43,13 @@ public partial class MainWindow
     private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions SourceOptions = new()
     {
         FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.PayloadCount > 0).Where(i => i.Desynth > 0)
+        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => i.Name.PayloadCount > 0).Where(i => i.Desynth > 0)
     };
 
     private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions ItemOptions = new()
     {
         FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Plugin.Data.GetExcelSheet<Item>()!.Skip(1).Where(i => i.Name.PayloadCount > 0)
+        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => i.Name.PayloadCount > 0)
     };
 
     private void DesynthesisTab()
@@ -527,7 +515,7 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.HealerGreen, "Search for a desynthesizable source");
 
         var changed = false;
-        if (ImGui.SliderInt("##ilvlInput", ref ILvLSearchResult, 1, HighestILvL, "Item Level %d"))
+        if (ImGui.SliderInt("##ilvlInput", ref ILvLSearchResult, 1, Sheets.HighestILvl, "Item Level %d"))
         {
             ILvLSearchResult = (int) Math.Round(ILvLSearchResult / 5.0) * 5;
             changed = true;
@@ -610,7 +598,7 @@ public partial class MainWindow
                     var allCharacters = Plugin.CharacterStorage.Values.Where(c => c.Storage.History.Count > 0).ToArray();
                     foreach (var pair in allCharacters.SelectMany(c => c.Storage.History))
                     {
-                        if (pair.Value.Source < LowestValidID || pair.Value.Source > HighestValidID)
+                        if (pair.Value.Source < Sheets.LowewstValidId || pair.Value.Source > Sheets.HighestValidId)
                             continue;
 
                         if (!SourceHistory.TryAdd(pair.Value.Source, 1))
@@ -623,7 +611,7 @@ public partial class MainWindow
                         if (pair.Value == 0)
                             continue;
 
-                        if (pair.Key > HighestValidID)
+                        if (pair.Key > Sheets.HighestValidId)
                             continue;
 
                         if (!RewardHistory.TryAdd(pair.Key, pair.Value))
@@ -660,21 +648,22 @@ public partial class MainWindow
             .Draw(sortedList);
     }
 
-    public Item[] BuildCatalogue()
+    private Item[] BuildCatalogue()
     {
-        return DesynthCache.Where(i => i.Desynth > 0)
-                              .Where(i => i.ItemUICategory.RowId != 39)
-                              .Where(i => i.LevelItem.RowId > ILvLSearchResult)
-                              .Where(i => i.ClassJobRepair.RowId == SelectedJob + 8)
-                              .Where(i => !ExcludeGear || i.EquipSlotCategory.RowId == 0)
-                              .Where(i => !ExcludeNonMB || !i.IsUntradable)
-                              .OrderBy(i => i.LevelItem.RowId)
-                              .ToArray();
+        return Sheets.DesynthCache
+              .Where(i => i.Desynth > 0)
+              .Where(i => i.ItemUICategory.RowId != 39)
+              .Where(i => i.LevelItem.RowId > ILvLSearchResult)
+              .Where(i => i.ClassJobRepair.RowId == SelectedJob + 8)
+              .Where(i => !ExcludeGear || i.EquipSlotCategory.RowId == 0)
+              .Where(i => !ExcludeNonMB || !i.IsUntradable)
+              .OrderBy(i => i.LevelItem.RowId)
+              .ToArray();
     }
 
     private const int GilItemOrder = 1_000_000;
     private const int CrystalOrder = 2_000_000;
-    public static IOrderedEnumerable<Result> SortByKeyCustom(IEnumerable<Result> unsortedArray, object _)
+    private static IOrderedEnumerable<Result> SortByKeyCustom(IEnumerable<Result> unsortedArray, object _)
     {
         return unsortedArray.OrderBy(result =>
         {
@@ -688,7 +677,7 @@ public partial class MainWindow
         });
     }
 
-    public void FillLocalCache(IEnumerable<DesynthResult> results)
+    private void FillLocalCache(IEnumerable<DesynthResult> results)
     {
         LocalSourcesCache = new Dictionary<uint, History>();
         LocalRewardsCache = new Dictionary<uint, History>();
@@ -697,7 +686,7 @@ public partial class MainWindow
         var final = new Dictionary<uint, Dictionary<uint, Importer.Stats>>();
         foreach (var result in results)
         {
-            if (result.Source > HighestValidID || result.Source < LowestValidID)
+            if (result.Source > Sheets.HighestValidId || result.Source < Sheets.LowewstValidId)
                 continue;
 
             if (!records.TryAdd(result.Source, 1))
@@ -706,30 +695,29 @@ public partial class MainWindow
             if (result.Received.Length > 3)
                 continue;
 
-            foreach (var received in result.Received)
+            foreach (var (item, amount, _) in result.Received)
             {
-                var item = received.Item;
-                var amount = received.Count;
-
                 switch (item)
                 {
                     case < 100:
-                        continue;
                     case > 100_000:
                         continue;
                 }
 
-                final.TryAdd(result.Source, new Dictionary<uint, Importer.Stats>());
+                if (!final.ContainsKey(result.Source))
+                    final[result.Source] = [];
 
                 var t = final[result.Source];
-                if (!t.TryAdd(item, new Importer.Stats(amount, amount)))
+                if (!t.TryGetValue(item, out var minMax))
                 {
-                    var minMax = t[item];
-                    minMax.Records++;
-                    minMax.Min = Math.Min(amount, minMax.Min);
-                    minMax.Max = Math.Max(amount, minMax.Max);
-                    t[item] = minMax;
+                    t[item] = new Importer.Stats(amount, amount);
+                    continue;
                 }
+
+                minMax.Records++;
+                minMax.Min = Math.Min(amount, minMax.Min);
+                minMax.Max = Math.Max(amount, minMax.Max);
+                t[item] = minMax;
             }
         }
 
@@ -740,19 +728,18 @@ public partial class MainWindow
             {
                 r.Add(new Result(reward, minMax.Min, minMax.Max, minMax.Records));
 
-                if (!LocalRewardsCache.TryAdd(reward, new History { Records = minMax.Records, Results = new [] { new Result(source, minMax.Min, minMax.Max, minMax.Records) } }))
+                if (!LocalRewardsCache.TryGetValue(reward, out var h))
                 {
-                    var h = LocalRewardsCache[reward];
-                    h.Records += minMax.Records;
-                    h.Results = h.Results.Append(new Result(source, minMax.Min, minMax.Max, minMax.Records)).ToArray();
-                    LocalRewardsCache[reward] = h;
+                    LocalRewardsCache[reward] = new History { Records = minMax.Records, Results = [new Result(source, minMax.Min, minMax.Max, minMax.Records)] };
+                    continue;
                 }
+
+                h.Records += minMax.Records;
+                h.Results = h.Results.Append(new Result(source, minMax.Min, minMax.Max, minMax.Records)).ToArray();
+                LocalRewardsCache[reward] = h;
             }
 
-            LocalSourcesCache.Add(source, new History {
-                Records = records[source],
-                Results = r.ToArray()
-            });
+            LocalSourcesCache.Add(source, new History { Records = records[source], Results = r.ToArray() });
         }
     }
 }

@@ -6,7 +6,7 @@ namespace TrackyTrack.Data;
 public class GachaThreeZero
 {
     public int Opened = 0;
-    public Dictionary<uint, uint> Obtained = new();
+    public Dictionary<uint, uint> Obtained = [];
 
     [JsonIgnore]
     public static readonly HashSet<uint> Content =
@@ -23,7 +23,7 @@ public class GachaThreeZero
 public class GachaFourZero
 {
     public int Opened = 0;
-    public Dictionary<uint, uint> Obtained = new();
+    public Dictionary<uint, uint> Obtained = [];
 
     [JsonIgnore]
     public static readonly HashSet<uint> Content =
@@ -38,7 +38,7 @@ public class GachaFourZero
 public class Sanctuary
 {
     public int Opened = 0;
-    public Dictionary<uint, uint> Obtained = new();
+    public Dictionary<uint, uint> Obtained = [];
 
     [JsonIgnore]
     public static readonly HashSet<uint> Content =

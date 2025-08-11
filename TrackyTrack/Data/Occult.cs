@@ -1,6 +1,24 @@
-﻿using Newtonsoft.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
+
+[SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
+public class OccultTracker
+{
+    public uint Opened = 0;
+    public readonly Dictionary<OccultTerritory, Dictionary<OccultCofferRarity, Dictionary<DateTime, OccultResult>>> History = new()
+    {
+        { OccultTerritory.SouthHorn, new()
+            {
+                { OccultCofferRarity.Bronze, [] },
+                { OccultCofferRarity.Silver, [] },
+                { OccultCofferRarity.Gold, [] },
+                { OccultCofferRarity.BunnyGold, [] },
+            }
+        }
+    };
+}
 
 public record OccultResult
 {
@@ -10,7 +28,10 @@ public record OccultResult
     [JsonIgnore] public bool IsValid => Items.Count != 0;
 }
 
-public record OccultItem(uint Item, uint Count);
+public record OccultItem(uint Item, uint Count)
+{
+    public uint[] Combine() => [Item, Count];
+}
 
 public enum OccultTerritory : uint
 {
@@ -26,9 +47,44 @@ public enum OccultCofferRarity : uint
     BunnyGold = 2012936,
 }
 
+public enum OccultWorth
+{
+    Bronze = 1_000,
+    Silver = 5_000,
+    Gold = 30_000,
+    BunnyGold = 200_000
+}
+
+public static class OccultUtil
+{
+    public static (long Worth, long Total, Dictionary<OccultTerritory, Dictionary<OccultCofferRarity, int>> Dict) GetAmounts(IEnumerable<CharacterConfiguration> characters)
+    {
+        var worth = 0L;
+        var totalNumber = 0;
+        var territoryCoffers = new Dictionary<OccultTerritory, Dictionary<OccultCofferRarity, int>>();
+        foreach (var (territory, rarityDictionary) in characters.SelectMany(c => c.Occult.History))
+        {
+            if (!territoryCoffers.ContainsKey(territory))
+                territoryCoffers[territory] = [];
+
+            foreach (var (rarity, history) in rarityDictionary)
+            {
+                totalNumber += history.Count;
+                worth += history.Count * rarity.ToWorth();
+
+                if (!territoryCoffers[territory].TryAdd(rarity, history.Count))
+                    territoryCoffers[territory][rarity] += history.Count;
+            }
+        }
+
+        return (worth, totalNumber, territoryCoffers);
+    }
+}
+
 public static class OccultExtensions
 {
-    public static readonly uint[] AsArray = Enum.GetValues<OccultCofferRarity>().Select(x => (uint)x).ToArray();
+    public static readonly uint[] RarityArray = Enum.GetValues<OccultCofferRarity>().Select(x => (uint)x).ToArray();
+    public static readonly int[] WorthArray =  Enum.GetValues<OccultWorth>().Select(x => (int)x).ToArray();
 
     public static string ToName(this OccultTerritory territory)
     {
@@ -46,7 +102,7 @@ public static class OccultExtensions
             OccultCofferRarity.Bronze => "Bronze",
             OccultCofferRarity.Silver => "Silver",
             OccultCofferRarity.Gold => "Gold",
-            OccultCofferRarity.BunnyGold => "Gold",
+            OccultCofferRarity.BunnyGold => "Bunny Gold",
             _ => "Unknown"
         };
     }
@@ -55,22 +111,22 @@ public static class OccultExtensions
     {
         return rarity switch
         {
-            OccultCofferRarity.BunnyGold => 200_000,
-            OccultCofferRarity.Gold => 30_000,
-            OccultCofferRarity.Silver => 5_000,
-            OccultCofferRarity.Bronze => 1_000,
+            OccultCofferRarity.BunnyGold => (uint)OccultWorth.BunnyGold,
+            OccultCofferRarity.Gold => (uint)OccultWorth.Gold,
+            OccultCofferRarity.Silver => (uint)OccultWorth.Silver,
+            OccultCofferRarity.Bronze => (uint)OccultWorth.Bronze,
             _ => 0
         };
     }
 
     public static OccultCofferRarity FromWorth(long worth)
     {
-        return worth switch
+        return (OccultWorth)worth switch
         {
-            200_000 => OccultCofferRarity.BunnyGold,
-            30_000 => OccultCofferRarity.Gold,
-            5_000 => OccultCofferRarity.Silver,
-            1_000 => OccultCofferRarity.Bronze,
+            OccultWorth.BunnyGold => OccultCofferRarity.BunnyGold,
+            OccultWorth.Gold => OccultCofferRarity.Gold,
+            OccultWorth.Silver => OccultCofferRarity.Silver,
+            OccultWorth.Bronze => OccultCofferRarity.Bronze,
             _ => 0
         };
     }

@@ -5,7 +5,7 @@ namespace TrackyTrack.Data;
 public class VentureCoffer
 {
     public int Opened = 0;
-    public Dictionary<uint, uint> Obtained = new();
+    public Dictionary<uint, uint> Obtained = [];
 
     [JsonIgnore]
     public static readonly HashSet<uint> Content =

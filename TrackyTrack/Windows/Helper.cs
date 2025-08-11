@@ -12,11 +12,7 @@ public static class Helper
 
     public const float SeparatorPadding = 1.0f;
     public static float GetSeparatorPaddingHeight => SeparatorPadding * ImGuiHelpers.GlobalScale;
-
-    public static float CalculateChildHeight()
-    {
-        return ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + GetSeparatorPaddingHeight;
-    }
+    public static float CalculateChildHeight() => ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + GetSeparatorPaddingHeight;
 
     public static void NoCharacters()
     {
@@ -60,10 +56,16 @@ public static class Helper
         WrappedError("No data stored for lockboxes\nPlease open any lockbox.");
     }
 
-    public static void NoEurekaBunnyData()
+    public static void NoBunnyData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
         WrappedError("No data stored for bunny coffers\nPlease open a bunny coffer in eureka.");
+    }
+
+    public static void NoPotData()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("No data stored for pot coffers\nPlease open a pot coffer in occult crescent.");
     }
 
     public static void TrackingDisabled(string text)
@@ -402,6 +404,8 @@ public enum Tabs
     [Description("Pagos")] Pagos = 100,
     [Description("Pyros")] Pyros = 101,
     [Description("Hydatos")] Hydatos = 102,
+
+    [Description("South Horn")] SouthHorn = 150,
 
     [Description("Gacha 3.0")] Gacha3 = 200,
     [Description("Gacha 4.0")] Gacha4 = 201,

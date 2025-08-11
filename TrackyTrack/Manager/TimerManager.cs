@@ -127,7 +127,7 @@ public class TimerManager
         LastBulkResult.AddSource(item.ItemId);
     }
 
-    public void StoreBulkResult(object? _, ElapsedEventArgs __)
+    private void StoreBulkResult(object? _, ElapsedEventArgs __)
     {
         if (!LastBulkResult.IsValid)
             return;
@@ -146,7 +146,7 @@ public class TimerManager
         Plugin.UploadEntry(new Export.DesynthesisResult(desynthResult));
     }
 
-    public static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];
+    private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];
     public void StoreCofferResult((uint ItemId, int Quantity)[] changes)
     {
         var added = changes.Where(pair => pair.Quantity > 0).ToArray();
@@ -221,11 +221,11 @@ public class TimerManager
 
     public void StoreEurekaResult((uint ItemId, int Quantity)[] changes)
     {
-        if (!EurekaExtensions.AsArray.Contains(Plugin.ClientState.TerritoryType))
+        if (!EurekaExtensions.RarityArray.Contains(Plugin.ClientState.TerritoryType))
             return;
 
         var gil = changes.FirstOrDefault(c => c.ItemId == 1);
-        if (gil.Quantity != 10_000 && gil.Quantity != 25_000 && gil.Quantity != 100_000)
+        if (!EurekaExtensions.WorthArray.Contains(gil.Quantity))
             return;
 
         var result = new EurekaResult();
@@ -292,7 +292,6 @@ public class TimerManager
         }
 
         Plugin.UploadEntry(new Export.OccultTreasure(lastBaseId, result.Items, ChestPosition));
-        Plugin.Log.Information($"LastBaseId: {lastBaseId}\n{string.Join(" | ", result.Items.Select(o => $"ItemID: {o.Item} Count: {o.Count}"))}");
     }
 
     public void StoreOccultBunny((uint ItemId, int Quantity)[] changes)
@@ -301,7 +300,7 @@ public class TimerManager
             return;
 
         var gil = changes.FirstOrDefault(c => c.ItemId == 1);
-        if (gil.Quantity != 1_000 && gil.Quantity != 5_000 && gil.Quantity != 30_000 && gil.Quantity != 200_000)
+        if (!OccultExtensions.WorthArray.Contains(gil.Quantity))
             return;
 
         var result = new OccultResult();
@@ -330,7 +329,7 @@ public class TimerManager
         var territory = (OccultTerritory) Plugin.ClientState.TerritoryType;
 
         var pos = Vector3.Zero;
-        if (OccultExtensions.AsArray.Contains(LastTargetBaseId))
+        if (OccultExtensions.RarityArray.Contains(LastTargetBaseId))
             pos = LastTargetPosition;
 
         var lastFateId = LastBunnyFateId;
@@ -341,6 +340,11 @@ public class TimerManager
             lastFateId = 0;
         else
             LastBunnyFateId = 0; // this will also set it to 0 for a second chance pot, which is preferred
+
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        character.Occult.Opened += 1;
+        character.Occult.History[territory][rarity].Add(DateTime.Now, result);
+        Plugin.ConfigurationBase.SaveCharacterConfig();
 
         Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos, lastFateId));
     }

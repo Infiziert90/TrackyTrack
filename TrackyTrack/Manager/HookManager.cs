@@ -1,4 +1,5 @@
 ﻿using Dalamud.Hooking;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -97,9 +98,9 @@ public unsafe class HookManager
             Plugin.LockboxHandler(LastSeenItemId, lostAction, 1);
             LastSeenItemId = uint.MaxValue;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e, "OpenInspection failed");
+            Plugin.Log.Error(ex, "OpenInspection failed");
         }
     }
 
@@ -119,9 +120,9 @@ public unsafe class HookManager
             if (Plugin.Configuration.EnableDesynthesis)
                 Plugin.DesynthHandler();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e, "Error while parsing desynth result packet");
+            Plugin.Log.Error(ex, "Error while parsing desynth result packet");
         }
     }
 
@@ -158,9 +159,9 @@ public unsafe class HookManager
                     break;
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e, "Error while parsing actor control packet");
+            Plugin.Log.Error(ex, "Error while parsing actor control packet");
         }
     }
 
@@ -232,23 +233,17 @@ public unsafe class HookManager
                 return;
             }
 
-            var primary = venture->RewardItemIds[0];
-            var primaryHQ = primary > 1_000_000;
-            if (primaryHQ)
-                primary -= 1_000_000;
+            var primary = ItemUtil.GetBaseId(venture->RewardItemIds[0]);
             var primaryCount = (short) venture->RewardItemCount[0];
 
-            var additionalItem = venture->RewardItemIds[1];
-            var additionalHQ = additionalItem > 1_000_000;
-            if (additionalHQ)
-                additionalItem -= 1_000_000;
+            var additionalItem = ItemUtil.GetBaseId(venture->RewardItemIds[1]);
             var additionalCount = (short) venture->RewardItemCount[1];
 
-            Plugin.RetainerHandler(venture->RetainerTaskId, activeRetainer->Level, new VentureItem(primary, primaryCount, primaryHQ), new VentureItem(additionalItem, additionalCount, additionalHQ));
+            Plugin.RetainerHandler(venture->RetainerTaskId, activeRetainer->Level, new VentureItem(primary.ItemId, primaryCount, primary.Kind == ItemKind.Hq), new VentureItem(additionalItem.ItemId, additionalCount, additionalItem.Kind == ItemKind.Hq));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Warning(e, "Unable to track retainer result.");
+            Plugin.Log.Warning(ex, "Unable to track retainer result.");
         }
     }
 

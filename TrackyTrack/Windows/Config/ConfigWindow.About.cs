@@ -16,7 +16,7 @@ public partial class ConfigWindow
         if (!tabItem.Success)
             return;
 
-        var buttonHeight = ImGui.CalcTextSize("RRRR").Y + (20.0f * ImGuiHelpers.GlobalScale);
+        var buttonHeight = Helper.CalculateChildHeight();
         using (var contentChild = ImRaii.Child("AboutContent", new Vector2(0, -buttonHeight)))
         {
             if (contentChild.Success)
@@ -68,16 +68,16 @@ public partial class ConfigWindow
         }
 
         ImGui.Separator();
-        ImGuiHelpers.ScaledDummy(1.0f);
+        ImGuiHelpers.ScaledDummy(Helper.SeparatorPadding);
 
-        using var bottomChild = ImRaii.Child("AboutBottomBar", new Vector2(0, 0), false, 0);
+        using var bottomChild = ImRaii.Child("AboutBottomBar", Vector2.Zero);
         if (!bottomChild.Success)
             return;
 
         using (ImRaii.PushColor(ImGuiCol.Button, ImGuiColors.ParsedBlue))
         {
             if (ImGui.Button("Discord Thread"))
-                Dalamud.Utility.Util.OpenLink("https://canary.discord.com/channels/581875019861328007/1143510564165926992");
+                Dalamud.Utility.Util.OpenLink("https://discord.com/channels/581875019861328007/1143510564165926992");
         }
 
         ImGui.SameLine();

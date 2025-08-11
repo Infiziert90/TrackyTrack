@@ -15,5 +15,5 @@ public record VentureResult(uint VentureType, List<VentureItem> Items, bool MaxL
 
 public class Retainer
 {
-    public Dictionary<DateTime, VentureResult> History = new();
+    public Dictionary<DateTime, VentureResult> History = [];
 }

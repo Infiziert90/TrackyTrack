@@ -148,14 +148,7 @@ public partial class MainWindow
         if (content.Count == 0)
             return;
 
-        var unsortedList = content.Select(pair =>
-        {
-            var item = Sheets.GetItem(pair.Key);
-            var count = pair.Value;
-            var percentage = (double) pair.Value / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
-        });
-
+        var unsortedList = Utils.ToSortedEntry(content, (int)opened);
         new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable)
             .EnableSortSpec()
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
@@ -167,22 +160,21 @@ public partial class MainWindow
 
     private void RefreshLockbox(CharacterConfiguration[] characters)
     {
-        if (Utils.NeedsRefresh(ref LastLockboxRefresh, LockboxRefreshRate))
+        if (!Utils.NeedsRefresh(ref LastLockboxRefresh, LockboxRefreshRate))
+            return;
+
+        LockboxContent.Clear();
+        foreach (var (type, innerDict) in characters.SelectMany(s => s.Lockbox.History))
         {
-            LockboxContent.Clear();
-            foreach (var (type, innerDict) in characters.SelectMany(s => s.Lockbox.History))
-            {
-                var typeId = (uint)type;
-                if (Lockboxes.Logograms.Contains(typeId) || Lockboxes.Fragments.Contains(typeId))
-                    continue;
+            if (Lockboxes.Logograms.Contains((uint)type) || Lockboxes.Fragments.Contains((uint)type))
+                continue;
 
-                LockboxContent.TryAdd(typeId, []);
+            LockboxContent.TryAdd((uint)type, []);
 
-                var lockbox = LockboxContent[typeId];
-                foreach (var (itemId, quantity) in innerDict.ToArray())
-                    if (!lockbox.TryAdd(itemId, quantity))
-                        lockbox[itemId] += quantity;
-            }
+            var lockbox = LockboxContent[(uint)type];
+            foreach (var (itemId, quantity) in innerDict.ToArray())
+                if (!lockbox.TryAdd(itemId, quantity))
+                    lockbox[itemId] += quantity;
         }
     }
 }

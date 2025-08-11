@@ -101,11 +101,7 @@ public static class Export
         public DesynthesisResult(DesynthResult result) : base("Desynthesis")
         {
             Source = ItemUtil.GetBaseId(result.Source).ItemId;
-            var r = new List<uint>();
-            foreach (var reward in result.Received)
-                r.AddRange(reward.ItemCountArray());
-
-            Rewards = r.ToArray();
+            Rewards = result.Received.SelectMany(r => r.Combined()).ToArray();
             ClassLevel = result.ClassLevel;
         }
     }
@@ -206,8 +202,8 @@ public static class Export
                 writer.Write(chestObjectId);
                 writer.Write(lowestContentId);
             }
-            stream.Position = 0;
 
+            stream.Position = 0;
             using (var hash = SHA256.Create())
             {
                 var result = hash.ComputeHash(stream);
@@ -246,14 +242,7 @@ public static class Export
         public OccultTreasure(uint baseId, List<OccultItem> rewards, Vector3 chestPos) : base("OccultTreasure")
         {
             BaseId = baseId;
-
-            var l = new List<uint>();
-            foreach (var r in rewards)
-            {
-                l.Add(r.Item);
-                l.Add(r.Count);
-            }
-            Rewards = l.ToArray();
+            Rewards = rewards.SelectMany(r => r.Combine()).ToArray();
 
             ChestPosX = chestPos.X;
             ChestPosY = chestPos.Y;
@@ -289,13 +278,7 @@ public static class Export
             Rarity = rarity;
             Territory = territory;
 
-            var l = new List<uint>();
-            foreach (var r in rewards)
-            {
-                l.Add(r.Item);
-                l.Add(r.Count);
-            }
-            Rewards = l.ToArray();
+            Rewards = rewards.SelectMany(r => r.Combine()).ToArray();
 
             ChestPosX = chestPos.X;
             ChestPosY = chestPos.Y;
@@ -338,12 +321,11 @@ public static class Export
             }
 
             ImGui.SetClipboardText(writer.ToString());
-
             Plugin.ChatGui.Print(Utils.SuccessMessage("Export to clipboard done."));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e.StackTrace ?? "No Stacktrace");
+            Plugin.Log.Error(ex, "Export to clipboard failed.");
         }
     }
 
@@ -357,9 +339,9 @@ public static class Export
             if (response.StatusCode != HttpStatusCode.Created)
                 Plugin.Log.Debug($"Table {entry.Table} | Content: {response.Content.ReadAsStringAsync().Result}");
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e, "Upload failed");
+            Plugin.Log.Error(ex, "Upload failed");
         }
     }
 }

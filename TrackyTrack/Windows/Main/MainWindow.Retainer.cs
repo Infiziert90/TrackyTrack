@@ -440,9 +440,9 @@ public partial class MainWindow
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Plugin.Log.Error(e, "Error while building retainer cache");
+                    Plugin.Log.Error(ex, "Error while building retainer cache");
                 }
 
                 RetainerTaskRunning = false;

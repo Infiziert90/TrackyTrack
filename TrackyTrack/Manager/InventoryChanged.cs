@@ -34,7 +34,7 @@ public class InventoryChanged
         Plugin.Framework.Update -= ProcessFrameDelayedLoot;
     }
 
-    public void TriggerInventoryChanged(IReadOnlyCollection<InventoryEventArgs> events)
+    private void TriggerInventoryChanged(IReadOnlyCollection<InventoryEventArgs> events)
     {
         var changes = new Dictionary<uint, (int NewQuantity, int OldQuantity)>();
         foreach (var (e, _, type) in events.Select(e => (e, e.Item, e.Type)))
@@ -48,17 +48,13 @@ public class InventoryChanged
                     if (!changes.TryAdd(item.ItemId, (item.Quantity, 0)))
                         changes[item.ItemId] = (changes[item.ItemId].NewQuantity + item.Quantity, changes[item.ItemId].OldQuantity);
                     break;
-
                 case GameInventoryEvent.Removed when e is InventoryItemRemovedArgs { Item: var item }:
                     if (!changes.TryAdd(item.ItemId, (0, item.Quantity)))
                         changes[item.ItemId] = (changes[item.ItemId].NewQuantity, changes[item.ItemId].OldQuantity + item.Quantity);
                     break;
-
                 case GameInventoryEvent.Changed when e is InventoryItemChangedArgs { OldItemState: var oldItem, Item: var newItem }:
                     changes.TryAdd(newItem.ItemId, (0, 0));
                     changes.TryAdd(oldItem.ItemId, (0, 0));
-
-
                     if (oldItem.ItemId == newItem.ItemId)
                     {
                         changes[newItem.ItemId] = (changes[newItem.ItemId].OldQuantity + newItem.Quantity, changes[newItem.ItemId].OldQuantity + oldItem.Quantity);
@@ -125,8 +121,8 @@ public class InventoryChanged
 
         if (Environment.TickCount64 < CurrentTickDelay + Delay)
             return;
-        CurrentTickDelay = 0;
 
+        CurrentTickDelay = 0;
         if (DelayedChanges.Count == 0)
             return;
 

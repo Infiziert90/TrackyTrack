@@ -6,7 +6,6 @@ namespace TrackyTrack.Windows.Config;
 public partial class ConfigWindow : Window, IDisposable
 {
     private Plugin Plugin;
-    private Configuration Configuration;
 
     public ConfigWindow(Plugin plugin) : base("Configuration##TrackyTrack")
     {
@@ -17,7 +16,6 @@ public partial class ConfigWindow : Window, IDisposable
         };
 
         Plugin = plugin;
-        Configuration = plugin.Configuration;
     }
 
     public void Dispose() { }

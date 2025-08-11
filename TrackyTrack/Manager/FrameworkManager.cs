@@ -139,7 +139,7 @@ public class FrameworkManager
             return;
 
         // Check that current target is an occult coffer
-        if (!OccultExtensions.AsArray.Contains(target.DataId))
+        if (!OccultExtensions.RarityArray.Contains(target.DataId))
             return;
 
         // 300ms before cast finish is when cast counts as successful

@@ -47,6 +47,8 @@ public partial class MainWindow : Window, IDisposable
 
                     BunnyTab();
 
+                    PotTab();
+
                     LockboxTab();
 
                     SessionTab();
@@ -57,7 +59,7 @@ public partial class MainWindow : Window, IDisposable
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(Helper.GetSeparatorPaddingHeight);
 
-        using var bottomChild = ImRaii.Child("BottomBar", Vector2.Zero, false, 0);
+        using var bottomChild = ImRaii.Child("BottomBar", Vector2.Zero);
         if (!bottomChild.Success)
             return;
 

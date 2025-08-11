@@ -6,40 +6,40 @@ namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
-    private CofferRarity Rarity = CofferRarity.Bronze;
+    private OccultCofferRarity PotRarity = OccultCofferRarity.Bronze;
 
-    private Tabs SelectedBunnyTab;
-    private static readonly Tabs[] BunnyTabs = [Tabs.Pagos, Tabs.Pyros, Tabs.Hydatos];
+    private Tabs SelectedPotTab;
+    private static readonly Tabs[] PotTabs = [Tabs.SouthHorn];
 
-    private void BunnyTab()
+    private void PotTab()
     {
-        using var tabItem = ImRaii.TabItem("Bunny");
+        using var tabItem = ImRaii.TabItem("Pot");
         if (!tabItem.Success)
             return;
 
         if (Plugin.CharacterStorage.Values.Count == 0)
         {
-            Helper.NoBunnyData();
+            Helper.NoPotData();
             return;
         }
 
-        var characterCoffers = Plugin.CharacterStorage.Values.Where(c => c.Eureka.Opened > 0).ToArray();
+        var characterCoffers = Plugin.CharacterStorage.Values.Where(c => c.Occult.Opened > 0).ToArray();
         if (characterCoffers.Length == 0)
         {
-            Helper.NoBunnyData();
+            Helper.NoPotData();
             return;
         }
 
         var pos = ImGui.GetCursorPos();
 
-        var nameDict = TabHelper.TabSize(BunnyTabs);
+        var nameDict = TabHelper.TabSize(PotTabs);
         var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max() + 10.0f, 0);
         using (var tabChild = ImRaii.Child("Tabs", childSize, true))
         {
             if (tabChild.Success)
             {
-                if (ImGui.Selectable("Stats", SelectedBunnyTab == Tabs.Stats))
-                    SelectedBunnyTab = Tabs.Stats;
+                if (ImGui.Selectable("Stats", SelectedPotTab == Tabs.Stats))
+                    SelectedPotTab = Tabs.Stats;
 
                 ImGui.Spacing();
                 ImGui.Separator();
@@ -47,26 +47,34 @@ public partial class MainWindow
 
                 foreach (var (id, (name, _)) in nameDict)
                 {
-                    var selected = SelectedBunnyTab == id;
+                    var selected = SelectedPotTab == id;
                     if (ImGui.Selectable(name, selected))
-                        SelectedBunnyTab = id;
+                        SelectedPotTab = id;
 
                     using var pushedId = ImRaii.PushId((int) id);
                     using var pushedIndent = ImRaii.PushIndent(10.0f);
-                    if (ImGui.Selectable("Bronze", selected && Rarity == CofferRarity.Bronze))
+                    if (ImGui.Selectable(OccultCofferRarity.Bronze.ToName(), selected && PotRarity == OccultCofferRarity.Bronze))
                     {
-                        Rarity = CofferRarity.Bronze;
-                        SelectedBunnyTab = id;
+                        PotRarity = OccultCofferRarity.Bronze;
+                        SelectedPotTab = id;
                     }
-                    if (ImGui.Selectable("Silver", selected && Rarity == CofferRarity.Silver))
+
+                    if (ImGui.Selectable(OccultCofferRarity.Silver.ToName(), selected && PotRarity == OccultCofferRarity.Silver))
                     {
-                        Rarity = CofferRarity.Silver;
-                        SelectedBunnyTab = id;
+                        PotRarity = OccultCofferRarity.Silver;
+                        SelectedPotTab = id;
                     }
-                    if (ImGui.Selectable("Gold", selected && Rarity == CofferRarity.Gold))
+
+                    if (ImGui.Selectable(OccultCofferRarity.Gold.ToName(), selected && PotRarity == OccultCofferRarity.Gold))
                     {
-                        Rarity = CofferRarity.Gold;
-                        SelectedBunnyTab = id;
+                        PotRarity = OccultCofferRarity.Gold;
+                        SelectedPotTab = id;
+                    }
+
+                    if (ImGui.Selectable(OccultCofferRarity.BunnyGold.ToName(), selected && PotRarity == OccultCofferRarity.BunnyGold))
+                    {
+                        PotRarity = OccultCofferRarity.BunnyGold;
+                        SelectedPotTab = id;
                     }
                 }
             }
@@ -77,28 +85,22 @@ public partial class MainWindow
         {
             if (contentChild.Success)
             {
-                switch (SelectedBunnyTab)
+                switch (SelectedPotTab)
                 {
                     case Tabs.Stats:
-                        EurekaStats(characterCoffers);
+                        PotStats(characterCoffers);
                         break;
-                    case Tabs.Pagos:
-                        Pagos(characterCoffers);
-                        break;
-                    case Tabs.Pyros:
-                        Pyros(characterCoffers);
-                        break;
-                    case Tabs.Hydatos:
-                        Hydatos(characterCoffers);
+                    case Tabs.SouthHorn:
+                        SouthHorn(characterCoffers);
                         break;
                 }
             }
         }
     }
 
-    private void EurekaStats(CharacterConfiguration[] characters)
+    private void PotStats(CharacterConfiguration[] characters)
     {
-        var (worth, total, territoryCoffers) = EurekaUtil.GetAmounts(characters);
+        var (worth, total, territoryCoffers) = OccultUtil.GetAmounts(characters);
 
         using var table = ImRaii.Table("##TotalStatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
         if (!table.Success)
@@ -141,26 +143,16 @@ public partial class MainWindow
         }
     }
 
-    private void Pagos(CharacterConfiguration[] characters)
+    private void SouthHorn(CharacterConfiguration[] characters)
     {
-        CofferHistory(Territory.Pagos, characters);
+        CofferHistory(OccultTerritory.SouthHorn, characters);
     }
 
-    private void Pyros(CharacterConfiguration[] characters)
-    {
-        CofferHistory(Territory.Pyros, characters);
-    }
-
-    private void Hydatos(CharacterConfiguration[] characters)
-    {
-        CofferHistory(Territory.Hydatos, characters);
-    }
-
-    private void CofferHistory(Territory territory, CharacterConfiguration[] characters)
+    private void CofferHistory(OccultTerritory territory, CharacterConfiguration[] characters)
     {
         // fill dict with real values
         var dict = new Dictionary<uint, (uint Obtained, List<uint> Amounts)>();
-        foreach (var pair in characters.SelectMany(c => c.Eureka.History).Where(pair => pair.Key == territory).Select(pair => pair.Value[Rarity]))
+        foreach (var pair in characters.SelectMany(c => c.Occult.History).Where(pair => pair.Key == territory).Select(pair => pair.Value[PotRarity]))
         {
             foreach (var result in pair.Values.SelectMany(result => result.Items))
             {
@@ -176,15 +168,15 @@ public partial class MainWindow
 
         if (dict.Count == 0)
         {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {Rarity.ToName()} Coffer in {territory.ToName()}");
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {PotRarity.ToName()} Coffer in {territory.ToName()}");
             return;
         }
 
-        var opened = characters.Select(c => c.Eureka.History[territory][Rarity].Count).Sum();
+        var opened = characters.Select(c => c.Occult.History[territory][PotRarity].Count).Sum();
         var unsortedList = Utils.ToSortedEntry(dict, opened);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Gil Obtained: {opened * Rarity.ToWorth():N0}");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Gil Obtained: {opened * PotRarity.ToWorth():N0}");
         new SimpleTable<Utils.SortedEntry>("##HistoryTable", Utils.SortEntries, ImGuiTableFlags.Sortable)
             .EnableSortSpec()
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))

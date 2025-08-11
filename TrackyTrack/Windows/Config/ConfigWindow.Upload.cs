@@ -38,9 +38,9 @@ public partial class ConfigWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        changed |= ImGui.Checkbox("Upload Permission", ref Configuration.UploadPermission);
+        changed |= ImGui.Checkbox("Upload Permission", ref Plugin.Configuration.UploadPermission);
 
         if (changed)
-            Configuration.Save();
+            Plugin.Configuration.Save();
     }
 }

@@ -12,7 +12,7 @@ public partial class MainWindow
 
     private readonly SortedList<TrackedSessionStats, int> TrackedStats = new();
 
-    public void InitSession()
+    private void InitSession()
     {
         foreach (var stat in Enum.GetValues<TrackedSessionStats>())
             TrackedStats[stat] = 0;
@@ -75,29 +75,37 @@ public partial class MainWindow
 
     private void RefreshSession(CharacterConfiguration[] characters)
     {
-        if (Utils.NeedsRefresh(ref LastSessionRefresh, SessionRefreshRate))
-        {
-            if (Plugin.SessionCopyState != SessionState.Done)
-                return;
+        if (!Utils.NeedsRefresh(ref LastSessionRefresh, SessionRefreshRate))
+            return;
 
-            var (_, _, territoryCoffers) = EurekaUtil.GetAmounts(characters);
-            var (_, _, territoryCoffersCopy) = EurekaUtil.GetAmounts(Plugin.SessionCharacterCopy.Values);
+        if (Plugin.SessionCopyState != SessionState.Done)
+            return;
 
-            var pagos = (Old: territoryCoffersCopy[Territory.Pagos], New: territoryCoffers[Territory.Pagos]);
-            TrackedStats[TrackedSessionStats.PagosBronze] = pagos.New[CofferRarity.Bronze] - pagos.Old[CofferRarity.Bronze];
-            TrackedStats[TrackedSessionStats.PagosSilver] = pagos.New[CofferRarity.Silver] - pagos.Old[CofferRarity.Silver];
-            TrackedStats[TrackedSessionStats.PagosGold] = pagos.New[CofferRarity.Gold] - pagos.Old[CofferRarity.Gold];
+        var (_, _, territoryCoffers) = EurekaUtil.GetAmounts(characters);
+        var (_, _, territoryCoffersCopy) = EurekaUtil.GetAmounts(Plugin.SessionCharacterCopy.Values);
 
-            var pyros = (Old: territoryCoffersCopy[Territory.Pyros], New: territoryCoffers[Territory.Pyros]);
-            TrackedStats[TrackedSessionStats.PyrosBronze] = pyros.New[CofferRarity.Bronze] - pyros.Old[CofferRarity.Bronze];
-            TrackedStats[TrackedSessionStats.PyrosSilver] = pyros.New[CofferRarity.Silver] - pyros.Old[CofferRarity.Silver];
-            TrackedStats[TrackedSessionStats.PyrosGold] = pyros.New[CofferRarity.Gold] - pyros.Old[CofferRarity.Gold];
+        var pagos = (Old: territoryCoffersCopy[Territory.Pagos], New: territoryCoffers[Territory.Pagos]);
+        TrackedStats[TrackedSessionStats.PagosBronze] = pagos.New[CofferRarity.Bronze] - pagos.Old[CofferRarity.Bronze];
+        TrackedStats[TrackedSessionStats.PagosSilver] = pagos.New[CofferRarity.Silver] - pagos.Old[CofferRarity.Silver];
+        TrackedStats[TrackedSessionStats.PagosGold] = pagos.New[CofferRarity.Gold] - pagos.Old[CofferRarity.Gold];
 
-            var hydatos = (Old: territoryCoffersCopy[Territory.Hydatos], New: territoryCoffers[Territory.Hydatos]);
-            TrackedStats[TrackedSessionStats.HydatosBronze] = hydatos.New[CofferRarity.Bronze] - hydatos.Old[CofferRarity.Bronze];
-            TrackedStats[TrackedSessionStats.HydatosSilver] = hydatos.New[CofferRarity.Silver] - hydatos.Old[CofferRarity.Silver];
-            TrackedStats[TrackedSessionStats.HydatosGold] = hydatos.New[CofferRarity.Gold] - hydatos.Old[CofferRarity.Gold];
-        }
+        var pyros = (Old: territoryCoffersCopy[Territory.Pyros], New: territoryCoffers[Territory.Pyros]);
+        TrackedStats[TrackedSessionStats.PyrosBronze] = pyros.New[CofferRarity.Bronze] - pyros.Old[CofferRarity.Bronze];
+        TrackedStats[TrackedSessionStats.PyrosSilver] = pyros.New[CofferRarity.Silver] - pyros.Old[CofferRarity.Silver];
+        TrackedStats[TrackedSessionStats.PyrosGold] = pyros.New[CofferRarity.Gold] - pyros.Old[CofferRarity.Gold];
+
+        var hydatos = (Old: territoryCoffersCopy[Territory.Hydatos], New: territoryCoffers[Territory.Hydatos]);
+        TrackedStats[TrackedSessionStats.HydatosBronze] = hydatos.New[CofferRarity.Bronze] - hydatos.Old[CofferRarity.Bronze];
+        TrackedStats[TrackedSessionStats.HydatosSilver] = hydatos.New[CofferRarity.Silver] - hydatos.Old[CofferRarity.Silver];
+        TrackedStats[TrackedSessionStats.HydatosGold] = hydatos.New[CofferRarity.Gold] - hydatos.Old[CofferRarity.Gold];
+
+        var (_, _, occultTerritoryCoffers) = OccultUtil.GetAmounts(characters);
+        var (_, _, occultTerritoryCoffersCopy) = OccultUtil.GetAmounts(Plugin.SessionCharacterCopy.Values);
+        var southHorn = (Old: occultTerritoryCoffersCopy[OccultTerritory.SouthHorn], New: occultTerritoryCoffers[OccultTerritory.SouthHorn]);
+        TrackedStats[TrackedSessionStats.SouthHornBronze] = southHorn.New[OccultCofferRarity.Bronze] - southHorn.Old[OccultCofferRarity.Bronze];
+        TrackedStats[TrackedSessionStats.SouthHornSilver] = southHorn.New[OccultCofferRarity.Silver] - southHorn.Old[OccultCofferRarity.Silver];
+        TrackedStats[TrackedSessionStats.SouthHornGold] = southHorn.New[OccultCofferRarity.Gold] - southHorn.Old[OccultCofferRarity.Gold];
+        TrackedStats[TrackedSessionStats.SouthHornBunnyGold] = southHorn.New[OccultCofferRarity.BunnyGold] - southHorn.Old[OccultCofferRarity.BunnyGold];
     }
 
     public enum TrackedSessionStats
@@ -113,5 +121,10 @@ public partial class MainWindow
         [Description("Hydatos Bronze")] HydatosBronze,
         [Description("Hydatos Silver")] HydatosSilver,
         [Description("Hydatos Gold")] HydatosGold,
+
+        [Description("South Horn Bronze")] SouthHornBronze,
+        [Description("South Horn Silver")] SouthHornSilver,
+        [Description("South Horn Gold")] SouthHornGold,
+        [Description("South Horn Bunny Gold")] SouthHornBunnyGold,
     }
 }

@@ -90,13 +90,7 @@ public partial class MainWindow
             dict[pair.Key] += pair.Value;
 
         var opened = characterGacha.Select(c => c.GachaThreeZero.Opened).Sum();
-        var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
-        {
-            var item = Sheets.GetItem(pair.Key);
-            var count = pair.Value;
-            var percentage = (double) count / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
-        });
+        var unsortedList = Utils.ToSortedEntry(dict, opened);
 
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
@@ -107,7 +101,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
         DrawMissingTable(Data.GachaThreeZero.Content.Where(i => dict[i] == 0), showUnlock);
     }
 
@@ -143,13 +137,7 @@ public partial class MainWindow
             dict[pair.Key] += pair.Value;
 
         var opened = characterGacha.Select(c => c.GachaFourZero.Opened).Sum();
-        var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
-        {
-            var item = Sheets.GetItem(pair.Key);
-            var count = pair.Value;
-            var percentage = (double) count / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
-        });
+        var unsortedList = Utils.ToSortedEntry(dict, opened);
 
         var showUnlock = Plugin.Configuration.ShowUnlockCheckmark;
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
@@ -160,7 +148,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
         DrawMissingTable(Data.GachaFourZero.Content.Where(i => dict[i] == 0), showUnlock);
     }
 
@@ -191,13 +179,7 @@ public partial class MainWindow
             dict[pair.Key] += pair.Value;
 
         var opened = characterGacha.Select(c => c.GachaSanctuary.Opened).Sum();
-        var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
-        {
-            var item = Sheets.GetItem(pair.Key);
-            var count = pair.Value;
-            var percentage = (Data.Sanctuary.MultiRewardItems.Contains(pair.Key) ? count / 5.0 : count ) / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, item.Icon, Utils.ToStr(item.Name), count, 0, 0, percentage);
-        });
+        var unsortedList = Utils.ToSortedEntry(dict, opened);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Sanctuary.Content.Count} items");
@@ -205,7 +187,7 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received Yet:");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
         DrawMissingTable(Data.Sanctuary.Content.Where(i => dict[i] == 0), false);
     }
 
@@ -232,14 +214,14 @@ public partial class MainWindow
 
     private void RefreshUnlocks()
     {
-        if (Utils.NeedsRefresh(ref LastRefresh, RefreshRate))
-        {
-            foreach (var item in Data.GachaThreeZero.Content)
-                Unlocked[item] = CheckUnlockStatus(item);
+        if (!Utils.NeedsRefresh(ref LastRefresh, RefreshRate))
+            return;
 
-            foreach (var item in Data.GachaFourZero.Content)
-                Unlocked[item] = CheckUnlockStatus(item);
-        }
+        foreach (var item in Data.GachaThreeZero.Content)
+            Unlocked[item] = CheckUnlockStatus(item);
+
+        foreach (var item in Data.GachaFourZero.Content)
+            Unlocked[item] = CheckUnlockStatus(item);
     }
 
     private static unsafe bool CheckUnlockStatus(uint id)

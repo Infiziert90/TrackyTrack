@@ -12,23 +12,23 @@ public class EurekaTracker
     {
         { Territory.Pagos, new()
             {
-                { CofferRarity.Bronze, new() },
-                { CofferRarity.Silver, new() },
-                { CofferRarity.Gold, new() },
+                { CofferRarity.Bronze, [] },
+                { CofferRarity.Silver, [] },
+                { CofferRarity.Gold, [] },
             }
         },
         { Territory.Pyros, new()
             {
-                { CofferRarity.Bronze, new() },
-                { CofferRarity.Silver, new() },
-                { CofferRarity.Gold, new() },
+                { CofferRarity.Bronze, [] },
+                { CofferRarity.Silver, [] },
+                { CofferRarity.Gold, [] },
             }
         },
         { Territory.Hydatos, new()
             {
-                { CofferRarity.Bronze, new() },
-                { CofferRarity.Silver, new() },
-                { CofferRarity.Gold, new() },
+                { CofferRarity.Bronze, [] },
+                { CofferRarity.Silver, [] },
+                { CofferRarity.Gold, [] },
             }
         }
     };
@@ -58,6 +58,13 @@ public enum CofferRarity : uint
     Bronze = 2009532
 }
 
+public enum Worth
+{
+    Bronze = 10_000,
+    Silver = 25_000,
+    Gold = 100_000,
+}
+
 public static class EurekaUtil
 {
     public static (long Worth, long Total, Dictionary<Territory, Dictionary<CofferRarity, int>> Dict) GetAmounts(IEnumerable<CharacterConfiguration> characters)
@@ -67,7 +74,9 @@ public static class EurekaUtil
         var territoryCoffers = new Dictionary<Territory, Dictionary<CofferRarity, int>>();
         foreach (var (territory, rarityDictionary) in characters.SelectMany(c => c.Eureka.History))
         {
-            territoryCoffers.TryAdd(territory, new Dictionary<CofferRarity, int>());
+            if (!territoryCoffers.ContainsKey(territory))
+                territoryCoffers[territory] = [];
+
             foreach (var (rarity, history) in rarityDictionary)
             {
                 totalNumber += history.Count;
@@ -84,7 +93,8 @@ public static class EurekaUtil
 
 public static class EurekaExtensions
 {
-    public static readonly uint[] AsArray = Enum.GetValues<Territory>().Select(t => (uint) t).ToArray();
+    public static readonly uint[] RarityArray = Enum.GetValues<Territory>().Select(t => (uint) t).ToArray();
+    public static readonly int[] WorthArray =  Enum.GetValues<Worth>().Select(x => (int)x).ToArray();
 
     public static string ToName(this Territory territory)
     {
@@ -112,20 +122,20 @@ public static class EurekaExtensions
     {
         return rarity switch
         {
-            CofferRarity.Gold => 100_000,
-            CofferRarity.Silver => 25_000,
-            CofferRarity.Bronze => 10_000,
+            CofferRarity.Gold => (uint)Worth.Gold,
+            CofferRarity.Silver => (uint)Worth.Silver,
+            CofferRarity.Bronze => (uint)Worth.Bronze,
             _ => 0
         };
     }
 
     public static CofferRarity FromWorth(long worth)
     {
-        return worth switch
+        return (Worth)worth switch
         {
-            100_000 => CofferRarity.Gold,
-            25_000 => CofferRarity.Silver,
-            10_000 => CofferRarity.Bronze,
+            Worth.Gold => CofferRarity.Gold,
+            Worth.Silver => CofferRarity.Silver,
+            Worth.Bronze => CofferRarity.Bronze,
             _ => 0
         };
     }

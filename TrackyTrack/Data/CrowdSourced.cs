@@ -119,17 +119,20 @@ public class Importer
                             break;
                     }
 
-                    final.TryAdd(import.Source, new Dictionary<uint, Stats>());
+                    if (!final.ContainsKey(import.Source))
+                        final[import.Source] = [];
 
                     var t = final[import.Source];
-                    if (!t.TryAdd(item, new Stats(amount, amount)))
+                    if (!t.TryGetValue(item, out var minMax))
                     {
-                        var minMax = t[item];
-                        minMax.Records++;
-                        minMax.Min = Math.Min(amount, minMax.Min);
-                        minMax.Max = Math.Max(amount, minMax.Max);
-                        t[item] = minMax;
+                        t[item] = new Stats(amount, amount);
+                        continue;
                     }
+
+                    minMax.Records++;
+                    minMax.Min = Math.Min(amount, minMax.Min);
+                    minMax.Max = Math.Max(amount, minMax.Max);
+                    t[item] = minMax;
                 }
             }
 
@@ -141,13 +144,19 @@ public class Importer
                 {
                     r.Add(new Result(reward, minMax.Min, minMax.Max, minMax.Records));
 
-                    if (!SourcedData.Rewards.TryAdd(reward, new History { Records = minMax.Records, Results = new [] { new Result(source, minMax.Min, minMax.Max, minMax.Records) } }))
+                    if (!SourcedData.Rewards.TryGetValue(reward, out var h))
                     {
-                        var h = SourcedData.Rewards[reward];
-                        h.Records += minMax.Records;
-                        h.Results = h.Results.Append(new Result(source, minMax.Min, minMax.Max, minMax.Records)).ToArray();
-                        SourcedData.Rewards[reward] = h;
+                        SourcedData.Rewards[reward] = new History
+                        {
+                            Records = minMax.Records,
+                            Results = [new Result(source, minMax.Min, minMax.Max, minMax.Records)]
+                        };
+                        continue;
                     }
+
+                    h.Records += minMax.Records;
+                    h.Results = h.Results.Append(new Result(source, minMax.Min, minMax.Max, minMax.Records)).ToArray();
+                    SourcedData.Rewards[reward] = h;
                 }
 
                 SourcedData.Sources.Add(source, new History {
@@ -162,9 +171,9 @@ public class Importer
 
             File.WriteAllBytes(path, MessagePackSerializer.Serialize(SourcedData));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e, "Can't build desynthesis history.");
+            Plugin.Log.Error(ex, "Can't build desynthesis history.");
         }
     }
 
@@ -201,30 +210,6 @@ public class Importer
         public Dictionary<uint, ChestLoot> Chests = [];
 
         public int Records;
-
-        public override string ToString()
-        {
-            var txt = $"{DutyName} [Records: {Records}]:\n";
-            foreach (var (_, chest) in Chests.OrderBy(pair => pair.Value.MapId).ThenBy(pair => pair.Key))
-            {
-                var map = Sheets.MapSheet.GetRow(chest.MapId);
-                txt += $"{map.PlaceNameSub.Value.Name.ExtractText()} ({chest.ChestId} | {chest.Position.X:F2}/{chest.Position.Y:F2}/{chest.Position.Z:F2}) [Records: {chest.Records} | Unique Items: {chest.Rewards.Count}]:\n";
-
-                foreach (var (itemId, loot) in chest.Rewards.OrderBy(pair => pair.Key))
-                {
-                    txt += $"{Sheets.GetItem(itemId).Name.ExtractText()} = {loot.Obtained} [{(float)loot.Obtained / chest.Records * 100.0f:##0.00}%]";
-                    if (loot.Min != 1 || loot.Max != 1)
-                        txt += $" [Min: {loot.Min} Max: {loot.Max}]\n";
-                    else
-                        txt += "\n";
-                }
-
-                // foreach (var (pos, count) in chest.Positions)
-                //     txt += $"Id: {chest.ChestId} Position: {pos.X}/{pos.Y}/{pos.Z} | Count: {count}\n";
-            }
-
-            return txt;
-        }
 
         public struct ChestLoot(string chestName, uint chestId, float x, float y, float z, uint territory, uint map)
         {
@@ -279,7 +264,7 @@ public class Importer
 
                 if (!Sheets.TerritoryTypeSheet.TryGetRow(import.Territory, out var territoryType))
                 {
-                    Plugin.Log.Information($"Invalid territory found, ID: {import.Id}");
+                    Plugin.Log.Warning($"Invalid territory found, ID: {import.Id}");
                     continue;
                 }
 
@@ -291,13 +276,13 @@ public class Importer
 
                 if (!Sheets.TreasureSheet.TryGetRow(import.ChestId, out var treasure))
                 {
-                    Plugin.Log.Information($"Invalid treasure found, ID: {import.Id}");
+                    Plugin.Log.Warning($"Invalid treasure found, ID: {import.Id}");
                     continue;
                 }
 
                 if (territoryType.ContentFinderCondition.RowId == 0)
                 {
-                    Plugin.Log.Information($"Invalid duty found, ID: {import.Id}");
+                    Plugin.Log.Warning($"Invalid duty found, ID: {import.Id}");
                     continue;
                 }
 
@@ -329,9 +314,6 @@ public class Importer
                 dutyLoot.Chests[import.ChestId] = chest;
                 DutyLootCache[territoryType.ContentFinderCondition.RowId] = dutyLoot;
             }
-
-            foreach (var dutyLoot in DutyLootCache.Values.OrderBy(l => l.Records))
-                Plugin.Log.Information(dutyLoot.ToString());
 
             var path = Path.Combine(FullPath, "test.json");
             if (File.Exists(path))

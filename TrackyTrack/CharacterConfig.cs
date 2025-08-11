@@ -48,6 +48,7 @@ public class CharacterConfiguration
     public Sanctuary GachaSanctuary = new();
     public Retainer VentureStorage = new();
     public EurekaTracker Eureka = new();
+    public OccultTracker Occult = new();
     public Lockboxes Lockbox = new();
 
     public CharacterConfiguration() { }
