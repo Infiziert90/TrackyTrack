@@ -168,7 +168,7 @@ public partial class MainWindow
                         color = ImGuiColors.DalamudYellow;
 
                     ImGui.TableNextColumn();
-                    ImGui.TextColored(color, buff.ToName().Replace("%", "%%"));
+                    ImGui.TextColored(color, buff.ToName());
 
                     var stat = $"{count} times";
                     if (savings > 0)

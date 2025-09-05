@@ -13,7 +13,7 @@ public partial class MainWindow : Window, IDisposable
     {
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(420, 630),
+            MinimumSize = new Vector2(480, 650),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
