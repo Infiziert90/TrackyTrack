@@ -82,9 +82,9 @@ public class ConfigurationBase : IDisposable
             var file = new FileInfo(Path.Combine(ConfigurationDirectory, $"{contentId}.json"));
             config = JsonConvert.DeserializeObject<CharacterConfiguration>(LoadFile(file));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error(e, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
+            Plugin.Log.Error(ex, $"Exception Occured during loading Character {contentId}. Loading new default config instead.");
             Utils.AddNotification("Exception during config load, pls check /xllog", NotificationType.Error);
             config = CharacterConfiguration.CreateNew();
         }

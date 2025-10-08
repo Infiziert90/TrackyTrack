@@ -1,35 +1,35 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Lumina.Excel.Sheets;
-using Lumina.Text.ReadOnly;
 
 namespace TrackyTrack;
 
 public static class Utils
 {
-    public static string ToStr(SeString content) => content.ToString();
-    public static string ToStr(ReadOnlySeString content) => content.ExtractText();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double ToChance(uint obtained, int total)
+        => ToChance((double)obtained, total);
 
-    public record SortedEntry(uint Id, uint Icon, string Name, uint Obtained, uint Min, uint Max, double Percentage);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double ToChance(uint obtained, uint total)
+        => ToChance((double)obtained, (int)total);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double ToChance(double obtained, int total)
+        => obtained / total * 100;
+
+    public record SortedEntry(uint Id, uint Icon, string Name, uint Obtained, uint Min, uint Max, double Percentage)
+    {
+        public static SortedEntry FromItem(Item item, uint obtained, uint min, uint max, double percentage)
+            => new(item.RowId, CheckItemAction(item), item.Name.ToString(), obtained, min, max, percentage);
+    }
 
     public static IEnumerable<SortedEntry> ToSortedEntry(Dictionary<uint, uint> dict, int opened)
     {
-        foreach (var (key, value) in dict)
-        {
-            if (value == 0)
-                continue;
-
-            var item = Sheets.GetItem(key);
-            yield return new SortedEntry(
-                item.RowId,
-                CheckItemAction(item),
-                ToStr(item.Name),
-                value,
-                0,
-                0,
-                (double)value / opened * 100.0);
-        }
+        foreach (var (key, value) in dict.Where(pair => pair.Value > 0))
+            yield return SortedEntry.FromItem(Sheets.GetItem(key), value, 0, 0, ToChance(value, opened));
     }
 
     public static IEnumerable<SortedEntry> ToSortedEntry(Dictionary<uint, (uint Obtained, List<uint> Amounts)> dict, int opened)
@@ -39,15 +39,7 @@ public static class Utils
             if (value.Obtained == 0)
                 continue;
 
-            var item = Sheets.GetItem(key);
-            yield return new SortedEntry(
-                item.RowId,
-                CheckItemAction(item),
-                ToStr(item.Name),
-                value.Obtained,
-                value.Amounts.Min(),
-                value.Amounts.Max(),
-                (double)value.Obtained / opened * 100.0);
+            yield return SortedEntry.FromItem(Sheets.GetItem(key), value.Obtained, value.Amounts.Min(), value.Amounts.Max(), ToChance(value.Obtained, opened));
         }
     }
 

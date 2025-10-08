@@ -56,7 +56,7 @@ public static class Export
             Coffer = coffer;
             ItemId = ItemUtil.GetBaseId(id).ItemId;
             Amount = amount;
-            Name = Utils.ToStr(Sheets.GetItem(ItemId).Name);
+            Name = Sheets.GetItem(ItemId).Name.ToString();
         }
     }
 

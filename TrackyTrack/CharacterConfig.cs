@@ -12,7 +12,6 @@ public class CharacterConfiguration
     public int Version { get; set; } = 3;
 
     public ulong LocalContentId;
-    public bool HadDesynthUpload = false;
 
     public string CharacterName = "";
     public string World = "Unknown";
@@ -56,8 +55,8 @@ public class CharacterConfiguration
     public CharacterConfiguration(ulong id, IPlayerCharacter local)
     {
         LocalContentId = id;
-        CharacterName = Utils.ToStr(local.Name);
-        World = Utils.ToStr(local.HomeWorld.Value.Name);
+        CharacterName = local.Name.TextValue;
+        World = local.HomeWorld.Value.Name.ToString();
     }
 
     public static CharacterConfiguration CreateNew() => new()
@@ -70,7 +69,7 @@ public class CharacterConfiguration
 
     public uint GetCurrencyCount(Currency currency)
     {
-        return (currency) switch
+        return currency switch
         {
             Currency.SerpentSeals or Currency.FlameSeals or Currency.StormSeals => GCSeals,
             Currency.MGP => MGP,

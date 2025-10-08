@@ -192,7 +192,7 @@ public static class Helper
         ImGui.Image(texture.Handle, size);
     }
 
-    public static void DrawIcon(uint iconId, Vector2 size, float withIndent = 0.0f)
+    private static void DrawIcon(uint iconId, Vector2 size, float withIndent = 0.0f)
     {
         using var indent = ImRaii.PushIndent(withIndent, condition: withIndent > 0.0f);
 
@@ -206,7 +206,7 @@ public static class Helper
         ImGui.Image(texture.Handle, size);
     }
 
-    internal static void Tooltip(string tooltip)
+    private static void Tooltip(string tooltip)
     {
         using (ImRaii.Tooltip())
         using (ImRaii.TextWrapPos(ImGui.GetFontSize() * 35.0f))
@@ -257,7 +257,7 @@ public static class Helper
         ActivatedButton(rightOption, size, ref selected, 1, ImDrawFlags.RoundCornersRight);
     }
 
-    public static void ActivatedButton(string buttonText, Vector2 size, ref int selected, int number, ImDrawFlags corners)
+    private static void ActivatedButton(string buttonText, Vector2 size, ref int selected, int number, ImDrawFlags corners)
     {
         var colors = ImGui.GetStyle().Colors;
 

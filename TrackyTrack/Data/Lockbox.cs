@@ -10,16 +10,16 @@ public class Lockboxes
 
     public readonly Dictionary<LockboxTypes, Dictionary<uint, uint>> History = new()
     {
-        { LockboxTypes.Anemos, new() },
-        { LockboxTypes.Pagos, new() },
-        { LockboxTypes.ColdWarped, new() },
-        { LockboxTypes.Pyros, new() },
-        { LockboxTypes.HeatWarped, new() },
-        { LockboxTypes.Hydatos, new() },
-        { LockboxTypes.MoistureWarped, new() },
+        { LockboxTypes.Anemos, [] },
+        { LockboxTypes.Pagos, [] },
+        { LockboxTypes.ColdWarped, [] },
+        { LockboxTypes.Pyros, [] },
+        { LockboxTypes.HeatWarped, [] },
+        { LockboxTypes.Hydatos, [] },
+        { LockboxTypes.MoistureWarped, [] },
 
-        { LockboxTypes.SouthernFront, new() },
-        { LockboxTypes.Zadnor, new() },
+        { LockboxTypes.SouthernFront, [] },
+        { LockboxTypes.Zadnor, [] },
     };
 
     // Bozja Fragments
@@ -100,7 +100,7 @@ public static class LockboxExtensions
             LockboxTypes.MoistureWarped => "Moisture-Warped",
             LockboxTypes.SouthernFront => "Bozja",
             LockboxTypes.Zadnor => "Zadnor",
-            _ => Utils.ToStr(Sheets.GetItem((uint)type).Name),
+            _ => Sheets.GetItem((uint)type).Name.ToString(),
         };
     }
 

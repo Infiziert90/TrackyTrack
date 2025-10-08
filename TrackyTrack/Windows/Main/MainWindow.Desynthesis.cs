@@ -31,10 +31,10 @@ public partial class MainWindow
     private readonly ConcurrentDictionary<uint, uint> SourceHistory = new();
     private readonly ConcurrentDictionary<uint, uint> RewardHistory = new();
 
-    public Dictionary<uint, History>? LocalSourcesCache;
-    public Dictionary<uint, History>? LocalRewardsCache;
+    private Dictionary<uint, History>? LocalSourcesCache;
+    private Dictionary<uint, History>? LocalRewardsCache;
 
-    public void InitializeDesynth()
+    private void InitializeDesynth()
     {
         // Fill once
         CatalogueCache = BuildCatalogue();
@@ -42,14 +42,14 @@ public partial class MainWindow
 
     private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions SourceOptions = new()
     {
-        FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => i.Name.PayloadCount > 0).Where(i => i.Desynth > 0)
+        FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {a.Name}" },
+        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => !i.Name.IsEmpty).Where(i => i.Desynth > 0)
     };
 
     private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions ItemOptions = new()
     {
-        FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {Utils.ToStr(a.Name)}" },
-        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => i.Name.PayloadCount > 0)
+        FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {a.Name}" },
+        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => !i.Name.IsEmpty)
     };
 
     private void DesynthesisTab()
@@ -130,7 +130,7 @@ public partial class MainWindow
         {
             ImGui.TextColored(ImGuiColors.HealerGreen, "Destroyed");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
+            ImGui.TextUnformatted(item.Name.ToString());
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{destroyed.Value:N0}");
 
@@ -139,7 +139,7 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Rewarded");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
+            ImGui.TextUnformatted(item.Name.ToString());
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{bestItem.Value:N0}");
 
@@ -148,7 +148,7 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.TextColored(ImGuiColors.HealerGreen, "Crystal");
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"{Utils.ToStr(item.Name)}");
+            ImGui.TextUnformatted(item.Name.ToString());
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{bestCrystal.Value:N0}");
         }
@@ -174,7 +174,7 @@ public partial class MainWindow
         }
     }
 
-    public void Local(CharacterConfiguration[] characters)
+    private void Local(CharacterConfiguration[] characters)
     {
         using var tabItem = ImRaii.TabItem("Local");
         if (!tabItem.Success)
@@ -220,7 +220,7 @@ public partial class MainWindow
         Helper.DrawIcon(source.Icon);
         ImGui.SameLine();
 
-        var sourceName = Utils.ToStr(source.Name);
+        var sourceName = source.Name.ToString();
         using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.HealerGreen))
         {
             if (ImGui.Selectable(sourceName))
@@ -240,7 +240,7 @@ public partial class MainWindow
             .AddColumn("##item", entry =>
             {
                 var item = entry.ToItemRow();
-                var name = Utils.ToStr(item.Name);
+                var name = item.Name.ToString();
                 if (ImGui.Selectable(name))
                 {
                     ImGui.SetClipboardText(name);
@@ -293,7 +293,7 @@ public partial class MainWindow
             Helper.DrawIcon(item.Icon);
 
             ImGui.TableNextColumn();
-            var name = Utils.ToStr(item.Name);
+            var name = item.Name.ToString();
             if (ImGui.Selectable(name))
             {
                 ImGui.SetClipboardText(name);
@@ -349,7 +349,7 @@ public partial class MainWindow
             Helper.DrawIcon(item.Icon);
 
             ImGui.TableNextColumn();
-            var name = Utils.ToStr(item.Name);
+            var name = item.Name.ToString();
             if (ImGui.Selectable(name))
             {
                 ImGui.SetClipboardText(name);
@@ -434,7 +434,7 @@ public partial class MainWindow
         }
 
         var sourceItem = Sheets.GetItem(SourceSearchResult);
-        Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), Utils.ToStr(sourceItem.Name), ImGuiColors.ParsedOrange);
+        Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), sourceItem.Name.ToString(), ImGuiColors.ParsedOrange);
         if (!dict.TryGetValue(SourceSearchResult, out var history))
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, "Nothing found for this source item ...");
@@ -452,9 +452,7 @@ public partial class MainWindow
             if (!Sheets.ItemSheet.TryGetRow(result.Item, out var itemRow))
                 itemRow = Sheets.GetItem(1);
 
-            var count = result.Received;
-            var percentage = (double) count / desynthesized * 100.0;
-            return new Utils.SortedEntry(itemRow.RowId, itemRow.Icon, Utils.ToStr(itemRow.Name), count, 0, 0, percentage);
+            return Utils.SortedEntry.FromItem(itemRow, result.Received, 0, 0, Utils.ToChance(result.Received, desynthesized));
         }).OrderByDescending(x => x.Percentage);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, "Percentages:");
@@ -473,7 +471,7 @@ public partial class MainWindow
         }
 
         var sourceItem = Sheets.GetItem(RewardSearchResult);
-        Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), Utils.ToStr(sourceItem.Name), ImGuiColors.ParsedOrange);
+        Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), sourceItem.Name.ToString(), ImGuiColors.ParsedOrange);
         if (!dict.TryGetValue(RewardSearchResult, out var history))
         {
             ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this reward item ...");
@@ -496,8 +494,7 @@ public partial class MainWindow
                 source = LocalSourcesCache[result.Item];
 
             var sourceRecord = source.Results.FirstOrDefault(r => r.Item == RewardSearchResult);
-            var percentage = (double) sourceRecord.Received / source.Records * 100.0;
-            return new Utils.SortedEntry(itemRow.RowId, itemRow.Icon, Utils.ToStr(itemRow.Name), result.Received, 0, 0, percentage);
+            return Utils.SortedEntry.FromItem(itemRow, result.Received, 0, 0, Utils.ToChance(sourceRecord.Received, source.Records));
         }).OrderByDescending(x => x.Percentage);
 
         ImGui.TextColored(ImGuiColors.HealerGreen, "Chance for each source:");
@@ -545,7 +542,7 @@ public partial class MainWindow
 
         new SimpleTable<Item>("##PossibleItemsTable", Helper.NoSort)
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Name##item", entry => Helper.SelectableClipboardText(Utils.ToStr(entry.Name)))
+            .AddColumn("Name##item", entry => Helper.SelectableClipboardText(entry.Name.ToString()))
             .AddColumn("Item Level##iLvL", entry => Helper.RightAlignedText($"{entry.LevelItem.RowId}"), initWidth: 0.3f)
             .Draw(CatalogueCache);
     }
@@ -631,7 +628,7 @@ public partial class MainWindow
     private static void MinMaxTable(string identifier, IEnumerable<Result> results, bool showReceived = false)
     {
         new SimpleTable<Result>(identifier, SortByKeyCustom, size: new Vector2((showReceived ? 400 : 300) * ImGuiHelpers.GlobalScale, 0))
-            .AddColumn("Item##ItemName", entry => Helper.SelectableClipboardText(Utils.ToStr(Sheets.ItemSheet.TryGetRow(entry.Item, out var item) ? item.Name : "Invalid Data"), 10.0f), initWidth: 0.6f)
+            .AddColumn("Item##ItemName", entry => Helper.SelectableClipboardText(Sheets.ItemSheet.TryGetRow(entry.Item, out var item) ? item.Name.ToString() : "Invalid Data", 10.0f), initWidth: 0.6f)
             .AddColumn("Min##StatMin", entry => Helper.RightAlignedText(entry.Min.ToString()), initWidth: 0.1f)
             .AddColumn("##StatSymbol", _ => Helper.CenterText("-"), initWidth: 0.05f)
             .AddColumn("Max##StatMax", entry => ImGui.TextUnformatted(entry.Max.ToString()), initWidth: 0.1f)

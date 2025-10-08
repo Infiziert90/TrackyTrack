@@ -40,8 +40,8 @@ public partial class MainWindow
         var nameDict = new SortedDictionary<uint, (string Name, float Width)>();
         foreach (var lockboxId in LockboxContent.Keys)
         {
-            var name = Sheets.GetItem(lockboxId).Name.ExtractText();
-            nameDict[lockboxId] = (name, ImGui.CalcTextSize(name).X + (styles.ItemSpacing.X * 2));
+            var name = Sheets.GetItem(lockboxId).Name.ToString();
+            nameDict[lockboxId] = (name, ImGui.CalcTextSize(name).X + styles.ItemSpacing.X * 2);
         }
 
         var pos = ImGui.GetCursorPos();

@@ -207,7 +207,7 @@ public partial class MainWindow
     {
         new SimpleTable<uint>("##GachaMissingTable", Helper.NoSort)
             .AddIconColumn("##missingItemIcon", entry => Helper.DrawIcon(Utils.CheckItemAction(Sheets.GetItem(entry))))
-            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.GetItem(entry).Name.ExtractText()))
+            .AddColumn("Item##missingItem", entry => Helper.HoverableText(Sheets.GetItem(entry).Name.ToString()))
             .AddColumn("##missingUnlocked", entry => Helper.DrawUnlockedSymbol(Unlocked.TryGetValue(entry, out var unlocked) && unlocked), ImGuiTableColumnFlags.NoSort, 0.1f, showUnlocked)
             .Draw(content);
     }

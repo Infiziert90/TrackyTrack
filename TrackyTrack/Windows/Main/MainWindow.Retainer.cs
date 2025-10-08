@@ -199,7 +199,7 @@ public partial class MainWindow
 
                 ImGui.TableNextColumn();
                 var width = ImGui.CalcTextSize("10000").X * 1.2f;
-                var avg = (TotalCoffers / (double)CofferVentures) * RetainerAvgInput;
+                var avg = TotalCoffers / (double)CofferVentures * RetainerAvgInput;
                 ImGui.AlignTextToFramePadding();
                 ImGui.TextColored(ImGuiColors.HealerGreen, "Chance in");
                 ImGui.SameLine();
@@ -242,7 +242,7 @@ public partial class MainWindow
             Helper.DrawIcon(Utils.CheckItemAction(item));
 
             ImGui.TableNextColumn();
-            var name = Utils.ToStr(item.Name);
+            var name = item.Name.ToString();
             if (ImGui.Selectable(name))
                 ImGui.SetClipboardText(name);
 
@@ -302,7 +302,7 @@ public partial class MainWindow
             Helper.DrawIcon(Utils.CheckItemAction(item));
             ImGui.TableNextColumn();
 
-            var name = Utils.ToStr(item.Name);
+            var name = item.Name.ToString();
             ImGui.TextUnformatted(name);
 
             ImGui.TableNextColumn();
@@ -338,10 +338,7 @@ public partial class MainWindow
         var opened = characterCoffers.Select(c => c.Coffer.Opened).Sum();
         var unsortedList = dict.Where(pair => pair.Value > 0).Select(pair =>
         {
-            var item = Sheets.GetItem(pair.Key);
-            var count = pair.Value;
-            var percentage = (pair.Key != 8841 ? count / 2.0 : count) / opened * 100.0;
-            return new Utils.SortedEntry(item.RowId, Utils.CheckItemAction(item), Utils.ToStr(item.Name), count, 0, 0, percentage);
+            return Utils.SortedEntry.FromItem(Sheets.GetItem(pair.Key), pair.Value, 0, 0, Utils.ToChance(pair.Key != 8841 ? pair.Value / 2.0 : pair.Value, opened));
         });
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");

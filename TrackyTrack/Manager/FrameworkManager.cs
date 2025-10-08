@@ -139,13 +139,13 @@ public class FrameworkManager
             return;
 
         // Check that current target is an occult coffer
-        if (!OccultExtensions.RarityArray.Contains(target.DataId))
+        if (!OccultExtensions.RarityArray.Contains(target.BaseId))
             return;
 
         // 300ms before cast finish is when cast counts as successful
         if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
         {
-            Plugin.TimerManager.LastTargetBaseId = target.DataId;
+            Plugin.TimerManager.LastTargetBaseId = target.BaseId;
             Plugin.TimerManager.LastTargetPosition = target.Position;
         }
     }
