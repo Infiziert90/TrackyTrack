@@ -2,8 +2,6 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using Dalamud.Game;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
@@ -35,6 +33,7 @@ public class Plugin : IDalamudPlugin
     [PluginService] public static IObjectTable ObjectTable { get; private set; } = null!;
     [PluginService] public static ITargetManager TargetManager { get; private set; } = null!;
     [PluginService] public static IFateTable FateTable { get; private set; } = null!;
+    [PluginService] public static IPlayerState PlayerState { get; private set; } = null!;
 
     public static FileDialogManager FileDialogManager { get; private set; } = null!;
 
@@ -174,8 +173,8 @@ public class Plugin : IDalamudPlugin
         if (instance->DesynthItemId == 0)
             return;
 
-        CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[ClientState.LocalContentId];
+        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
+        var character = CharacterStorage[PlayerState.ContentId];
 
         var desynthResult = new DesynthResult(instance);
         character.Storage.History.Add(DateTime.Now, desynthResult);
@@ -194,8 +193,8 @@ public class Plugin : IDalamudPlugin
         if (!Configuration.EnableRetainer)
             return;
 
-        CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[ClientState.LocalContentId];
+        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
+        var character = CharacterStorage[PlayerState.ContentId];
 
         var ventureResult = new VentureResult(venture, [primary, additional], level == Sheets.MaxLevel);
         character.VentureStorage.History.Add(DateTime.Now, ventureResult);
@@ -206,8 +205,8 @@ public class Plugin : IDalamudPlugin
 
     public void CurrencyHandler(Currency currency, int increase)
     {
-        CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[ClientState.LocalContentId];
+        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
+        var character = CharacterStorage[PlayerState.ContentId];
 
         switch (currency)
         {
@@ -242,13 +241,13 @@ public class Plugin : IDalamudPlugin
     public static TeleportBuff GetCurrentTeleportBuff()
     {
         // LocalPlayer can be null in some cases, like loading screens
-        return ClientState.LocalPlayer == null ? TeleportBuff.None : TeleportBuffExtension.FromStatusList(ClientState.LocalPlayer.StatusList);
+        return ObjectTable.LocalPlayer == null ? TeleportBuff.None : TeleportBuffExtension.FromStatusList(ObjectTable.LocalPlayer.StatusList);
     }
 
     public void TeleportCostHandler(uint cost)
     {
-        CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[ClientState.LocalContentId];
+        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
+        var character = CharacterStorage[PlayerState.ContentId];
 
         // Record the current teleport buff and savings
         var buff = GetCurrentTeleportBuff();
@@ -270,8 +269,8 @@ public class Plugin : IDalamudPlugin
 
     public void AetheryteTicketHandler()
     {
-        CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[ClientState.LocalContentId];
+        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
+        var character = CharacterStorage[PlayerState.ContentId];
 
         character.TeleportsAetheryte += 1;
         character.Teleports += 1;
@@ -282,8 +281,8 @@ public class Plugin : IDalamudPlugin
     {
         TimerManager.StartTicketUsed();
 
-        CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[ClientState.LocalContentId];
+        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
+        var character = CharacterStorage[PlayerState.ContentId];
 
         switch (ticketId)
         {
@@ -313,8 +312,8 @@ public class Plugin : IDalamudPlugin
         if (!Configuration.EnableLockboxes)
             return;
 
-        CharacterStorage.TryAdd(ClientState.LocalContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[ClientState.LocalContentId];
+        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
+        var character = CharacterStorage[PlayerState.ContentId];
 
         // Multiple other items use this handler, like the deep dungeon treasures, so we just add them as we go
         var type = (LockboxTypes) lockbox;

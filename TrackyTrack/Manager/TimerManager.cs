@@ -93,7 +93,7 @@ public class TimerManager
 
         RepairTimer.Stop();
 
-        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         character.Repairs += Repaired;
         character.RepairCost += (uint)gilDifference;
 
@@ -132,7 +132,7 @@ public class TimerManager
         if (!LastBulkResult.IsValid)
             return;
 
-        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
 
         var desynthResult = new DesynthResult(LastBulkResult);
         character.Storage.History.Add(DateTime.Now, desynthResult);
@@ -181,7 +181,7 @@ public class TimerManager
             return;
         }
 
-        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         if (coffer.ItemId == 32161 && VentureCoffer.Content.Contains(item.ItemId))
         {
             character.Coffer.Opened += 1;
@@ -249,7 +249,7 @@ public class TimerManager
         var rarity = EurekaExtensions.FromWorth(gil.Quantity);
         var territory = (Territory) Plugin.ClientState.TerritoryType;
 
-        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         character.Eureka.Opened += 1;
         character.Eureka.History[territory][rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();
@@ -341,7 +341,7 @@ public class TimerManager
         else
             LastBunnyFateId = 0; // this will also set it to 0 for a second chance pot, which is preferred
 
-        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.ClientState.LocalContentId);
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         character.Occult.Opened += 1;
         character.Occult.History[territory][rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();

@@ -366,7 +366,7 @@ public partial class MainWindow
 
         if (ImGui.Button("Reset Character") && ImGui.GetIO().KeyCtrl)
         {
-            if (Plugin.CharacterStorage.TryGetValue(Plugin.ClientState.LocalContentId, out var character))
+            if (Plugin.CharacterStorage.TryGetValue(Plugin.PlayerState.ContentId, out var character))
             {
                 character.VentureStorage = new Retainer();
 

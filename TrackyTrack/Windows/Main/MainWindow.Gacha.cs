@@ -234,7 +234,7 @@ public partial class MainWindow
 
         var action = item.ItemAction.Value;
         var instance = UIState.Instance();
-        return action.Type switch
+        return action.Action.RowId switch
         {
             1322 => instance->PlayerState.IsMountUnlocked(action.Data[0]),
             853 => instance->IsCompanionUnlocked(action.Data[0]),

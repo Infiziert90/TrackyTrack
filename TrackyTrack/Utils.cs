@@ -133,7 +133,7 @@ public static class Utils
             return item.Icon;
 
         var itemAction = item.ItemAction.Value;
-        return itemAction.Type switch
+        return itemAction.Action.RowId switch
         {
             1322 => Sheets.MountSheet.GetRow(itemAction.Data[0]).Icon, // Mount ID
             3357 => 87000 + (uint)itemAction.Data[0], // Triple Triad ID

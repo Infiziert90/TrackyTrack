@@ -57,7 +57,7 @@ public class FrameworkManager
     private unsafe void CurrencyTracker(IFramework _)
     {
         // Only run for real characters
-        if (Plugin.ClientState.LocalContentId == 0)
+        if (!Plugin.PlayerState.IsLoaded)
         {
             IsSafe = false;
             return;
@@ -95,7 +95,7 @@ public class FrameworkManager
 
     private void TicketTracker(IFramework _)
     {
-        var local = Plugin.ClientState.LocalPlayer;
+        var local = Plugin.ObjectTable.LocalPlayer;
         if (local is not { IsCasting: true })
             return;
 
@@ -122,7 +122,7 @@ public class FrameworkManager
     private readonly ushort[] OccultBunnyFates = [1976, 1977];
     private void OccultTracker(IFramework _)
     {
-        var local = Plugin.ClientState.LocalPlayer;
+        var local = Plugin.ObjectTable.LocalPlayer;
         if (local is null)
             return;
 

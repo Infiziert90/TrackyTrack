@@ -61,10 +61,10 @@ public class CharacterConfiguration
 
     public static CharacterConfiguration CreateNew() => new()
     {
-        LocalContentId = Plugin.ClientState.LocalContentId,
+        LocalContentId = Plugin.PlayerState.ContentId,
 
-        CharacterName = Plugin.ClientState.LocalPlayer?.Name.ToString() ?? "",
-        World = Plugin.ClientState.LocalPlayer?.HomeWorld.Value.Name.ToString() ?? "Unknown"
+        CharacterName = Plugin.PlayerState.CharacterName,
+        World = Plugin.PlayerState.HomeWorld.Value.Name.ToString()
     };
 
     public uint GetCurrencyCount(Currency currency)

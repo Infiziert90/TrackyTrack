@@ -155,7 +155,7 @@ public class ConfigurationBase : IDisposable
     public void SaveCharacterConfig()
     {
         // Only allow saving of current character
-        var contentId = Plugin.ClientState.LocalContentId;
+        var contentId = Plugin.PlayerState.ContentId;
         if (contentId == 0)
         {
             Plugin.Log.Error("ClientId was 0 but something called Save()");
@@ -271,7 +271,7 @@ public class ConfigurationBase : IDisposable
                 if (ulong.TryParse(Path.GetFileNameWithoutExtension(file.Name), out var id))
                 {
                     // No need to override current character as we already have up to date config
-                    if (id == Plugin.ClientState.LocalContentId)
+                    if (id == Plugin.PlayerState.ContentId)
                         continue;
 
                     var lastWriteTime = GetConfigLastWriteTime(id);
