@@ -71,7 +71,7 @@ public unsafe class HookManager
     public void Dispose()
     {
         DesynthResultHook.Dispose();
-        // ActorControlSelfHook.Dispose();
+        ActorControlSelfHook.Dispose();
         OpenInspectHook.Dispose();
         LootAddedHook.Dispose();
         RetainerTaskHook.Dispose();
