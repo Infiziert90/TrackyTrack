@@ -18,7 +18,7 @@ public unsafe class HookManager
     private Hook<DesynthResultDelegate> DesynthResultHook;
 
     private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
-    private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, ulong targetId, byte param7);
+    private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, uint param7, uint param8, ulong targetId, byte param9);
     private Hook<ActorControlSelfDelegate> ActorControlSelfHook;
 
     private const string OpenInspectSig = "40 53 56 41 54 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 01";
@@ -71,7 +71,7 @@ public unsafe class HookManager
     public void Dispose()
     {
         DesynthResultHook.Dispose();
-        ActorControlSelfHook.Dispose();
+        // ActorControlSelfHook.Dispose();
         OpenInspectHook.Dispose();
         LootAddedHook.Dispose();
         RetainerTaskHook.Dispose();
@@ -126,9 +126,9 @@ public unsafe class HookManager
         }
     }
 
-    private void ActorControlSelf(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, ulong targetId, byte param7)
+    private void ActorControlSelf(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, uint param7, uint param8, ulong targetId, byte param9)
     {
-        ActorControlSelfHook.Original(category, eventId, param1, param2, param3, param4, param5, param6, targetId, param7);
+        ActorControlSelfHook.Original(category, eventId, param1, param2, param3, param4, param5, param6, param7, param8, targetId, param9);
 
         // handler for teleport, repair and other message logs
         if (eventId != 517)
