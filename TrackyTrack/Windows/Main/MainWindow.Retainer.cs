@@ -229,7 +229,7 @@ public partial class MainWindow
 
         ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X);
         ImGui.TableSetupColumn("##item");
-        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+        ImGui.TableSetupColumn("##amount", ImGuiTableColumnFlags.WidthStretch, 0.2f);
 
         var items = AllItemsHistory.OrderByDescending(pair => pair.Value).ToArray();
         using var clipper = new ListClipper(items.Length, itemHeight: Helper.IconSize.Y * ImGuiHelpers.GlobalScale);
@@ -287,9 +287,9 @@ public partial class MainWindow
         if (!table.Success)
             return;
 
-        ImGui.TableSetupColumn("##icon", 0, 0.2f);
+        ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthStretch, 0.2f);
         ImGui.TableSetupColumn("##item");
-        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+        ImGui.TableSetupColumn("##amount", ImGuiTableColumnFlags.WidthStretch, 0.2f);
 
         foreach (var ventureItem in ventureResult.Items)
         {

@@ -51,7 +51,7 @@ public partial class MainWindow
         ImGui.TextColored(ImGuiColors.DalamudViolet, "Session Changes:");
 
         using var indent = ImRaii.PushIndent(10.0f);
-        using var table = ImRaii.Table("##StatsTable", 2, 0, new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
+        using var table = ImRaii.Table("##StatsTable", 2, 0, new Vector2(400 * ImGuiHelpers.GlobalScale, 0));
         if (!table.Success)
             return;
 
@@ -99,13 +99,19 @@ public partial class MainWindow
         TrackedStats[TrackedSessionStats.HydatosSilver] = hydatos.New[CofferRarity.Silver] - hydatos.Old[CofferRarity.Silver];
         TrackedStats[TrackedSessionStats.HydatosGold] = hydatos.New[CofferRarity.Gold] - hydatos.Old[CofferRarity.Gold];
 
-        var (_, _, occultTerritoryCoffers) = OccultUtil.GetAmounts(characters);
-        var (_, _, occultTerritoryCoffersCopy) = OccultUtil.GetAmounts(Plugin.SessionCharacterCopy.Values);
+        var (_, occultTreasure) = OccultUtil.GetTreasureAmounts(characters);
+        var (_, occultTreasureCopy) = OccultUtil.GetTreasureAmounts(Plugin.SessionCharacterCopy.Values);
+        var southHornTreasure = (Old: occultTreasureCopy[OccultTerritory.SouthHorn], New: occultTreasure[OccultTerritory.SouthHorn]);
+        TrackedStats[TrackedSessionStats.TreasureBronze] = southHornTreasure.New[OccultTreasureRarity.Bronze] - southHornTreasure.Old[OccultTreasureRarity.Bronze];
+        TrackedStats[TrackedSessionStats.TreasureSilver] = southHornTreasure.New[OccultTreasureRarity.Silver] - southHornTreasure.Old[OccultTreasureRarity.Silver];
+
+        var (_, _, occultTerritoryCoffers) = OccultUtil.GetPotAmounts(characters);
+        var (_, _, occultTerritoryCoffersCopy) = OccultUtil.GetPotAmounts(Plugin.SessionCharacterCopy.Values);
         var southHorn = (Old: occultTerritoryCoffersCopy[OccultTerritory.SouthHorn], New: occultTerritoryCoffers[OccultTerritory.SouthHorn]);
-        TrackedStats[TrackedSessionStats.SouthHornBronze] = southHorn.New[OccultCofferRarity.Bronze] - southHorn.Old[OccultCofferRarity.Bronze];
-        TrackedStats[TrackedSessionStats.SouthHornSilver] = southHorn.New[OccultCofferRarity.Silver] - southHorn.Old[OccultCofferRarity.Silver];
-        TrackedStats[TrackedSessionStats.SouthHornGold] = southHorn.New[OccultCofferRarity.Gold] - southHorn.Old[OccultCofferRarity.Gold];
-        TrackedStats[TrackedSessionStats.SouthHornBunnyGold] = southHorn.New[OccultCofferRarity.BunnyGold] - southHorn.Old[OccultCofferRarity.BunnyGold];
+        TrackedStats[TrackedSessionStats.PotBronze] = southHorn.New[OccultCofferRarity.Bronze] - southHorn.Old[OccultCofferRarity.Bronze];
+        TrackedStats[TrackedSessionStats.PotSilver] = southHorn.New[OccultCofferRarity.Silver] - southHorn.Old[OccultCofferRarity.Silver];
+        TrackedStats[TrackedSessionStats.PotGold] = southHorn.New[OccultCofferRarity.Gold] - southHorn.Old[OccultCofferRarity.Gold];
+        TrackedStats[TrackedSessionStats.CarrotGold] = southHorn.New[OccultCofferRarity.BunnyGold] - southHorn.Old[OccultCofferRarity.BunnyGold];
     }
 
     public enum TrackedSessionStats
@@ -122,9 +128,11 @@ public partial class MainWindow
         [Description("Hydatos Silver")] HydatosSilver,
         [Description("Hydatos Gold")] HydatosGold,
 
-        [Description("South Horn Bronze")] SouthHornBronze,
-        [Description("South Horn Silver")] SouthHornSilver,
-        [Description("South Horn Gold")] SouthHornGold,
-        [Description("South Horn Bunny Gold")] SouthHornBunnyGold,
+        [Description("Treasure Bronze")] TreasureBronze,
+        [Description("Treasure Silver")] TreasureSilver,
+        [Description("Pot Bronze")] PotBronze,
+        [Description("Pot Silver")] PotSilver,
+        [Description("Pot Gold")] PotGold,
+        [Description("Carrot Gold")] CarrotGold,
     }
 }

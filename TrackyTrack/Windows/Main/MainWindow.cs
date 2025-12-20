@@ -47,7 +47,7 @@ public partial class MainWindow : Window, IDisposable
 
                     BunnyTab();
 
-                    PotTab();
+                    OccultTab();
 
                     LockboxTab();
 

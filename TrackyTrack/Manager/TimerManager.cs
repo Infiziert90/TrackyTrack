@@ -265,6 +265,12 @@ public class TimerManager
         var lastBaseId = LastBaseId;
         LastBaseId = 0;
 
+        // This range should include all treasure coffers
+        if (lastBaseId is > 1856 or < 1789)
+            return;
+
+        var adjustedCofferId = Sheets.TreasureSheet.GetRow(lastBaseId).SGB;
+
         var result = new OccultResult();
         foreach (var (itemId, quantity) in changes)
         {
@@ -290,6 +296,14 @@ public class TimerManager
             Plugin.Log.Warning("No items received, invalid result");
             return;
         }
+
+        var rarity = (OccultTreasureRarity) adjustedCofferId.RowId;
+        var territory = (OccultTerritory) Plugin.ClientState.TerritoryType;
+
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
+        character.Occult.TreasureOpened += 1;
+        character.Occult.TreasureHistory[territory][rarity].Add(DateTime.Now, result);
+        Plugin.ConfigurationBase.SaveCharacterConfig();
 
         Plugin.UploadEntry(new Export.OccultTreasure(lastBaseId, result.Items, ChestPosition));
     }

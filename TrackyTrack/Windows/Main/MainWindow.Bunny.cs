@@ -104,7 +104,7 @@ public partial class MainWindow
         if (!table.Success)
             return;
 
-        ImGui.TableSetupColumn("##stat", 0, 0.4f);
+        ImGui.TableSetupColumn("##stat", ImGuiTableColumnFlags.WidthStretch, 0.4f);
         ImGui.TableSetupColumn("##opened");
 
         ImGui.TableNextColumn();

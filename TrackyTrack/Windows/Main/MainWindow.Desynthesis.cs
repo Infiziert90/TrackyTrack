@@ -103,7 +103,7 @@ public partial class MainWindow
         if (!table.Success)
             return;
 
-        ImGui.TableSetupColumn("##stat", 0, 0.8f);
+        ImGui.TableSetupColumn("##stat", ImGuiTableColumnFlags.WidthStretch, 0.8f);
         ImGui.TableSetupColumn("##name");
         ImGui.TableSetupColumn("##amount");
 
@@ -279,7 +279,7 @@ public partial class MainWindow
 
         ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
         ImGui.TableSetupColumn("##item");
-        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+        ImGui.TableSetupColumn("##amount", ImGuiTableColumnFlags.WidthStretch, 0.2f);
 
         var items = RewardHistory.Where(pair => pair.Key is > 0 and < 100_000).OrderBy(pair => pair.Key).ToArray();
         using var indent = ImRaii.PushIndent(10.0f);
@@ -335,7 +335,7 @@ public partial class MainWindow
 
         ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, Helper.IconSize.X + 10.0f);
         ImGui.TableSetupColumn("##item");
-        ImGui.TableSetupColumn("##amount", 0, 0.2f);
+        ImGui.TableSetupColumn("##amount", ImGuiTableColumnFlags.WidthStretch, 0.2f);
 
         var items = SourceHistory.OrderByDescending(pair => pair.Value).ToArray();
         using var indent = ImRaii.PushIndent(10.0f);

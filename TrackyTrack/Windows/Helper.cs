@@ -65,7 +65,7 @@ public static class Helper
     public static void NoPotData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);
-        WrappedError("No data stored for pot coffers\nPlease open a pot coffer in occult crescent.");
+        WrappedError("No data stored for treasure or pot coffers\nPlease open a treasure or pot coffer in occult crescent.");
     }
 
     public static void TrackingDisabled(string text)
@@ -405,7 +405,9 @@ public enum Tabs
     [Description("Pyros")] Pyros = 101,
     [Description("Hydatos")] Hydatos = 102,
 
-    [Description("South Horn")] SouthHorn = 150,
+    [Description("Treasure")] Treasure = 150,
+    [Description("Pot")] Pot = 151,
+    [Description("Carrot")] Carrot = 152,
 
     [Description("Gacha 3.0")] Gacha3 = 200,
     [Description("Gacha 4.0")] Gacha4 = 201,

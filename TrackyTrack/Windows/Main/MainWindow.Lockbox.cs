@@ -101,7 +101,7 @@ public partial class MainWindow
             }
         }
         using var table = ImRaii.Table("##TotalStatsTable", 2);
-        ImGui.TableSetupColumn("##stat", 0, 2.0f);
+        ImGui.TableSetupColumn("##stat", ImGuiTableColumnFlags.WidthStretch, 2.0f);
         ImGui.TableSetupColumn("##opened");
 
         ImGui.TableNextColumn();

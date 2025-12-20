@@ -107,7 +107,7 @@ public partial class MainWindow
             if (!table.Success)
                 return;
 
-            ImGui.TableSetupColumn("##TeleportStat", 0, 0.6f);
+            ImGui.TableSetupColumn("##TeleportStat", ImGuiTableColumnFlags.WidthStretch, 0.6f);
             ImGui.TableSetupColumn("##TeleportNum");
 
             ImGui.TableNextColumn();
@@ -250,7 +250,7 @@ public partial class MainWindow
             if (!table.Success)
                 return;
 
-            ImGui.TableSetupColumn("##RepairStat", 0, 0.6f);
+            ImGui.TableSetupColumn("##RepairStat", ImGuiTableColumnFlags.WidthStretch, 0.6f);
             ImGui.TableSetupColumn("##RepairNum");
 
             ImGui.TableNextColumn();

@@ -8,6 +8,7 @@ public static class Sheets
 {
     public static readonly ExcelSheet<Item> ItemSheet;
     public static readonly ExcelSheet<Mount> MountSheet;
+    public static readonly ExcelSheet<Treasure> TreasureSheet;
     public static readonly ExcelSheet<ParamGrow> ParamGrowSheets;
     public static readonly ExcelSheet<GCSupplyDutyReward> GCSupplySheet;
 
@@ -23,6 +24,7 @@ public static class Sheets
     {
         ItemSheet = Plugin.Data.GetExcelSheet<Item>();
         MountSheet = Plugin.Data.GetExcelSheet<Mount>();
+        TreasureSheet = Plugin.Data.GetExcelSheet<Treasure>();
         ParamGrowSheets = Plugin.Data.GetExcelSheet<ParamGrow>();
         GCSupplySheet = Plugin.Data.GetExcelSheet<GCSupplyDutyReward>();
 

@@ -18,6 +18,17 @@ public class OccultTracker
             }
         }
     };
+
+    public uint TreasureOpened = 0;
+    public readonly Dictionary<OccultTerritory, Dictionary<OccultTreasureRarity, Dictionary<DateTime, OccultResult>>> TreasureHistory = new()
+    {
+        { OccultTerritory.SouthHorn, new()
+            {
+                { OccultTreasureRarity.Bronze, [] },
+                { OccultTreasureRarity.Silver, [] },
+            }
+        }
+    };
 }
 
 public record OccultResult
@@ -36,6 +47,12 @@ public record OccultItem(uint Item, uint Count)
 public enum OccultTerritory : uint
 {
     SouthHorn = 1252,
+}
+
+public enum OccultTreasureRarity : uint
+{
+    Bronze = 1596,
+    Silver = 1597,
 }
 
 public enum OccultCofferRarity : uint
@@ -57,7 +74,28 @@ public enum OccultWorth
 
 public static class OccultUtil
 {
-    public static (long Worth, long Total, Dictionary<OccultTerritory, Dictionary<OccultCofferRarity, int>> Dict) GetAmounts(IEnumerable<CharacterConfiguration> characters)
+    public static (long Total, Dictionary<OccultTerritory, Dictionary<OccultTreasureRarity, int>> Dict) GetTreasureAmounts(IEnumerable<CharacterConfiguration> characters)
+    {
+        var totalNumber = 0;
+        var territoryCoffers = new Dictionary<OccultTerritory, Dictionary<OccultTreasureRarity, int>>();
+        foreach (var (territory, rarityDictionary) in characters.SelectMany(c => c.Occult.TreasureHistory))
+        {
+            if (!territoryCoffers.ContainsKey(territory))
+                territoryCoffers[territory] = [];
+
+            foreach (var (rarity, history) in rarityDictionary)
+            {
+                totalNumber += history.Count;
+
+                if (!territoryCoffers[territory].TryAdd(rarity, history.Count))
+                    territoryCoffers[territory][rarity] += history.Count;
+            }
+        }
+
+        return (totalNumber, territoryCoffers);
+    }
+
+    public static (long Worth, long Total, Dictionary<OccultTerritory, Dictionary<OccultCofferRarity, int>> Dict) GetPotAmounts(IEnumerable<CharacterConfiguration> characters)
     {
         var worth = 0L;
         var totalNumber = 0;
@@ -95,14 +133,23 @@ public static class OccultExtensions
         };
     }
 
+    public static string ToName(this OccultTreasureRarity rarity)
+    {
+        return rarity switch
+        {
+            OccultTreasureRarity.Bronze => "Bronze",
+            OccultTreasureRarity.Silver => "Silver",
+            _ => "Unknown"
+        };
+    }
+
     public static string ToName(this OccultCofferRarity rarity)
     {
         return rarity switch
         {
             OccultCofferRarity.Bronze => "Bronze",
             OccultCofferRarity.Silver => "Silver",
-            OccultCofferRarity.Gold => "Gold",
-            OccultCofferRarity.BunnyGold => "Bunny Gold",
+            OccultCofferRarity.Gold or OccultCofferRarity.BunnyGold => "Gold",
             _ => "Unknown"
         };
     }
