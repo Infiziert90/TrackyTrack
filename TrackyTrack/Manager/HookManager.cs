@@ -37,7 +37,16 @@ public unsafe class HookManager
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
     private Hook<TreasureInteractDelegate> TreasureInteractHook;
 
+    private const string UpdateNumberSig = "40 53 48 83 EC ?? 48 63 C2 48 8B D9 44 88 44";
+    private delegate void UpdateNumberDelegate(nint agentLotteryDaily, int index, byte value);
+    private Hook<UpdateNumberDelegate> UpdateNumberHook;
+
+    private const string UpdatePayoutSig = "E8 ?? ?? ?? ?? 4C 8B 74 24 ?? 89 BB";
+    private delegate void UpdatePayoutDelegate(nint agentLotteryDaily, int sum, int mgp);
+    private Hook<UpdatePayoutDelegate> UpdatePayoutHook;
+
     public uint LastSeenItemId;
+    private MiniCactpotData? LastDataSet = null;
 
     public HookManager(Plugin plugin)
     {
@@ -66,6 +75,14 @@ public unsafe class HookManager
         var treasureInteractPtr = Plugin.SigScanner.ScanText(TreasureInteractSig);
         TreasureInteractHook = Plugin.Hook.HookFromAddress<TreasureInteractDelegate>(treasureInteractPtr, TreasureInteractDetour);
         TreasureInteractHook.Enable();
+
+        var updateNumberPtr = Plugin.SigScanner.ScanText(UpdateNumberSig);
+        UpdateNumberHook = Plugin.Hook.HookFromAddress<UpdateNumberDelegate>(updateNumberPtr, UpdateNumberDetour);
+        UpdateNumberHook.Enable();
+
+        var updatePayoutPtr = Plugin.SigScanner.ScanText(UpdatePayoutSig);
+        UpdatePayoutHook = Plugin.Hook.HookFromAddress<UpdatePayoutDelegate>(updatePayoutPtr, UpdatePayoutDetour);
+        UpdatePayoutHook.Enable();
     }
 
     public void Dispose()
@@ -76,6 +93,8 @@ public unsafe class HookManager
         LootAddedHook.Dispose();
         RetainerTaskHook.Dispose();
         TreasureInteractHook.Dispose();
+        UpdateNumberHook.Dispose();
+        UpdatePayoutHook.Dispose();
     }
 
     private void OpenInspect(nint inspectAgent, int starRating, InventoryItem* reward)
@@ -130,7 +149,7 @@ public unsafe class HookManager
     {
         ActorControlSelfHook.Original(category, eventId, param1, param2, param3, param4, param5, param6, param7, param8, targetId, param9);
 
-        // handler for teleport, repair and other message logs
+        // Handler for teleport, repair and other message logs
         if (eventId != 517)
             return;
 
@@ -138,11 +157,11 @@ public unsafe class HookManager
         {
             switch (param1)
             {
-                // teleport log handler
+                // Teleport log handler
                 case 4590:
                     Plugin.TeleportCostHandler(param2);
                     break;
-                // aetheryte ticket log handler
+                // Aetheryte ticket log handler
                 case 4591:
                     Plugin.AetheryteTicketHandler();
                     break;
@@ -266,6 +285,55 @@ public unsafe class HookManager
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Unable to track treasure interaction.");
+        }
+    }
+
+    private void UpdateNumberDetour(nint agentLotteryDaily, int index, byte value)
+    {
+        UpdateNumberHook.Original(agentLotteryDaily, index, value);
+        try
+        {
+            if (LastDataSet != null)
+                return;
+
+            LastDataSet = new MiniCactpotData { Start = { [0] = (byte)index, [1] = value } };
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error while processing UpdateNumber.");
+        }
+    }
+
+    private void UpdatePayoutDetour(nint agentLotteryDaily, int sum, int mgp)
+    {
+        UpdatePayoutHook.Original(agentLotteryDaily, sum, mgp);
+
+        try
+        {
+            if (LastDataSet == null)
+            {
+                Plugin.Log.Error("Reached UpdatePayout without creating LastDataSet?");
+                return;
+            }
+
+            var numbers = new Span<byte>((void*)(agentLotteryDaily + 0x38), 9);
+            for (var i = 0; i < numbers.Length; i++)
+                LastDataSet.FullBoard[i] = numbers[i];
+
+            LastDataSet.Sum = sum;
+            LastDataSet.Payout = mgp;
+
+            var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
+            character.MiniCactpot.Recorded += 1;
+            character.MiniCactpot.History.Add(DateTime.Now, LastDataSet);
+            Plugin.ConfigurationBase.SaveCharacterConfig();
+
+            Plugin.UploadEntry(new Export.MiniCactpotSet(LastDataSet));
+            LastDataSet = null;
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error while processing UpdatePayout.");
         }
     }
 }

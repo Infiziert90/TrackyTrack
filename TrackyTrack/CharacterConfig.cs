@@ -49,6 +49,7 @@ public class CharacterConfiguration
     public EurekaTracker Eureka = new();
     public OccultTracker Occult = new();
     public Lockboxes Lockbox = new();
+    public MiniCactpot MiniCactpot = new();
 
     public CharacterConfiguration() { }
 

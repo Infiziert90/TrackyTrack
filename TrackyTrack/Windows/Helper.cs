@@ -68,6 +68,12 @@ public static class Helper
         WrappedError("No data stored for treasure or pot coffers\nPlease open a treasure or pot coffer in occult crescent.");
     }
 
+    public static void NoMiniCactpotData()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("No data stored for gold saucer\nPlease do a Mini Cactpot game.");
+    }
+
     public static void TrackingDisabled(string text)
     {
         ImGuiHelpers.ScaledDummy(10.0f);

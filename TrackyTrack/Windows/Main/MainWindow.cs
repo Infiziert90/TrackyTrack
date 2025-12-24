@@ -51,6 +51,8 @@ public partial class MainWindow : Window, IDisposable
 
                     LockboxTab();
 
+                    SaucerTab();
+
                     SessionTab();
                 }
             }

@@ -75,6 +75,7 @@ public class InventoryChanged
         {
             var processedChanges = changes.Select(pair => (pair.Key, pair.Value.NewQuantity - pair.Value.OldQuantity)).ToArray();
 
+            // Check for unwanted events, e.g. full gear-set switches or unknown items
             foreach (var processedChange in processedChanges)
             {
                 if (!Sheets.ItemSheet.TryGetRow(processedChange.Key, out var itemRow))

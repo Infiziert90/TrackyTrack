@@ -288,6 +288,21 @@ public static class Export
         }
     }
 
+    public class MiniCactpotSet : Upload
+    {
+        [JsonProperty("start")]
+        public ushort[] Start; // NewtonsoftJson will base64 encode a byte[], so we have to use ushort[] here
+
+        [JsonProperty("board")]
+        public ushort[] Board;
+
+        public MiniCactpotSet(MiniCactpotData data) : base("MiniCactpot")
+        {
+            Start = data.Start.Select(b => (ushort)b).ToArray();
+            Board = data.FullBoard.Select(b => (ushort)b).ToArray();
+        }
+    }
+
     public sealed class ExportMap : ClassMap<GachaLoot>
     {
         public ExportMap()
