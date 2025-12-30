@@ -280,7 +280,20 @@ public unsafe class HookManager
             if (baseId is > 1856 or < 1789)
                 return;
 
-            Plugin.TimerManager.StartTreasure(baseId, treasureObj->Position);
+            var pos = (Vector3)treasureObj->Position;
+            foreach (var (otherPos, _) in OccultUtil.TreasurePositions)
+            {
+                var dis = Vector3.Distance(otherPos, pos);
+                if (dis != 0.0 && dis < 10.0)
+                {
+                    Plugin.Log.Error($"Found invalid treasure position. ({pos.X}, {pos.Y}, {pos.Z})");
+                    Plugin.ChatGui.PrintError("Found invalid treasure position, this is a problem, please contact @infi on discord or per github issues to resolve this.");
+
+                    return;
+                }
+            }
+
+            Plugin.TimerManager.StartTreasure(baseId, pos);
         }
         catch (Exception ex)
         {
