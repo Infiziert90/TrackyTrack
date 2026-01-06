@@ -100,6 +100,8 @@ public class Plugin : IDalamudPlugin
         ClientState.Login += Login;
         ClientState.TerritoryChanged += TerritoryChanged;
 
+        ClientState.TerritoryChanged += ClearHashes;
+
         Login();
 
         // Delay load and save tasks, ensuring that everything has loaded
@@ -110,6 +112,8 @@ public class Plugin : IDalamudPlugin
     {
         ClientState.Login -= Login;
         ClientState.TerritoryChanged -= TerritoryChanged;
+
+        ClientState.TerritoryChanged -= ClearHashes;
 
         InventoryChanged.OnItemsChanged -= TimerManager.StoreCofferResult;
         InventoryChanged.OnItemsChanged -= TimerManager.StoreEurekaResult;
@@ -344,6 +348,11 @@ public class Plugin : IDalamudPlugin
             return;
 
         HookManager.LastSeenItemId = ItemUtil.GetBaseId(changedItem.ItemId).ItemId;
+    }
+
+    private void ClearHashes(ushort _)
+    {
+        Bnpc.UploadHashes.Clear();
     }
 
     #region Draws

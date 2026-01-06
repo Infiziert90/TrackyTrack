@@ -303,6 +303,94 @@ public static class Export
         }
     }
 
+    public class BnpcPair : Upload
+    {
+        [JsonProperty("base")]
+        public uint BaseId;
+
+        [JsonProperty("name")]
+        public uint NameId;
+
+        [JsonProperty("territory")]
+        public uint TerritoryId;
+
+        [JsonProperty("map")]
+        public uint MapId;
+
+        [JsonProperty("level_id")]
+        public uint LevelId;
+
+        [JsonProperty("x")]
+        public float X;
+
+        [JsonProperty("y")]
+        public float Y;
+
+        [JsonProperty("z")]
+        public float Z;
+
+        [JsonProperty("rotation")]
+        public uint Rotation;
+
+        [JsonProperty("enemy_type")]
+        public ushort EnemyType;
+
+        [JsonProperty("level")]
+        public ushort Level;
+
+        [JsonProperty("display_flags")]
+        public uint DisplayFlags;
+
+        [JsonProperty("gm_rank")]
+        public ushort GMRank;
+
+        [JsonProperty("spawn_type")]
+        public ushort SpawnType;
+
+        [JsonProperty("hash")]
+        public string Hashed;
+
+        public BnpcPair(SpawnPacketLayout packet, ushort spawnType) : base("BnpcPairs")
+        {
+            BaseId = packet.BNPCBaseId;
+            NameId = packet.BNPCNameId;
+
+            MapId = Plugin.ClientState.MapId;
+            TerritoryId = Plugin.ClientState.TerritoryType;
+
+            LevelId = packet.LevelId;
+            X = packet.X;
+            Y = packet.Y;
+            Z = packet.Z;
+            Rotation = packet.Rotation;
+
+            EnemyType = packet.EnemyType;
+            Level = packet.Level;
+            DisplayFlags = packet.DisplayFlags;
+            GMRank = packet.GMRank;
+
+            SpawnType = spawnType;
+
+            using var stream = new MemoryStream();
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                writer.Write(BaseId);
+                writer.Write(NameId);
+                writer.Write(MapId);
+                writer.Write(TerritoryId);
+                writer.Write(LevelId);
+                writer.Write(Plugin.PlayerState.ContentId);
+            }
+
+            stream.Position = 0;
+            using (var hash = SHA256.Create())
+            {
+                var result = hash.ComputeHash(stream);
+                Hashed = string.Join("", result.Select(b => $"{b:X2}"));
+            }
+        }
+    }
+
     public sealed class ExportMap : ClassMap<GachaLoot>
     {
         public ExportMap()
