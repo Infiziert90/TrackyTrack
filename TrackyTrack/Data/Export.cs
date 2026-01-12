@@ -8,6 +8,7 @@ using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -341,33 +342,33 @@ public static class Export
         [JsonProperty("display_flags")]
         public uint DisplayFlags;
 
-        [JsonProperty("gm_rank")]
-        public ushort GMRank;
-
         [JsonProperty("spawn_type")]
         public ushort SpawnType;
+
+        [JsonProperty("object_kind")]
+        public ushort ObjectKind;
 
         [JsonProperty("hash")]
         public string Hashed;
 
-        public BnpcPair(SpawnPacketLayout packet, ushort spawnType) : base("BnpcPairs")
+        public unsafe BnpcPair(SpawnNpcPacket* packet, ushort spawnType) : base("BnpcPairs")
         {
-            BaseId = packet.BNPCBaseId;
-            NameId = packet.BNPCNameId;
+            BaseId = packet->Common.BNpcBaseId;
+            NameId = packet->Common.BNpcNameId;
 
             MapId = Plugin.ClientState.MapId;
             TerritoryId = Plugin.ClientState.TerritoryType;
 
-            LevelId = packet.LevelId;
-            X = packet.X;
-            Y = packet.Y;
-            Z = packet.Z;
-            Rotation = packet.Rotation;
+            LevelId = packet->Common.LayoutId;
+            X = packet->Common.Position.X;
+            Y = packet->Common.Position.Y;
+            Z = packet->Common.Position.Z;
+            Rotation = packet->Common.Rotation;
 
-            EnemyType = packet.EnemyType;
-            Level = packet.Level;
-            DisplayFlags = packet.DisplayFlags;
-            GMRank = packet.GMRank;
+            EnemyType = packet->Common.Battalion;
+            Level = packet->Common.Level;
+            DisplayFlags = packet->Common.DisplayFlags;
+            ObjectKind = (ushort)packet->Common.ObjectKind;
 
             SpawnType = spawnType;
 

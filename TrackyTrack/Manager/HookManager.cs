@@ -1,10 +1,11 @@
-﻿using System.Runtime.InteropServices;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using TrackyTrack.Data;
 
@@ -46,16 +47,12 @@ public unsafe class HookManager
     private delegate void UpdatePayoutDelegate(nint agentLotteryDaily, int sum, int mgp);
     private Hook<UpdatePayoutDelegate> UpdatePayoutHook;
 
-    private const string HandleSpawnNPCPacketSig = "E8 ?? ?? ?? ?? B0 ?? 48 8B 5C 24 ?? 48 8B 74 24 ?? 48 83 C4 ?? 5F C3 2D";
-    private delegate nint HandleSpawnNPCPacketDelegate(uint a1, nint a2);
-    private readonly Hook<HandleSpawnNPCPacketDelegate> HandleSpawnNPCPacketHook;
-
-    private const string HandleSpawnBossPacketSig = "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B DA 8B F9 E8 ?? ?? ?? ?? 3C ?? 75 ?? E8 ?? ?? ?? ?? 3C ?? 75 ?? 80 BB ?? ?? ?? ?? ?? 75 ?? 8B 05 ?? ?? ?? ?? 39 43 ?? 0F 85 ?? ?? ?? ?? 0F B6 53 ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F B6 53 ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 44 24 ?? C7 44 24 ?? ?? ?? ?? ?? BA ?? ?? ?? ?? 66 90 48 8D 80 ?? ?? ?? ?? ?? ?? ?? 0F 10 4B ?? 48 8D 9B ?? ?? ?? ?? 0F 11 40 ?? 0F 10 43 ?? 0F 11 48 ?? 0F 10 4B ?? 0F 11 40 ?? 0F 10 43 ?? 0F 11 48 ?? 0F 10 4B ?? 0F 11 40 ?? 0F 10 43 ?? 0F 11 48 ?? 0F 10 4B ?? 0F 11 40 ?? 0F 11 48 ?? 48 83 EA ?? 75 ?? 4C 8D 44 24";
-    private delegate nint HandleSpawnBossPacketDelegate(uint a1, nint a2);
-    private readonly Hook<HandleSpawnBossPacketDelegate> HandleSpawnBossPacketHook;
+    private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
 
     public uint LastSeenItemId;
     private MiniCactpotData? LastDataSet = null;
+
+    public readonly HashSet<string> UploadHashes = [];
 
     public HookManager(Plugin plugin)
     {
@@ -93,13 +90,8 @@ public unsafe class HookManager
         UpdatePayoutHook = Plugin.Hook.HookFromAddress<UpdatePayoutDelegate>(updatePayoutPtr, UpdatePayoutDetour);
         UpdatePayoutHook.Enable();
 
-        var handleSpawnNPCPacketPtr = Plugin.SigScanner.ScanText(HandleSpawnNPCPacketSig);
-        HandleSpawnNPCPacketHook = Plugin.Hook.HookFromAddress<HandleSpawnNPCPacketDelegate>(handleSpawnNPCPacketPtr, HandleSpawnNPCPacketDetour);
+        HandleSpawnNPCPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleSpawnNpcPacket>(PacketDispatcher.MemberFunctionPointers.HandleSpawnNpcPacket, HandleSpawnNPCPacketDetour);
         HandleSpawnNPCPacketHook.Enable();
-
-        var handleSpawnBossPacketPtr = Plugin.SigScanner.ScanText(HandleSpawnBossPacketSig);
-        HandleSpawnBossPacketHook = Plugin.Hook.HookFromAddress<HandleSpawnBossPacketDelegate>(handleSpawnBossPacketPtr, HandleSpawnBossPacketDetour);
-        HandleSpawnBossPacketHook.Enable();
     }
 
     public void Dispose()
@@ -112,8 +104,7 @@ public unsafe class HookManager
         TreasureInteractHook.Dispose();
         UpdateNumberHook.Dispose();
         UpdatePayoutHook.Dispose();
-        HandleSpawnNPCPacketHook.Dispose();
-        HandleSpawnBossPacketHook.Dispose();
+        HandleSpawnNPCPacketHook?.Dispose();
     }
 
     private void OpenInspect(nint inspectAgent, int starRating, InventoryItem* reward)
@@ -369,15 +360,14 @@ public unsafe class HookManager
         }
     }
 
-    private nint HandleSpawnNPCPacketDetour(uint a1, nint a2)
+    private void HandleSpawnNPCPacketDetour(uint targetId, SpawnNpcPacket* packet)
     {
         try
         {
-            var packet = Marshal.PtrToStructure<SpawnPacketLayout>(a2);
-            if (!Sheets.DisallowedBnpcNames.Contains(packet.BNPCNameId) && !Sheets.DisallowedBnpcBase.Contains(packet.BNPCBaseId))
+            if (!Sheets.DisallowedBnpcNames.Contains(packet->Common.BNpcNameId) && !Sheets.DisallowedBnpcBase.Contains(packet->Common.BNpcBaseId))
             {
                 var bnpcPairData = new Export.BnpcPair(packet, 1);
-                if (Bnpc.UploadHashes.Add(bnpcPairData.Hashed))
+                if (UploadHashes.Add(bnpcPairData.Hashed))
                     Plugin.UploadEntry(bnpcPairData);
             }
         }
@@ -386,26 +376,6 @@ public unsafe class HookManager
             Plugin.Log.Error(ex, "Error while processing HandleSpawnNPC.");
         }
 
-        return HandleSpawnNPCPacketHook.Original(a1, a2);
-    }
-
-    private nint HandleSpawnBossPacketDetour(uint a1, nint a2)
-    {
-        try
-        {
-            var packet = Marshal.PtrToStructure<SpawnPacketLayout>(a2);
-            if (!Sheets.DisallowedBnpcNames.Contains(packet.BNPCNameId) && !Sheets.DisallowedBnpcBase.Contains(packet.BNPCBaseId))
-            {
-                var bnpcPairData = new Export.BnpcPair(packet, 2);
-                if (Bnpc.UploadHashes.Add(bnpcPairData.Hashed))
-                    Plugin.UploadEntry(bnpcPairData);
-            }
-        }
-        catch (Exception ex)
-        {
-            Plugin.Log.Error(ex, "Error while processing HandleSpawnBoss.");
-        }
-
-        return HandleSpawnBossPacketHook.Original(a1, a2);
+        HandleSpawnNPCPacketHook!.Original(targetId, packet);
     }
 }

@@ -352,7 +352,7 @@ public class Plugin : IDalamudPlugin
 
     private void ClearHashes(ushort _)
     {
-        Bnpc.UploadHashes.Clear();
+        HookManager.UploadHashes.Clear();
     }
 
     #region Draws
