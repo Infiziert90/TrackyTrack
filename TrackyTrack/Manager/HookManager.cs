@@ -374,9 +374,12 @@ public unsafe class HookManager
         try
         {
             var packet = Marshal.PtrToStructure<SpawnPacketLayout>(a2);
-            var bnpcPairData = new Export.BnpcPair(packet, 1);
-            if (Bnpc.UploadHashes.Add(bnpcPairData.Hashed))
-                Plugin.UploadEntry(bnpcPairData);
+            if (!Sheets.DisallowedBnpcNames.Contains(packet.BNPCNameId) && !Sheets.DisallowedBnpcBase.Contains(packet.BNPCBaseId))
+            {
+                var bnpcPairData = new Export.BnpcPair(packet, 1);
+                if (Bnpc.UploadHashes.Add(bnpcPairData.Hashed))
+                    Plugin.UploadEntry(bnpcPairData);
+            }
         }
         catch (Exception ex)
         {
@@ -391,7 +394,7 @@ public unsafe class HookManager
         try
         {
             var packet = Marshal.PtrToStructure<SpawnPacketLayout>(a2);
-            if (!Sheets.DisallowedBnpcNames.Contains(packet.BNPCNameId))
+            if (!Sheets.DisallowedBnpcNames.Contains(packet.BNPCNameId) && !Sheets.DisallowedBnpcBase.Contains(packet.BNPCBaseId))
             {
                 var bnpcPairData = new Export.BnpcPair(packet, 2);
                 if (Bnpc.UploadHashes.Add(bnpcPairData.Hashed))

@@ -24,6 +24,7 @@ public static class Sheets
     public static readonly uint LowewstValidId;
     public static readonly uint HighestValidId;
 
+    public static HashSet<uint> DisallowedBnpcBase = [3705];
     public static HashSet<uint> DisallowedBnpcNames;
 
     static Sheets()
