@@ -39,18 +39,12 @@ public unsafe class HookManager
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
     private Hook<TreasureInteractDelegate> TreasureInteractHook;
 
-    private const string UpdateNumberSig = "40 53 48 83 EC ?? 48 63 C2 48 8B D9 44 88 44";
-    private delegate void UpdateNumberDelegate(nint agentLotteryDaily, int index, byte value);
-    private Hook<UpdateNumberDelegate> UpdateNumberHook;
-
-    private const string UpdatePayoutSig = "E8 ?? ?? ?? ?? 4C 8B 74 24 ?? 89 BB";
-    private delegate void UpdatePayoutDelegate(nint agentLotteryDaily, int sum, int mgp);
-    private Hook<UpdatePayoutDelegate> UpdatePayoutHook;
-
+    private Hook<AgentLotteryDaily.Delegates.UpdateNumber>? UpdateNumberHook { get; init; }
+    private Hook<AgentLotteryDaily.Delegates.UpdatePayout>? UpdatePayoutHook { get; init; }
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
 
     public uint LastSeenItemId;
-    private MiniCactpotData? LastDataSet = null;
+    private MiniCactpotData? LastDataSet;
 
     public readonly HashSet<string> UploadHashes = [];
 
@@ -82,12 +76,10 @@ public unsafe class HookManager
         TreasureInteractHook = Plugin.Hook.HookFromAddress<TreasureInteractDelegate>(treasureInteractPtr, TreasureInteractDetour);
         TreasureInteractHook.Enable();
 
-        var updateNumberPtr = Plugin.SigScanner.ScanText(UpdateNumberSig);
-        UpdateNumberHook = Plugin.Hook.HookFromAddress<UpdateNumberDelegate>(updateNumberPtr, UpdateNumberDetour);
+        UpdateNumberHook = Plugin.Hook.HookFromAddress<AgentLotteryDaily.Delegates.UpdateNumber>(AgentLotteryDaily.MemberFunctionPointers.UpdateNumber, UpdateNumberDetour);
         UpdateNumberHook.Enable();
 
-        var updatePayoutPtr = Plugin.SigScanner.ScanText(UpdatePayoutSig);
-        UpdatePayoutHook = Plugin.Hook.HookFromAddress<UpdatePayoutDelegate>(updatePayoutPtr, UpdatePayoutDetour);
+        UpdatePayoutHook = Plugin.Hook.HookFromAddress<AgentLotteryDaily.Delegates.UpdatePayout>(AgentLotteryDaily.MemberFunctionPointers.UpdatePayout, UpdatePayoutDetour);
         UpdatePayoutHook.Enable();
 
         HandleSpawnNPCPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleSpawnNpcPacket>(PacketDispatcher.MemberFunctionPointers.HandleSpawnNpcPacket, HandleSpawnNPCPacketDetour);
@@ -102,8 +94,8 @@ public unsafe class HookManager
         LootAddedHook.Dispose();
         RetainerTaskHook.Dispose();
         TreasureInteractHook.Dispose();
-        UpdateNumberHook.Dispose();
-        UpdatePayoutHook.Dispose();
+        UpdateNumberHook?.Dispose();
+        UpdatePayoutHook?.Dispose();
         HandleSpawnNPCPacketHook?.Dispose();
     }
 
@@ -311,9 +303,9 @@ public unsafe class HookManager
         }
     }
 
-    private void UpdateNumberDetour(nint agentLotteryDaily, int index, byte value)
+    private void UpdateNumberDetour(AgentLotteryDaily* agent, int index, byte value)
     {
-        UpdateNumberHook.Original(agentLotteryDaily, index, value);
+        UpdateNumberHook!.Original(agent, index, value);
         try
         {
             if (LastDataSet != null)
@@ -327,9 +319,9 @@ public unsafe class HookManager
         }
     }
 
-    private void UpdatePayoutDetour(nint agentLotteryDaily, int sum, int mgp)
+    private void UpdatePayoutDetour(AgentLotteryDaily* agent, int sum, int mgp)
     {
-        UpdatePayoutHook.Original(agentLotteryDaily, sum, mgp);
+        UpdatePayoutHook!.Original(agent, sum, mgp);
 
         try
         {
@@ -339,9 +331,8 @@ public unsafe class HookManager
                 return;
             }
 
-            var numbers = new Span<byte>((void*)(agentLotteryDaily + 0x38), 9);
-            for (var i = 0; i < numbers.Length; i++)
-                LastDataSet.FullBoard[i] = numbers[i];
+            for (var i = 0; i < agent->Numbers.Length; i++)
+                LastDataSet.FullBoard[i] = agent->Numbers[i];
 
             LastDataSet.Sum = sum;
             LastDataSet.Payout = mgp;
@@ -364,7 +355,16 @@ public unsafe class HookManager
     {
         try
         {
-            if (!Sheets.DisallowedBnpcNames.Contains(packet->Common.BNpcNameId) && !Sheets.DisallowedBnpcBase.Contains(packet->Common.BNpcBaseId))
+            if (packet->Common.ObjectKind == ObjectKind.BattleNpc)
+            {
+                if ((BattleNpcSubKind)packet->Common.SubKind is BattleNpcSubKind.Pet or BattleNpcSubKind.Buddy or BattleNpcSubKind.RaceChocobo)
+                {
+                    HandleSpawnNPCPacketHook!.Original(targetId, packet);
+                    return;
+                }
+            }
+
+            if (!Sheets.DisallowedBnpcBase.Contains(packet->Common.BaseId))
             {
                 var bnpcPairData = new Export.BnpcPair(packet, 1);
                 if (UploadHashes.Add(bnpcPairData.Hashed))

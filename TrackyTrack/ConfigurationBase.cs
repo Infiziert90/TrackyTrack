@@ -81,6 +81,8 @@ public class ConfigurationBase : IDisposable
         {
             var file = new FileInfo(Path.Combine(ConfigurationDirectory, $"{contentId}.json"));
             config = JsonConvert.DeserializeObject<CharacterConfiguration>(LoadFile(file));
+            if (config == null)
+                Plugin.Log.Error($"Found invalid json file: {contentId}.json");
         }
         catch (Exception ex)
         {

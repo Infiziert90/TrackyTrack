@@ -60,6 +60,7 @@ public class CharacterConfiguration
         World = local.HomeWorld.Value.Name.ToString();
     }
 
+    // TODO fix invalid state on login screen from PlayerState not being loaded
     public static CharacterConfiguration CreateNew() => new()
     {
         LocalContentId = Plugin.PlayerState.ContentId,

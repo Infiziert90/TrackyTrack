@@ -353,8 +353,8 @@ public static class Export
 
         public unsafe BnpcPair(SpawnNpcPacket* packet, ushort spawnType) : base("BnpcPairs")
         {
-            BaseId = packet->Common.BNpcBaseId;
-            NameId = packet->Common.BNpcNameId;
+            BaseId = packet->Common.BaseId;
+            NameId = packet->Common.NameId;
 
             MapId = Plugin.ClientState.MapId;
             TerritoryId = Plugin.ClientState.TerritoryType;
@@ -445,7 +445,7 @@ public static class Export
         }
         catch (Exception ex)
         {
-            Plugin.Log.Error(ex, "Upload failed");
+            Plugin.Log.Warning(ex, "Upload failed");
         }
     }
 }
