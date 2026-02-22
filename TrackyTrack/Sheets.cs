@@ -10,6 +10,7 @@ public static class Sheets
     public static readonly ExcelSheet<Mount> MountSheet;
     public static readonly ExcelSheet<Treasure> TreasureSheet;
     public static readonly ExcelSheet<ParamGrow> ParamGrowSheets;
+    public static readonly ExcelSheet<TerritoryType> TerritoryTypeSheet;
     public static readonly ExcelSheet<GCSupplyDutyReward> GCSupplySheet;
 
     public static readonly uint MaxLevel;
@@ -20,7 +21,8 @@ public static class Sheets
     public static readonly uint LowewstValidId;
     public static readonly uint HighestValidId;
 
-    public static HashSet<uint> DisallowedBnpcBase = [3705];
+    public static readonly HashSet<uint> HousingTerritory;
+    public static readonly HashSet<uint> DisallowedBnpcBase = [3705];
 
     static Sheets()
     {
@@ -28,6 +30,7 @@ public static class Sheets
         MountSheet = Plugin.Data.GetExcelSheet<Mount>();
         TreasureSheet = Plugin.Data.GetExcelSheet<Treasure>();
         ParamGrowSheets = Plugin.Data.GetExcelSheet<ParamGrow>();
+        TerritoryTypeSheet = Plugin.Data.GetExcelSheet<TerritoryType>();
         GCSupplySheet = Plugin.Data.GetExcelSheet<GCSupplyDutyReward>();
 
         MaxLevel = ParamGrowSheets.Where(l => l.ExpToNext > 0).Max(l => l.RowId);
@@ -37,6 +40,8 @@ public static class Sheets
 
         LowewstValidId = 100;
         HighestValidId = ItemSheet.Where(i => i.Icon > 0).MaxBy(i => i.RowId).RowId;
+
+        HousingTerritory = TerritoryTypeSheet.Where(r => r.TerritoryIntendedUse.RowId is 13 or 14).Select(r => r.RowId).ToHashSet();
     }
 
     public static Item GetItem(uint itemId) => ItemSheet.GetRow(ItemUtil.GetBaseId(itemId).ItemId);

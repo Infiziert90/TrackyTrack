@@ -355,6 +355,12 @@ public unsafe class HookManager
     {
         try
         {
+            if (Sheets.HousingTerritory.Contains(Plugin.ClientState.TerritoryType))
+            {
+                HandleSpawnNPCPacketHook!.Original(targetId, packet);
+                return;
+            }
+
             if (packet->Common.ObjectKind == ObjectKind.BattleNpc)
             {
                 if ((BattleNpcSubKind)packet->Common.SubKind is BattleNpcSubKind.Pet or BattleNpcSubKind.Buddy or BattleNpcSubKind.RaceChocobo)
