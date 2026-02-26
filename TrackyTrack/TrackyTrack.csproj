@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+<Project Sdk="Dalamud.NET.Sdk/14.0.2">
     <PropertyGroup>
         <Authors>Infi</Authors>
-        <Version>1.6.7.4</Version>
-        <Description>Tracking data is fun</Description>
+        <Version>1.6.7.5</Version>
         <PackageProjectUrl>https://github.com/Infiziert90/TrackyTrack</PackageProjectUrl>
     </PropertyGroup>
 

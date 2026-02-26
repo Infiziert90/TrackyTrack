@@ -360,7 +360,7 @@ public unsafe class HookManager
             if (Sheets.HousingTerritory.Contains(Plugin.ClientState.TerritoryType))
                 return;
 
-            if (packet->Common.ObjectKind != ObjectKind.Retainer)
+            if (packet->Common.ObjectKind == ObjectKind.Retainer)
                 return;
 
             if (packet->Common.ObjectKind == ObjectKind.BattleNpc)
@@ -369,12 +369,12 @@ public unsafe class HookManager
                     return;
             }
 
-            if (!Sheets.DisallowedBnpcBase.Contains(packet->Common.BaseId))
-            {
-                var bnpcPairData = new Export.BnpcPair(packet, 1);
-                if (UploadHashes.Add(bnpcPairData.Hashed))
-                    Plugin.UploadEntry(bnpcPairData);
-            }
+            if (Sheets.DisallowedBnpcBase.Contains(packet->Common.BaseId))
+                return;
+
+            var bnpcPairData = new Export.BnpcPair(packet, 1);
+            if (UploadHashes.Add(bnpcPairData.Hashed))
+                Plugin.UploadEntry(bnpcPairData);
         }
         catch (Exception ex)
         {
