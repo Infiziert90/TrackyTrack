@@ -350,7 +350,7 @@ public class Plugin : IDalamudPlugin
         HookManager.LastSeenItemId = ItemUtil.GetBaseId(changedItem.ItemId).ItemId;
     }
 
-    private void ClearHashes(ushort _)
+    private void ClearHashes(uint _)
     {
         HookManager.UploadHashes.Clear();
     }
@@ -395,7 +395,7 @@ public class Plugin : IDalamudPlugin
         }
     }
 
-    private void TerritoryChanged(ushort _)
+    private void TerritoryChanged(uint _)
     {
         // trigger the warning also for people that just installed it
         if (Configuration.UploadNotification)

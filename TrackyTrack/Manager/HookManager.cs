@@ -1,6 +1,7 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -14,10 +15,6 @@ namespace TrackyTrack.Manager;
 public unsafe class HookManager
 {
     private readonly Plugin Plugin;
-
-    private const string DesynthResultSig = "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D9 41 0F B6 F8 0F B7 F2 8B E9 E8 ?? ?? ?? ?? 44 0F B6 54 24 ?? 44 0F B6 CF 44 88 54 24 ?? 44 0F B7 C6 8B D5";
-    private delegate void DesynthResultDelegate(nuint a1, ushort eventId, byte responseId, uint* args, byte argCount);
-    private Hook<DesynthResultDelegate> DesynthResultHook;
 
     private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
     private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, uint param7, uint param8, ulong targetId, byte param9);
@@ -35,10 +32,11 @@ public unsafe class HookManager
     private delegate void RetainerTaskResultDelegate(AgentRetainerTask* agent, nint someLuaPointer, nint packet);
     private Hook<RetainerTaskResultDelegate> RetainerTaskHook;
 
-    private const string TreasureInteractSig = "E9 ?? ?? ?? ?? 8B 05 ?? ?? ?? ?? 85 C0";
+    private const string TreasureInteractSig = "E9 ?? ?? ?? ?? 48 63 05";
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
     private Hook<TreasureInteractDelegate> TreasureInteractHook;
 
+    private Hook<PacketDispatcher.Delegates.HandleEventYieldPacket> DesynthResultHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdateNumber>? UpdateNumberHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdatePayout>? UpdatePayoutHook { get; init; }
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
@@ -52,8 +50,7 @@ public unsafe class HookManager
     {
         Plugin = plugin;
 
-        var desynthResultPtr = Plugin.SigScanner.ScanText(DesynthResultSig);
-        DesynthResultHook = Plugin.Hook.HookFromAddress<DesynthResultDelegate>(desynthResultPtr, DesynthResultPacket);
+        DesynthResultHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleEventYieldPacket>(PacketDispatcher.MemberFunctionPointers.HandleEventYieldPacket, DesynthResultPacket);
         DesynthResultHook.Enable();
 
         var actorControlSelfPtr = Plugin.SigScanner.ScanText(ActorControlSig);
@@ -125,12 +122,12 @@ public unsafe class HookManager
         }
     }
 
-    private void DesynthResultPacket(nuint a1, ushort eventId, byte responseId, uint* args, byte argCount)
+    private void DesynthResultPacket(EventId id, short scene, byte responseId, int* intParams, byte argCount)
     {
-        DesynthResultHook.Original(a1, eventId, responseId, args, argCount);
+        DesynthResultHook.Original(id, scene, responseId, intParams, argCount);
 
         // DesynthResult is triggered by multiple events
-        if (a1 != 3735552)
+        if (id != 3735552)
             return;
 
         try
@@ -254,11 +251,11 @@ public unsafe class HookManager
                 return;
             }
 
-            var primary = ItemUtil.GetBaseId(venture->RewardItemIds[0]);
-            var primaryCount = (short) venture->RewardItemCount[0];
+            var primary = ItemUtil.GetBaseId(venture->RetainerData.RewardItemIds[0]);
+            var primaryCount = (short) venture->RetainerData.RewardItemCount[0];
 
-            var additionalItem = ItemUtil.GetBaseId(venture->RewardItemIds[1]);
-            var additionalCount = (short) venture->RewardItemCount[1];
+            var additionalItem = ItemUtil.GetBaseId(venture->RetainerData.RewardItemIds[1]);
+            var additionalCount = (short) venture->RetainerData.RewardItemCount[1];
 
             Plugin.RetainerHandler(venture->RetainerTaskId, activeRetainer->Level, new VentureItem(primary.ItemId, primaryCount, primary.Kind == ItemKind.Hq), new VentureItem(additionalItem.ItemId, additionalCount, additionalItem.Kind == ItemKind.Hq));
         }
