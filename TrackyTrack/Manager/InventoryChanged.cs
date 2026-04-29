@@ -39,7 +39,7 @@ public class InventoryChanged
         var changes = new Dictionary<uint, (int NewQuantity, int OldQuantity)>();
         foreach (var (e, _, type) in events.Select(e => (e, e.Item, e.Type)))
         {
-            if (e.Item.ContainerType == GameInventoryType.DamagedGear)
+            if (e.Item.ContainerType == GameInventoryType.BlockedItems)
                 continue;
 
             switch (type)
