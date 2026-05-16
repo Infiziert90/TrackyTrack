@@ -92,5 +92,5 @@ public struct BulkResult
     public void AddItem(uint item, uint count, bool isHQ) => Received[0] = new ItemResult(ItemUtil.GetBaseId(item).ItemId, count, isHQ);
     public void AddCrystal(uint item, uint count) => Received.Add(new ItemResult(item, count, false));
 
-    public bool IsValid => Source is > 100 and < 100_000 && Received[0].Item is > 100 and < 100_000 && Received.Count <= 3;
+    public bool IsValid => Source is > 100 and < 100_000 && Sheets.GetItem(Source).Desynth > 0 && Received[0].Item is > 100 and < 100_000 && Received.Count <= 3;
 }

@@ -265,6 +265,12 @@ public class TimerManager
         var lastBaseId = LastBaseId;
         LastBaseId = 0;
 
+        if (ChestPosition == Vector3.Zero)
+        {
+            Plugin.Log.Warning("Invalid chest position found for occult treasure.");
+            return;
+        }
+
         // This range should include all treasure coffers
         if (lastBaseId is > 1856 or < 1789)
             return;
@@ -354,6 +360,12 @@ public class TimerManager
             lastFateId = 0;
         else
             LastBunnyFateId = 0; // this will also set it to 0 for a second chance pot, which is preferred
+
+        if (pos == Vector3.Zero)
+        {
+            Plugin.Log.Warning("Invalid chest position found for occult bunny.");
+            return;
+        }
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         character.Occult.Opened += 1;
