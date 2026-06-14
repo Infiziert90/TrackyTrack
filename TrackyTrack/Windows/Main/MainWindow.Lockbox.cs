@@ -40,8 +40,11 @@ public partial class MainWindow
         var nameDict = new SortedDictionary<uint, (string Name, float Width)>();
         foreach (var lockboxId in LockboxContent.Keys)
         {
-            var name = Sheets.GetItem(lockboxId).Name.ToString();
-            nameDict[lockboxId] = (name, ImGui.CalcTextSize(name).X + styles.ItemSpacing.X * 2);
+            var name = Sheets.GetItem(lockboxId).Name;
+            if (name.IsEmpty)
+                continue;
+
+            nameDict[lockboxId] = (name.ToString(), ImGui.CalcTextSize(name.ToString()).X + styles.ItemSpacing.X * 2);
         }
 
         var pos = ImGui.GetCursorPos();
@@ -153,7 +156,7 @@ public partial class MainWindow
             .EnableSortSpec()
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
-            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Obtained}"), initWidth: 0.2f)
+            .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Obtained}"), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.2f)
             .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
             .Draw(unsortedList);
     }
@@ -166,6 +169,9 @@ public partial class MainWindow
         LockboxContent.Clear();
         foreach (var (type, innerDict) in characters.SelectMany(s => s.Lockbox.History))
         {
+            if (type == 0)
+                continue;
+
             if (Lockboxes.Logograms.Contains((uint)type) || Lockboxes.Fragments.Contains((uint)type))
                 continue;
 

@@ -41,6 +41,7 @@ public class CharacterConfiguration
     public uint Skybuilder = 0;
 
     public Desynth Storage = new();
+    public Reduction Reduction = new();
     public VentureCoffer Coffer = new();
     public GachaThreeZero GachaThreeZero = new();
     public GachaFourZero GachaFourZero = new();

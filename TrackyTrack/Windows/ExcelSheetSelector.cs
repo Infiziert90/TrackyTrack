@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Lumina.Excel;
 
 // From: https://github.com/UnknownX7/Hypostasis/blob/master/ImGui/ExcelSheet.cs
@@ -67,12 +68,15 @@ public static class ExcelSheetSelector<T> where T : struct, IExcelRow<T>
             return false;
 
         ImGui.SetNextWindowSize(options.Size ?? new Vector2(0, 250 * ImGuiHelpers.GlobalScale));
-        if (!ImGui.BeginPopupContextItem(id, options.PopupFlags))
+        using var contextPopupItem = ImRaii.ContextPopupItem(id, options.PopupFlags);
+        if (!contextPopupItem.Success)
             return false;
 
         ExcelSheetSearchInput(id, sheet, options.SearchPredicate ?? ((row, s) => options.FormatRow(row).Contains(s, StringComparison.CurrentCultureIgnoreCase)));
 
-        ImGui.BeginChild("ExcelSheetSearchList", Vector2.Zero, true);
+        using var child = ImRaii.Child("ExcelSheetSearchList", Vector2.Zero, true);
+        if (!child.Success)
+            return false;
 
         var ret = false;
         var drawSelectable = options.DrawSelectable ?? ((row, selected) => ImGui.Selectable(options.FormatRow(row), selected));
@@ -81,11 +85,13 @@ public static class ExcelSheetSelector<T> where T : struct, IExcelRow<T>
             foreach (var i in clipper.Rows)
             {
                 var row = (T) FilteredSearchSheet[i];
-                ImGui.PushID(id);
-                if (!drawSelectable(row, options.IsRowSelected(row))) continue;
+
+                using var pushedId = ImRaii.PushId(id);
+                if (!drawSelectable(row, options.IsRowSelected(row)))
+                    continue;
+
                 selectedRow = row.RowId;
                 ret = true;
-                ImGui.PopID();
             }
         }
 
@@ -93,8 +99,6 @@ public static class ExcelSheetSelector<T> where T : struct, IExcelRow<T>
         if (ret && options.CloseOnSelection)
             ImGui.CloseCurrentPopup();
 
-        ImGui.EndChild();
-        ImGui.EndPopup();
         return ret;
     }
 }

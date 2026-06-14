@@ -26,6 +26,12 @@ public static class Helper
         WrappedError("No data stored for desynthesis\nPlease desynthesis an item.");
     }
 
+    public static void NoReductionData()
+    {
+        ImGuiHelpers.ScaledDummy(10.0f);
+        WrappedError("No data stored for reduction\nPlease reduce an item.");
+    }
+
     public static void NoRetainerData()
     {
         ImGuiHelpers.ScaledDummy(10.0f);

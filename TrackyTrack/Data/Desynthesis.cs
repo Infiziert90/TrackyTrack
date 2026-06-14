@@ -70,7 +70,7 @@ public record DesynthResult(uint Source, ItemResult[] Received, ushort ClassLeve
     }
 }
 
-public record ItemResult(uint Item, uint Count, bool HQ)
+public record ItemResult(uint Item, uint Count, bool HQ = false)
 {
     public uint[] Combined() => [ItemUtil.GetBaseId(Item).ItemId, Count];
 

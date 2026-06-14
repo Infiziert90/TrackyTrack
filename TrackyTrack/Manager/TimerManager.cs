@@ -12,6 +12,9 @@ public class TimerManager
     private BulkResult LastBulkResult = new();
     private readonly Timer AwaitingBulkDesynth = new(1 * 500);
 
+    public ReductionResult LastReductionResult = new();
+    private readonly Timer AwaitingReduction = new(1 * 500);
+
     public readonly Timer TicketUsedTimer = new(1 * 500);
 
     public uint Repaired;
@@ -35,6 +38,9 @@ public class TimerManager
         AwaitingBulkDesynth.AutoReset = false;
         AwaitingBulkDesynth.Elapsed += StoreBulkResult;
 
+        AwaitingReduction.AutoReset = false;
+        AwaitingReduction.Elapsed += StoreReductionResult;
+
         TicketUsedTimer.AutoReset = false;
 
         RepairTimer.AutoReset = false;
@@ -53,6 +59,13 @@ public class TimerManager
     {
         LastBulkResult = new BulkResult();
         AwaitingBulkDesynth.Start();
+    }
+
+    public void StartReduction(uint source, uint collectability)
+    {
+        LastReductionResult = new ReductionResult(source, collectability);
+        AwaitingReduction.Start();
+        LastReductionResult.AwaitingResults = true;
     }
 
     public void StartTicketUsed()
@@ -144,6 +157,28 @@ public class TimerManager
 
         Plugin.ConfigurationBase.SaveCharacterConfig();
         Plugin.UploadEntry(new Export.DesynthesisResult(desynthResult));
+    }
+
+    private void StoreReductionResult(object? _, ElapsedEventArgs __)
+    {
+        LastReductionResult.AwaitingResults = false;
+
+        if (!LastReductionResult.IsValid)
+            return;
+
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
+
+        character.Reduction.History.Add(DateTime.Now, LastReductionResult);
+        foreach (var result in LastReductionResult.Received.Where(r => r.Item != 0))
+        {
+            if (!character.Reduction.Total.TryAdd(result.Item, result.Count))
+                character.Reduction.Total[result.Item] += result.Count;
+        }
+
+        Plugin.ConfigurationBase.SaveCharacterConfig();
+        Plugin.UploadEntry(new Export.ReductionUpload(LastReductionResult));
+
+        LastReductionResult = new ReductionResult();
     }
 
     private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];

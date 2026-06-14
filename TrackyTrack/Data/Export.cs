@@ -107,6 +107,29 @@ public static class Export
         }
     }
 
+    public class ReductionUpload : Upload
+    {
+        [JsonProperty("source")]
+        public uint Source;
+
+        [JsonProperty("collectability")]
+        public uint Collectability;
+
+        [JsonProperty("rewards")]
+        public uint[] Rewards;
+
+        [JsonProperty("bonus")]
+        public bool Bonus;
+
+        public ReductionUpload(ReductionResult result) : base("Reduction")
+        {
+            Source = ItemUtil.GetBaseId(result.Source).ItemId;
+            Collectability = result.Collectability;
+            Rewards = result.Received.SelectMany(r => r.Combined()).ToArray();
+            Bonus = result.HasBonus;
+        }
+    }
+
     public class VentureLoot : Upload
     {
         [JsonProperty("venture_type")]

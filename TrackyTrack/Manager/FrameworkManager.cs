@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
+﻿using Dalamud.Game.Chat;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using TrackyTrack.Data;
@@ -33,6 +34,8 @@ public class FrameworkManager
         Plugin.Framework.Update += TicketTracker;
         Plugin.Framework.Update += CurrencyTracker;
         Plugin.Framework.Update += OccultTracker;
+
+        Plugin.ChatGui.LogMessage += ChatGuiOnLogMessage;
     }
 
     public void Dispose()
@@ -40,6 +43,41 @@ public class FrameworkManager
         Plugin.Framework.Update -= TicketTracker;
         Plugin.Framework.Update -= CurrencyTracker;
         Plugin.Framework.Update -= OccultTracker;
+        Plugin.ChatGui.LogMessage -= ChatGuiOnLogMessage;
+    }
+
+    private void ChatGuiOnLogMessage(ILogMessage message)
+    {
+        // Check if message is Reduction start
+        if (message.LogMessageId == 3553)
+        {
+            // source + collectability
+            if (message.ParameterCount != 2)
+                return;
+
+            var source = message.Parameters[0].UIntValue;
+            var collectability = message.Parameters[1].UIntValue;
+
+            Plugin.TimerManager.StartReduction(source, collectability);
+        }
+
+        if (!Plugin.TimerManager.LastReductionResult.AwaitingResults)
+            return;
+
+        if (message.LogMessageId == 3563)
+            Plugin.TimerManager.LastReductionResult.SetBonus();
+
+        if (message.LogMessageId is 3555 or 3554)
+        {
+            // reward + count
+            if (message.ParameterCount is 1 or 2)
+            {
+                var reward = message.Parameters[0].UIntValue;
+                var count = message.ParameterCount == 2 ? message.Parameters[1].UIntValue : 1;
+
+                Plugin.TimerManager.LastReductionResult.AddItem(reward, count);
+            }
+        }
     }
 
     private unsafe void ScanCurrentCharacter()
