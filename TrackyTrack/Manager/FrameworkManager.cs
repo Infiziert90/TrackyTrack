@@ -75,6 +75,7 @@ public class FrameworkManager
                 var reward = message.Parameters[0].UIntValue;
                 var count = message.ParameterCount == 2 ? message.Parameters[1].UIntValue : 1;
 
+                Plugin.Log.Information($"Reward: {reward}, Count: {count}, ParameterCount: {message.ParameterCount}, Format: {message.FormatLogMessageForDebugging()}");
                 Plugin.TimerManager.LastReductionResult.AddItem(reward, count);
             }
         }

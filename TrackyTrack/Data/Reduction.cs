@@ -39,4 +39,7 @@ public struct ReductionResult
     }
 
     public bool IsValid => Source > 0 && Collectability > 0 && Received.Count is > 0 and <= 3;
+
+    public ReductionResult Clone()
+        => new() {Source = Source, Collectability = Collectability, Received = [..Received], HasBonus = HasBonus};
 }

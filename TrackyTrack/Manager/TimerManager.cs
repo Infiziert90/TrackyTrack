@@ -13,7 +13,7 @@ public class TimerManager
     private readonly Timer AwaitingBulkDesynth = new(1 * 500);
 
     public ReductionResult LastReductionResult = new();
-    private readonly Timer AwaitingReduction = new(1 * 500);
+    private readonly Timer AwaitingReduction = new(1 * 200);
 
     public readonly Timer TicketUsedTimer = new(1 * 500);
 
@@ -63,9 +63,8 @@ public class TimerManager
 
     public void StartReduction(uint source, uint collectability)
     {
-        LastReductionResult = new ReductionResult(source, collectability);
+        LastReductionResult = new ReductionResult(source, collectability) { AwaitingResults = true, };
         AwaitingReduction.Start();
-        LastReductionResult.AwaitingResults = true;
     }
 
     public void StartTicketUsed()
@@ -145,9 +144,10 @@ public class TimerManager
         if (!LastBulkResult.IsValid)
             return;
 
+        var desynthResult = new DesynthResult(LastBulkResult);
+
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
 
-        var desynthResult = new DesynthResult(LastBulkResult);
         character.Storage.History.Add(DateTime.Now, desynthResult);
         foreach (var result in LastBulkResult.Received.Where(r => r.Item != 0))
         {
@@ -161,24 +161,23 @@ public class TimerManager
 
     private void StoreReductionResult(object? _, ElapsedEventArgs __)
     {
-        LastReductionResult.AwaitingResults = false;
+        var lastReduction = LastReductionResult.Clone();
+        LastReductionResult = new ReductionResult();
 
-        if (!LastReductionResult.IsValid)
+        if (!lastReduction.IsValid)
             return;
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
 
-        character.Reduction.History.Add(DateTime.Now, LastReductionResult);
-        foreach (var result in LastReductionResult.Received.Where(r => r.Item != 0))
+        character.Reduction.History.Add(DateTime.Now, lastReduction);
+        foreach (var result in lastReduction.Received.Where(r => r.Item != 0))
         {
             if (!character.Reduction.Total.TryAdd(result.Item, result.Count))
                 character.Reduction.Total[result.Item] += result.Count;
         }
 
         Plugin.ConfigurationBase.SaveCharacterConfig();
-        Plugin.UploadEntry(new Export.ReductionUpload(LastReductionResult));
-
-        LastReductionResult = new ReductionResult();
+        Plugin.UploadEntry(new Export.ReductionUpload(lastReduction));
     }
 
     private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];
