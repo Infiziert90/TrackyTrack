@@ -86,5 +86,13 @@ public partial class ConfigWindow
             if (ImGui.Button("Ko-Fi Tip"))
                 Dalamud.Utility.Util.OpenLink("https://ko-fi.com/infiii");
         }
+
+        ImGui.SameLine();
+
+        using (ImRaii.PushColor(ImGuiCol.Button, ImGuiColors.DalamudOrange))
+        {
+            if (ImGui.Button("Website"))
+                Dalamud.Utility.Util.OpenLink("https://xivstats.com/");
+        }
     }
 }

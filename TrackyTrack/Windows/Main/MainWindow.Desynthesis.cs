@@ -375,6 +375,14 @@ public partial class MainWindow
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
+        using (ImRaii.PushColor(ImGuiCol.Button, ImGuiColors.ParsedBlue))
+        {
+            if (ImGui.Button("Improved Website Version"))
+                Dalamud.Utility.Util.OpenLink("https://xivstats.com/desynth");
+        }
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+
         var longText = "Data Source";
         var width = ImGui.CalcTextSize(longText).X + (20.0f * ImGuiHelpers.GlobalScale);
 

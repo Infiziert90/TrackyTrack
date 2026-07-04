@@ -25,14 +25,15 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Lockboxes");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Bunny Coffers");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Desynthesis");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "- Reduction");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Retainer Ventures");
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
 
         ImGui.TextColored(ImGuiColors.DalamudViolet, "If you'd like to see the results");
-        if (ImGui.Button("Click Me"))
-            Dalamud.Utility.Util.OpenLink("https://gacha.infi.ovh/");
+        if (ImGui.Button("Website"))
+            Dalamud.Utility.Util.OpenLink("https://xivstats.com/");
 
         ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.Separator();
