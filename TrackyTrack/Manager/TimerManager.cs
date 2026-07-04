@@ -9,11 +9,11 @@ public class TimerManager
 {
     private readonly Plugin Plugin;
 
-    private BulkResult LastBulkResult = new();
-    private readonly Timer AwaitingBulkDesynth = new(1 * 500);
-
     public ReductionResult LastReductionResult = new();
     private readonly Timer AwaitingReduction = new(1 * 200);
+
+    public DesynthResultV2 LastDesynthesisResult = new();
+    private readonly Timer AwaitingDesynthesis = new(1 * 200);
 
     public readonly Timer TicketUsedTimer = new(1 * 500);
 
@@ -35,11 +35,11 @@ public class TimerManager
     {
         Plugin = plugin;
 
-        AwaitingBulkDesynth.AutoReset = false;
-        AwaitingBulkDesynth.Elapsed += StoreBulkResult;
-
         AwaitingReduction.AutoReset = false;
         AwaitingReduction.Elapsed += StoreReductionResult;
+
+        AwaitingDesynthesis.AutoReset = false;
+        AwaitingDesynthesis.Elapsed += StoreDesynthesisResult;
 
         TicketUsedTimer.AutoReset = false;
 
@@ -55,16 +55,16 @@ public class TimerManager
 
     public void Dispose() { }
 
-    public void StartBulk()
-    {
-        LastBulkResult = new BulkResult();
-        AwaitingBulkDesynth.Start();
-    }
-
     public void StartReduction(uint source, uint collectability)
     {
         LastReductionResult = new ReductionResult(source, collectability) { AwaitingResults = true, };
         AwaitingReduction.Start();
+    }
+
+    public void StartDesynthesis(uint source)
+    {
+        LastDesynthesisResult = new DesynthResultV2(source) { AwaitingResults = true, };
+        AwaitingDesynthesis.Start();
     }
 
     public void StartTicketUsed()
@@ -112,53 +112,6 @@ public class TimerManager
         Plugin.ConfigurationBase.SaveCharacterConfig();
     }
 
-    public void DesynthItemAdded((uint ItemId, uint Quantity) changedItem)
-    {
-        if (!AwaitingBulkDesynth.Enabled)
-            return;
-
-        // 19 and below are crystals
-        var item = ItemUtil.GetBaseId(changedItem.ItemId);
-
-        if (item.ItemId > 19)
-            LastBulkResult.AddItem(item.ItemId, changedItem.Quantity, item.Kind == ItemKind.Hq);
-        else
-            LastBulkResult.AddCrystal(item.ItemId, changedItem.Quantity);
-    }
-
-    public void DesynthItemRemoved((uint ItemId, uint Quantity) changedItem)
-    {
-        if (!AwaitingBulkDesynth.Enabled)
-            return;
-
-        // Impossible to bulk desynth collectables
-        var item = ItemUtil.GetBaseId(changedItem.ItemId);
-        if (item.Kind == ItemKind.Collectible)
-            return;
-
-        LastBulkResult.AddSource(item.ItemId);
-    }
-
-    private void StoreBulkResult(object? _, ElapsedEventArgs __)
-    {
-        if (!LastBulkResult.IsValid)
-            return;
-
-        var desynthResult = new DesynthResult(LastBulkResult);
-
-        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
-
-        character.Storage.History.Add(DateTime.Now, desynthResult);
-        foreach (var result in LastBulkResult.Received.Where(r => r.Item != 0))
-        {
-            if (!character.Storage.Total.TryAdd(result.Item, result.Count))
-                character.Storage.Total[result.Item] += result.Count;
-        }
-
-        Plugin.ConfigurationBase.SaveCharacterConfig();
-        Plugin.UploadEntry(new Export.DesynthesisResult(desynthResult));
-    }
-
     private void StoreReductionResult(object? _, ElapsedEventArgs __)
     {
         var lastReduction = LastReductionResult.Clone();
@@ -178,6 +131,27 @@ public class TimerManager
 
         Plugin.ConfigurationBase.SaveCharacterConfig();
         Plugin.UploadEntry(new Export.ReductionUpload(lastReduction));
+    }
+
+    private void StoreDesynthesisResult(object? _, ElapsedEventArgs __)
+    {
+        var lastDesynthesis = LastDesynthesisResult.Clone();
+        LastDesynthesisResult = new DesynthResultV2();
+
+        if (!lastDesynthesis.IsValid)
+            return;
+
+        var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
+
+        character.Storage.History.Add(DateTime.Now, lastDesynthesis);
+        foreach (var result in lastDesynthesis.Received)
+        {
+            if (!character.Storage.Total.TryAdd(result.Item, result.Count))
+                character.Storage.Total[result.Item] += result.Count;
+        }
+
+        Plugin.ConfigurationBase.SaveCharacterConfig();
+        Plugin.UploadEntry(new Export.DesynthesisResultV2(lastDesynthesis));
     }
 
     private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];

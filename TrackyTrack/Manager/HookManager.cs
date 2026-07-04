@@ -1,7 +1,6 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -36,7 +35,6 @@ public unsafe class HookManager
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
     private Hook<TreasureInteractDelegate> TreasureInteractHook;
 
-    private Hook<PacketDispatcher.Delegates.HandleEventYieldPacket> DesynthResultHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdateNumber>? UpdateNumberHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdatePayout>? UpdatePayoutHook { get; init; }
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
@@ -49,9 +47,6 @@ public unsafe class HookManager
     public HookManager(Plugin plugin)
     {
         Plugin = plugin;
-
-        DesynthResultHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleEventYieldPacket>(PacketDispatcher.MemberFunctionPointers.HandleEventYieldPacket, DesynthResultPacket);
-        DesynthResultHook.Enable();
 
         var actorControlSelfPtr = Plugin.SigScanner.ScanText(ActorControlSig);
         ActorControlSelfHook = Plugin.Hook.HookFromAddress<ActorControlSelfDelegate>(actorControlSelfPtr, ActorControlSelf);
@@ -85,7 +80,6 @@ public unsafe class HookManager
 
     public void Dispose()
     {
-        DesynthResultHook.Dispose();
         ActorControlSelfHook.Dispose();
         OpenInspectHook.Dispose();
         LootAddedHook.Dispose();
@@ -119,28 +113,6 @@ public unsafe class HookManager
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "OpenInspection failed");
-        }
-    }
-
-    private void DesynthResultPacket(EventId id, short scene, byte responseId, int* intParams, byte argCount)
-    {
-        DesynthResultHook.Original(id, scene, responseId, intParams, argCount);
-
-        // DesynthResult is triggered by multiple events
-        if (id != 3735552)
-            return;
-
-        try
-        {
-            if (Plugin.Configuration.EnableBulkSupport)
-                Plugin.BulkHandler();
-
-            if (Plugin.Configuration.EnableDesynthesis)
-                Plugin.DesynthHandler();
-        }
-        catch (Exception ex)
-        {
-            Plugin.Log.Error(ex, "Error while parsing desynth result packet");
         }
     }
 

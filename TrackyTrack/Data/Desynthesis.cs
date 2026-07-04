@@ -1,6 +1,5 @@
 ﻿using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 
@@ -9,7 +8,7 @@ namespace TrackyTrack.Data;
 public class Desynth
 {
     public Dictionary<uint, uint> Total = new();
-    public Dictionary<DateTime, DesynthResult> History = new();
+    public Dictionary<DateTime, DesynthResultV2> History = new();
 
     [JsonIgnore]
     public static readonly Dictionary<uint, uint> GilItems = new()
@@ -38,36 +37,51 @@ public class Desynth
     };
 }
 
-public record DesynthResult(uint Source, ItemResult[] Received, ushort ClassLevel = 0)
+public class DesynthResultV2
 {
-    [JsonConstructor]
-    public DesynthResult() : this(0, []) {}
+    public uint Source;
+    public List<ItemResult> Received = [];
+    public double Increase;
+    public double ClassLevel;
+    public ushort[] Bonus = [];
 
-    public unsafe DesynthResult(AgentSalvage* result) : this(0, [])
+    [JsonIgnore]
+    public bool AwaitingResults;
+
+    [JsonIgnore]
+    private static readonly HashSet<ushort> BonusParams =
+    [
+        270, 10270, // Bacon Broth
+        271, 10271, // Tinker's Calm
+    ];
+
+    [JsonConstructor]
+    public DesynthResultV2() {}
+
+    public unsafe DesynthResultV2(uint source)
     {
-        var adjustedId = ItemUtil.GetBaseId(result->DesynthItemId);
-        if (adjustedId.Kind == ItemKind.EventItem)
+        Source = ItemUtil.GetBaseId(source).ItemId;
+        ClassLevel = PlayerState.Instance()->GetDesynthesisLevel(Sheets.GetItem(Source).ClassJobRepair.RowId);
+    }
+
+    public void SetLevel(double increase)
+    {
+        if (Plugin.ObjectTable.LocalPlayer == null)
             return;
 
-        Source = adjustedId.ItemId;
-        Received = result->DesynthResults.ToArray()
-                                         .Where(r => r.ItemId > 0)
-                                         .Select(r =>
-                                         {
-                                             var item = ItemUtil.GetBaseId(r.ItemId);
-                                             return new ItemResult(item.ItemId, (uint)r.Quantity, item.Kind == ItemKind.Hq);
-                                         })
-                                         .ToArray();
-
-        ClassLevel = (ushort) PlayerState.Instance()->GetDesynthesisLevel(Sheets.GetItem(Source).ClassJobRepair.RowId);
+        Increase = increase;
+        ClassLevel = Math.Round(ClassLevel - Increase, 2);
+        Bonus = Plugin.ObjectTable.LocalPlayer.StatusList.Where(s => BonusParams.Contains(s.Param)).Select(s => s.Param).ToArray();
     }
 
-    public unsafe DesynthResult(BulkResult result) : this(0, [])
-    {
-        Source = result.Source;
-        Received = result.Received.ToArray();
-        ClassLevel = (ushort) PlayerState.Instance()->GetDesynthesisLevel(Sheets.GetItem(Source).ClassJobRepair.RowId);
-    }
+    public void AddItem(uint item, uint count)
+        => Received.Add(new ItemResult(ItemUtil.GetBaseId(item).ItemId, count));
+
+    public bool IsValid
+        => Source > 0 && Received.Count is > 0 and <= 3;
+
+    public DesynthResultV2 Clone()
+        => new() {Source = Source, Received = [..Received], Increase = Increase, ClassLevel = ClassLevel, Bonus = [..Bonus]};
 }
 
 public record ItemResult(uint Item, uint Count, bool HQ = false)
@@ -75,22 +89,4 @@ public record ItemResult(uint Item, uint Count, bool HQ = false)
     public uint[] Combined() => [ItemUtil.GetBaseId(Item).ItemId, Count];
 
     public Item ToItemRow() => Sheets.GetItem(Item);
-}
-
-public struct BulkResult
-{
-    public uint Source;
-    public List<ItemResult> Received;
-
-    public BulkResult()
-    {
-        Source = 0;
-        Received = [new ItemResult(0, 0, false)];
-    }
-
-    public void AddSource(uint source) => Source = source;
-    public void AddItem(uint item, uint count, bool isHQ) => Received[0] = new ItemResult(ItemUtil.GetBaseId(item).ItemId, count, isHQ);
-    public void AddCrystal(uint item, uint count) => Received.Add(new ItemResult(item, count, false));
-
-    public bool IsValid => Source is > 100 and < 100_000 && Sheets.GetItem(Source).Desynth > 0 && Received[0].Item is > 100 and < 100_000 && Received.Count <= 3;
 }

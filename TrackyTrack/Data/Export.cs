@@ -81,7 +81,7 @@ public static class Export
         }
     }
 
-    public class DesynthesisResult : Upload
+    public class DesynthesisResultV2 : Upload
     {
         [JsonProperty("source")]
         public uint Source;
@@ -89,21 +89,22 @@ public static class Export
         [JsonProperty("rewards")]
         public uint[] Rewards;
 
+        [JsonProperty("increase")]
+        public double Increase;
+
         [JsonProperty("class_level")]
-        public ushort ClassLevel;
+        public double ClassLevel;
 
-        public DesynthesisResult(uint source, uint[] rewards, ushort classLevel = 0) : base("Desynthesis")
-        {
-            Source = ItemUtil.GetBaseId(source).ItemId;
-            Rewards = rewards.Select(s => ItemUtil.GetBaseId(s).ItemId).ToArray();
-            ClassLevel = classLevel;
-        }
+        [JsonProperty("bonus")]
+        public ushort[] Bonus;
 
-        public DesynthesisResult(DesynthResult result) : base("Desynthesis")
+        public DesynthesisResultV2(DesynthResultV2 result) : base("DesynthesisV2")
         {
             Source = ItemUtil.GetBaseId(result.Source).ItemId;
             Rewards = result.Received.SelectMany(r => r.Combined()).ToArray();
+            Increase = result.Increase;
             ClassLevel = result.ClassLevel;
+            Bonus = result.Bonus;
         }
     }
 
@@ -468,7 +469,7 @@ public static class Export
         }
         catch (Exception ex)
         {
-            Plugin.Log.Warning(ex, "Upload failed");
+            Plugin.Log.Warning(ex, "Upload failed.");
         }
     }
 }

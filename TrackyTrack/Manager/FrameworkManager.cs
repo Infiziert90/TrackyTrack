@@ -1,7 +1,11 @@
-﻿using Dalamud.Game.Chat;
+﻿using System.Globalization;
+using Dalamud.Game.Chat;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Component.Text;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -35,7 +39,8 @@ public class FrameworkManager
         Plugin.Framework.Update += CurrencyTracker;
         Plugin.Framework.Update += OccultTracker;
 
-        Plugin.ChatGui.LogMessage += ChatGuiOnLogMessage;
+        Plugin.ChatGui.LogMessage += OnReductionLogMessage;
+        Plugin.ChatGui.LogMessage += OnDesynthesisLogMessage;
     }
 
     public void Dispose()
@@ -43,14 +48,18 @@ public class FrameworkManager
         Plugin.Framework.Update -= TicketTracker;
         Plugin.Framework.Update -= CurrencyTracker;
         Plugin.Framework.Update -= OccultTracker;
-        Plugin.ChatGui.LogMessage -= ChatGuiOnLogMessage;
+        Plugin.ChatGui.LogMessage -= OnReductionLogMessage;
+        Plugin.ChatGui.LogMessage -= OnDesynthesisLogMessage;
     }
 
-    private void ChatGuiOnLogMessage(ILogMessage message)
+    private void OnReductionLogMessage(ILogMessage message)
     {
         // Check if message is Reduction start
         if (message.LogMessageId == 3553)
         {
+            if (!CompareGstrPlayerNames(message.SourceEntity))
+                return;
+
             // source + collectability
             if (message.ParameterCount != 2)
                 return;
@@ -59,6 +68,7 @@ public class FrameworkManager
             var collectability = message.Parameters[1].UIntValue;
 
             Plugin.TimerManager.StartReduction(source, collectability);
+            return;
         }
 
         if (!Plugin.TimerManager.LastReductionResult.AwaitingResults)
@@ -75,8 +85,54 @@ public class FrameworkManager
                 var reward = message.Parameters[0].UIntValue;
                 var count = message.ParameterCount == 2 ? message.Parameters[1].UIntValue : 1;
 
-                Plugin.Log.Information($"Reward: {reward}, Count: {count}, ParameterCount: {message.ParameterCount}, Format: {message.FormatLogMessageForDebugging()}");
                 Plugin.TimerManager.LastReductionResult.AddItem(reward, count);
+            }
+        }
+    }
+
+    private void OnDesynthesisLogMessage(ILogMessage message)
+    {
+        // Check if message is Desynthesis start
+        if (message.LogMessageId == 4321)
+        {
+            if (!CompareGstrPlayerNames(message.SourceEntity))
+                return;
+
+            // source
+            if (message.ParameterCount != 1)
+                return;
+
+            var source = message.Parameters[0].UIntValue;
+
+            Plugin.TimerManager.StartDesynthesis(source);
+            return;
+        }
+
+        if (!Plugin.TimerManager.LastDesynthesisResult.AwaitingResults)
+            return;
+
+        if (message.LogMessageId == 4325)
+        {
+            // Job + Whole + Decimal
+            if (message.ParameterCount == 3)
+            {
+                var integral = message.Parameters[1].UIntValue;
+                var fractional = message.Parameters[2].UIntValue;
+                var combined = double.Parse($"{integral}.{fractional:00}", CultureInfo.InvariantCulture);
+
+                Plugin.TimerManager.LastDesynthesisResult.SetLevel(combined);
+            }
+        }
+
+        if (message.LogMessageId is 4322 or 4323)
+        {
+            // Reward + Count
+            if (message.ParameterCount is 1 or 2)
+            {
+                var reward = message.Parameters[0].UIntValue;
+                var count = message.ParameterCount == 2 ? message.Parameters[1].UIntValue : 1;
+
+                Plugin.TimerManager.LastDesynthesisResult.AddItem(reward, count);
             }
         }
     }
@@ -186,6 +242,51 @@ public class FrameworkManager
         {
             Plugin.TimerManager.LastTargetBaseId = target.BaseId;
             Plugin.TimerManager.LastTargetPosition = target.Position;
+        }
+    }
+
+    private bool CompareGstrPlayerNames(ILogMessageEntity? source)
+    {
+        if (source == null)
+            return false;
+
+        if (!TryGetGStr(0, out var gstr1))
+            return false;
+
+        return gstr1.SequenceEqual(source.Name.Data.Span);
+    }
+
+    private unsafe bool TryGetGStr(uint parameterIndex, out ReadOnlySpan<byte> gstr)
+    {
+        gstr = [];
+
+        var rtm = RaptureTextModule.Instance();
+        if (rtm is null)
+            return false;
+
+        ref var gp = ref rtm->GlobalParameters;
+        if (parameterIndex >= gp.MySize)
+            return false;
+
+        if (!ThreadSafety.IsMainThread)
+        {
+            Plugin.Log.Error("Global parameters may only be used from the main thread.");
+            return false;
+        }
+
+        ref var p = ref gp[parameterIndex];
+        switch (p.Type)
+        {
+            case TextParameterType.ReferencedUtf8String:
+                gstr = p.ReferencedUtf8StringValue->Utf8String.AsSpan();
+                return true;
+            case TextParameterType.String:
+                gstr = p.StringValue.AsSpan();
+                return true;
+            case TextParameterType.Integer:
+            case TextParameterType.Uninitialized:
+            default:
+                return false;
         }
     }
 }

@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.ImGuiNotification;
-using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using TrackyTrack.Data;
 
@@ -20,6 +19,7 @@ public class ConfigurationBase : IDisposable
     private readonly CancellationTokenSource CancellationToken = new();
     private readonly ConcurrentDictionary<ulong, DateTime> LastWriteTimes = new();
     private readonly ConcurrentQueue<SaveObject> SaveQueue = new();
+    private readonly ConcurrentDictionary<ulong, byte> DirtySaveQueue = new();
 
     public string ConfigurationDirectory { get; init; }
     private string MiscFolder { get; init; }
@@ -37,6 +37,7 @@ public class ConfigurationBase : IDisposable
     {
         Task.Run(CheckForConfigChanges, CancellationToken.Token);
         Task.Run(SaveAndTryMoveConfig, CancellationToken.Token);
+        Task.Run(CheckDirtyQueue, CancellationToken.Token);
     }
 
     public void Dispose()
@@ -93,63 +94,6 @@ public class ConfigurationBase : IDisposable
 
         config ??= CharacterConfiguration.CreateNew();
 
-
-        if (config.Version < 3)
-        {
-            config.Version = 3;
-
-            // Wipe the fragment overflow from older versions
-            foreach (var (key, dict) in config.Lockbox.History)
-                if (Lockboxes.Fragments.Contains((uint)key))
-                {
-                    config.Lockbox.Opened -= dict.Count;
-                    dict.Clear();
-                }
-
-            Save(contentId, config);
-        }
-
-        if (config.Version < 4)
-        {
-            config.Version = 4;
-
-            var lowestValidID = 100;
-            var highestValidID = Plugin.Data.GetExcelSheet<Item>()!.Where(i => i.Icon != 0).MaxBy(i => i.RowId)!.RowId;
-
-            // Wipe the invalid desynth data from older versions
-            foreach (var (key, desynthResult) in config.Storage.History.ToArray())
-            {
-                if (desynthResult.Source > highestValidID || desynthResult.Source < lowestValidID)
-                    config.Storage.History.Remove(key);
-
-                if (desynthResult.Received.Length == 0)
-                {
-                    config.Storage.History.Remove(key);
-                    continue;
-                }
-
-                var itemResult = desynthResult.Received.First();
-                if (itemResult.Item > highestValidID || itemResult.Item < lowestValidID)
-                {
-                    config.Storage.History.Remove(key);
-                    config.Storage.Total.Remove(itemResult.Item);
-                }
-            }
-
-            // Wipe the fragment inspection hiccup from older versions
-            var invalidItems = new uint[] { 31664, 31326, 33672, 32828, 33706, 33257 };
-            foreach (var (key, dict) in config.Lockbox.History)
-            {
-                if (!Lockboxes.Fragments.Contains((uint) key))
-                    continue;
-
-                foreach (var itemId in dict.Keys.Where(i => invalidItems.Contains(i)).ToArray())
-                    dict.Remove(itemId);
-            }
-
-            Save(contentId, config);
-        }
-
         LastWriteTimes[contentId] = GetConfigLastWriteTime(contentId);
         return config;
     }
@@ -164,10 +108,7 @@ public class ConfigurationBase : IDisposable
             return;
         }
 
-        if (!Plugin.CharacterStorage.TryGetValue(contentId, out var savedConfig))
-            return;
-
-        Save(contentId, savedConfig);
+        DirtySaveQueue[contentId] = 1;
     }
 
     public void SaveAll()
@@ -178,6 +119,34 @@ public class ConfigurationBase : IDisposable
 
         foreach (var (contentId, savedConfig) in Plugin.CharacterStorage)
             Save(contentId, savedConfig);
+    }
+
+    public async Task CheckDirtyQueue()
+    {
+        while (!CancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(5000), CancellationToken.Token);
+            if (DirtySaveQueue.IsEmpty)
+                continue;
+
+            try
+            {
+                var lastQueue = DirtySaveQueue.ToDictionary();
+                DirtySaveQueue.Clear();
+
+                foreach (var contentId in lastQueue.Keys)
+                {
+                    if (!Plugin.CharacterStorage.TryGetValue(contentId, out var savedConfig))
+                        return;
+
+                    Save(contentId, savedConfig);
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Log.Error(ex, "Dirty save queue check went horrible wrong!");
+            }
+        }
     }
 
     private void Save(ulong contentId, CharacterConfiguration savedConfig)
@@ -212,10 +181,9 @@ public class ConfigurationBase : IDisposable
             if (file.Exists)
                 file.Delete();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Plugin.Log.Error("Error while deleting character save file.");
-            Plugin.Log.Error(e.Message);
+            Plugin.Log.Error(ex, "Error while deleting character save file.");
         }
     }
 
@@ -254,10 +222,9 @@ public class ConfigurationBase : IDisposable
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Plugin.Log.Error(e.Message);
-                Plugin.Log.Error(e.StackTrace ?? "Null Stacktrace");
+                Plugin.Log.Error(ex, "Error while saving config file.");
             }
         }
     }

@@ -78,9 +78,6 @@ public class Plugin : IDalamudPlugin
         InventoryChanged.OnDelayedItemsChanged += TimerManager.StoreOccultResult;
         InventoryChanged.OnDelayedItemsChanged += TimerManager.StoreOccultBunny;
 
-        InventoryChanged.OnItemAdded += TimerManager.DesynthItemAdded;
-
-        InventoryChanged.OnItemRemoved += TimerManager.DesynthItemRemoved;
         InventoryChanged.OnItemRemoved += FragmentRemoved;
 
         ConfigWindow = new ConfigWindow(this);
@@ -120,9 +117,6 @@ public class Plugin : IDalamudPlugin
         InventoryChanged.OnDelayedItemsChanged -= TimerManager.StoreOccultResult;
         InventoryChanged.OnDelayedItemsChanged -= TimerManager.StoreOccultBunny;
 
-        InventoryChanged.OnItemAdded -= TimerManager.DesynthItemAdded;
-
-        InventoryChanged.OnItemRemoved -= TimerManager.DesynthItemRemoved;
         InventoryChanged.OnItemRemoved -= FragmentRemoved;
 
         ConfigurationBase.Dispose();
@@ -152,44 +146,6 @@ public class Plugin : IDalamudPlugin
     private void OnConfigCommand(string command, string args)
     {
         ConfigWindow.IsOpen ^= true;
-    }
-
-    public void BulkHandler()
-    {
-        if (GameGui.GetAddonByName("SalvageAutoDialog") != nint.Zero)
-            TimerManager.StartBulk();
-    }
-
-    public unsafe void DesynthHandler()
-    {
-        // We have to return whenever we see bulk happening
-        if (GameGui.GetAddonByName("SalvageAutoDialog") != nint.Zero)
-            return;
-
-        var instance = AgentSalvage.Instance();
-        if (instance == null)
-        {
-            Log.Warning("AgentSalvage was null");
-            return;
-        }
-
-        // Making sure that we received real items
-        if (instance->DesynthItemId == 0)
-            return;
-
-        CharacterStorage.TryAdd(PlayerState.ContentId, CharacterConfiguration.CreateNew());
-        var character = CharacterStorage[PlayerState.ContentId];
-
-        var desynthResult = new DesynthResult(instance);
-        character.Storage.History.Add(DateTime.Now, desynthResult);
-        foreach (var result in desynthResult.Received)
-        {
-            if (!character.Storage.Total.TryAdd(result.Item, result.Count))
-                character.Storage.Total[result.Item] += result.Count;
-        }
-
-        ConfigurationBase.SaveCharacterConfig();
-        UploadEntry(new Export.DesynthesisResult(desynthResult));
     }
 
     public void RetainerHandler(uint venture, byte level, VentureItem primary, VentureItem additional)

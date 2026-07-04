@@ -674,7 +674,7 @@ public partial class MainWindow
         });
     }
 
-    private void FillLocalCache(IEnumerable<DesynthResult> results)
+    private void FillLocalCache(IEnumerable<DesynthResultV2> results)
     {
         LocalSourcesCache = new Dictionary<uint, History>();
         LocalRewardsCache = new Dictionary<uint, History>();
@@ -689,7 +689,7 @@ public partial class MainWindow
             if (!records.TryAdd(result.Source, 1))
                 records[result.Source]++;
 
-            if (result.Received.Length > 3)
+            if (result.Received.Count > 3)
                 continue;
 
             foreach (var (item, amount, _) in result.Received)
