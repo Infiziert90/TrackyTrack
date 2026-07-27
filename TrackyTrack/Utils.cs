@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Lumina.Excel.Sheets;
@@ -139,5 +140,25 @@ public static class Utils
             3357 => 87000 + (uint)itemAction.Data[0], // Triple Triad ID
             _ => item.Icon,
         };
+    }
+
+    public static unsafe void PrintMemoryArea(nint address, int length)
+    {
+        var ptr = (byte*)address;
+        var str = new StringBuilder("\n");
+        for(var i = 0; i < length; i++)
+        {
+            str.Append($"{ptr![i]:X02}");
+
+            if (i == 0)
+                continue;
+
+            if ((i+1) % 16 == 0)
+                str.Append('\n');
+            else if ((i+1) % 4 == 0)
+                str.Append(' ');
+        }
+
+        Plugin.Log.Information(str.ToString());
     }
 }

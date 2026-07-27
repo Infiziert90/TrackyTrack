@@ -27,6 +27,7 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Desynthesis");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Reduction");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Retainer Ventures");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "- Reward Tracking");
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);

@@ -10,6 +10,7 @@ using CsvHelper.Configuration;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using Newtonsoft.Json;
+using TrackyTrack.Manager;
 
 namespace TrackyTrack.Data;
 
@@ -413,6 +414,142 @@ public static class Export
                 var result = hash.ComputeHash(stream);
                 Hashed = string.Join("", result.Select(b => $"{b:X2}"));
             }
+        }
+    }
+
+    public class FateReward : Upload
+    {
+        // Extra data
+
+        [JsonProperty("client_language")]
+        public byte ClientLanguage;
+
+        [JsonProperty("territory")]
+        public uint Territory;
+
+        [JsonProperty("map")]
+        public uint Map;
+
+        // Struct data
+
+        [JsonProperty("type")]
+        public byte Type;
+
+        [JsonProperty("success")]
+        public byte IsSuccess;
+
+        [JsonProperty("name")]
+        public string Name;
+
+        [JsonProperty("icon")]
+        public uint Icon;
+
+        [JsonProperty("medal")]
+        public uint Medal;
+
+        [JsonProperty("fate_id")]
+        public uint FateId;
+
+        [JsonProperty("eureka_fate")]
+        public byte EurekaFate;
+
+        [JsonProperty("experience")]
+        public uint Experience;
+
+        [JsonProperty("experience_flags")]
+        public byte ExperienceFlags;
+
+        [JsonProperty("currency_amount")]
+        public uint CurrencyAmount;
+
+        [JsonProperty("currency_flags")]
+        public byte CurrencyFlags;
+
+        [JsonProperty("rewards")]
+        public uint[] Rewards;
+
+        [JsonProperty("fate_token_type_id")]
+        public byte FateTokenTypeId;
+
+        [JsonProperty("fate_token_type_item_id")]
+        public uint FateTokenTypeItemId;
+
+        [JsonProperty("fate_token_type_amount")]
+        public uint FateTokenTypeAmount;
+
+        [JsonProperty("fate_token_type_flags")]
+        public byte FateTokenTypeFlags;
+
+        [JsonProperty("grand_company")]
+        public byte GrandCompany;
+
+        [JsonProperty("gc_seals_amount")]
+        public uint GCSealsAmount;
+
+        [JsonProperty("additional_rewards")]
+        public uint[] AdditionalRewards;
+
+        [JsonProperty("item_processed_bits")]
+        public byte ItemProcessedBits;
+
+        [JsonProperty("item_processed_count")]
+        public byte ItemProcessedCount;
+
+        public unsafe FateReward(Reward* reward) : base("FateReward")
+        {
+            ClientLanguage = (byte)Plugin.ClientState.ClientLanguage;
+            Territory = Plugin.ClientState.TerritoryType;
+            Map = Plugin.ClientState.MapId;
+
+            Type = (byte)reward->Type;
+            IsSuccess = reward->IsSuccess;
+            Name = reward->Name.AsReadOnlySeString().ToString();
+            Icon = reward->Icon;
+            Medal = reward->Medal;
+            FateId = reward->Id;
+            EurekaFate = reward->EurekaFate;
+            Experience = reward->Experience;
+            ExperienceFlags = reward->ExperienceFlags;
+            CurrencyAmount = reward->CurrencyAmount;
+            CurrencyFlags = reward->CurrencyFlags;
+            FateTokenTypeId = reward->FateTokenTypeId;
+            FateTokenTypeItemId = reward->FateTokenTypeItemId;
+            FateTokenTypeAmount = reward->FateTokenTypeAmount;
+            FateTokenTypeFlags = reward->FateTokenTypeFlags;
+            GrandCompany = reward->GrandCompany;
+            GCSealsAmount = reward->GCSealsAmount;
+            ItemProcessedBits = reward->ItemProcessedBits;
+            ItemProcessedCount = reward->ItemProcessedCount;
+
+            Rewards =
+            [
+                reward->_items[0].ItemId,
+                reward->_items[0].Amount,
+
+                reward->_items[1].ItemId,
+                reward->_items[1].Amount,
+
+                reward->_items[2].ItemId,
+                reward->_items[2].Amount,
+
+                reward->_items[3].ItemId,
+                reward->_items[3].Amount,
+
+                reward->_items[4].ItemId,
+                reward->_items[4].Amount,
+            ];
+
+            AdditionalRewards =
+            [
+                reward->_additionalItems[0].ItemId,
+                reward->_additionalItems[0].Amount,
+
+                reward->_additionalItems[1].ItemId,
+                reward->_additionalItems[1].Amount,
+
+                reward->_additionalItems[2].ItemId,
+                reward->_additionalItems[2].Amount,
+            ];
         }
     }
 

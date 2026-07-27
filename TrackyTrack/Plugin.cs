@@ -10,7 +10,6 @@ using TrackyTrack.Attributes;
 using TrackyTrack.Data;
 using TrackyTrack.Windows.Main;
 using TrackyTrack.Windows.Config;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using TrackyTrack.Manager;
 
 namespace TrackyTrack;
@@ -25,7 +24,6 @@ public class Plugin : IDalamudPlugin
     [PluginService] public static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] public static IGameInteropProvider Hook { get; private set; } = null!;
-    [PluginService] public static IGameGui GameGui { get; private set; } = null!;
     [PluginService] public static IPluginLog Log { get; private set; } = null!;
     [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
     [PluginService] public static IGameInventory GameInventory { get; private set; } = null!;
