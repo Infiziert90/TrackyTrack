@@ -553,6 +553,36 @@ public static class Export
         }
     }
 
+    public class FashionReport : Upload
+    {
+        [JsonProperty("plugin")]
+        public uint Plugin = 0;
+
+        [JsonProperty("week_num")]
+        public uint WeekNum;
+
+        [JsonProperty("score")]
+        public uint Score;
+
+        [JsonProperty("hints")]
+        public uint[] Hints;
+
+        [JsonProperty("items")]
+        public uint[] Items;
+
+        [JsonProperty("dyes")]
+        public uint[] Dyes;
+
+        public FashionReport(FashionReportResult data) : base("FashionReport")
+        {
+            WeekNum = data.WeekNum;
+            Score = data.Score;
+            Hints = data.Categories.SelectMany(cat => cat.Coupled()).ToArray();
+            Items = data.ItemIds.ToArray();
+            Dyes = data.StainIds.ToArray();
+        }
+    }
+
     public sealed class ExportMap : ClassMap<GachaLoot>
     {
         public ExportMap()
