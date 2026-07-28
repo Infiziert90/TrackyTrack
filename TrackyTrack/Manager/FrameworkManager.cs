@@ -214,7 +214,7 @@ public class FrameworkManager
         }
     }
 
-    private readonly ushort[] OccultBunnyFates = [1976, 1977];
+    private readonly ushort[] OccultBunnyFates = [1976, 1977, 2072, 2073];
     private void OccultTracker(IFramework _)
     {
         var local = Plugin.ObjectTable.LocalPlayer;
