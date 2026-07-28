@@ -1,4 +1,6 @@
-﻿using Dalamud.Hooking;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
@@ -6,10 +8,77 @@ using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Network;
+using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
+
+[InlineArray(3)]
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+internal struct FixedSizeArray3<T> where T : unmanaged
+{
+    private T _element0;
+}
+
+[InlineArray(5)]
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+internal struct FixedSizeArray5<T> where T : unmanaged
+{
+    private T _element0;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 0x168)]
+public unsafe partial struct Reward {
+    [FieldOffset(0x00)] public RewardType Type;
+    [FieldOffset(0x01)] public byte IsSuccess;
+    [FieldOffset(0x08)] public Utf8String Name;
+    [FieldOffset(0x70)] public uint Icon;
+    [FieldOffset(0x74)] public uint Medal;
+    // For GoldSaucerReward the Id is the index in this array of Addon RowIds: 9980, 9981, 9982, 9984, 9983, 9986, 9985, 9987, 9988, 9989, 9990, 9991, 9992, 9993, 9994, 9995, 9996
+    // For WKSReward the Id is a byte, followed by a byte with flags
+    [FieldOffset(0x78)] public uint Id;
+    [FieldOffset(0x7C)] public byte EurekaFate;
+    [FieldOffset(0x80)] public uint Experience; // Experience, Island EXP, ...
+    [FieldOffset(0x84)] public byte ExperienceFlags;
+    [FieldOffset(0x88)] public uint CurrencyAmount; // Gil, Seafarer's Cowrie, ...
+    [FieldOffset(0x8C)] public byte CurrencyFlags;
+    [FieldOffset(0x90)] internal FixedSizeArray5<ItemReward> _items;
+    [FieldOffset(0x108)] public byte FateTokenTypeId;
+    [FieldOffset(0x10C)] public uint FateTokenTypeItemId;
+    [FieldOffset(0x110)] public uint FateTokenTypeAmount;
+    [FieldOffset(0x118)] public void* FateTokenTypeItemRow;
+    [FieldOffset(0x120)] public byte FateTokenTypeFlags;
+    [FieldOffset(0x128)] public byte GrandCompany;
+    [FieldOffset(0x12C)] public uint GCSealsAmount;
+    [FieldOffset(0x130)] internal FixedSizeArray3<AdditionalItemReward> _additionalItems;
+    [FieldOffset(0x160)] public byte ItemProcessedBits;
+    [FieldOffset(0x161)] public byte ItemProcessedCount;
+
+    [StructLayout(LayoutKind.Explicit, Size = 0x18)]
+    public unsafe struct ItemReward {
+        [FieldOffset(0x00)] public uint ItemId;
+        [FieldOffset(0x04)] public uint Amount;
+        [FieldOffset(0x08)] public void* ItemRow;
+        [FieldOffset(0x10)] public byte Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 0x10)]
+    public unsafe struct AdditionalItemReward {
+        [FieldOffset(0x00)] public uint ItemId;
+        [FieldOffset(0x04)] public uint Amount;
+        [FieldOffset(0x08)] public void* ItemRow;
+    }
+}
+
+public enum RewardType : byte {
+    FateReward = 0,
+    Unk1 = 1, // ContentReward?
+    Unk2 = 2, // TreasureHuntReward?
+    GoldSaucerReward = 3,
+    MJIReward = 4,
+    WKSReward = 5,
+}
 
 public unsafe class HookManager
 {
@@ -35,10 +104,15 @@ public unsafe class HookManager
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
     private Hook<TreasureInteractDelegate> TreasureInteractHook;
 
+    // Replace with https://github.com/aers/FFXIVClientStructs/blob/main/FFXIVClientStructs/FFXIV/Client/UI/Agent/AgentFateReward.cs
+    private const string EnqueueRewardSig = "E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 8D ?? ?? ?? ?? 48 33 CC E8 ?? ?? ?? ?? 48 81 C4 ?? ?? ?? ?? 41 5E";
+    private delegate void EnqueueRewardDelegate(nint agentFateReward, Reward* reward);
+    private Hook<EnqueueRewardDelegate> EnqueueRewardHook;
+
     private Hook<AgentLotteryDaily.Delegates.UpdateNumber>? UpdateNumberHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdatePayout>? UpdatePayoutHook { get; init; }
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
-    private Hook<AgentFateReward.Delegates.EnqueueReward>? EnqueueRewardHook { get; init; }
+    // private Hook<AgentFateReward.Delegates.EnqueueReward>? EnqueueRewardHook { get; init; }
 
     public uint LastSeenItemId;
     private MiniCactpotData? LastDataSet;
@@ -69,8 +143,12 @@ public unsafe class HookManager
         TreasureInteractHook = Plugin.Hook.HookFromAddress<TreasureInteractDelegate>(treasureInteractPtr, TreasureInteractDetour);
         TreasureInteractHook.Enable();
 
-        EnqueueRewardHook = Plugin.Hook.HookFromAddress<AgentFateReward.Delegates.EnqueueReward>(AgentFateReward.MemberFunctionPointers.EnqueueReward, EnqueueRewardDetour);
+        var enqueueRewardPtr = Plugin.SigScanner.ScanText(EnqueueRewardSig);
+        EnqueueRewardHook = Plugin.Hook.HookFromAddress<EnqueueRewardDelegate>(enqueueRewardPtr, EnqueueRewardDetour);
         EnqueueRewardHook.Enable();
+
+        // EnqueueRewardHook = Plugin.Hook.HookFromAddress<AgentFateReward.Delegates.EnqueueReward>(AgentFateReward.MemberFunctionPointers.EnqueueReward, EnqueueRewardDetour);
+        // EnqueueRewardHook.Enable();
 
         UpdateNumberHook = Plugin.Hook.HookFromAddress<AgentLotteryDaily.Delegates.UpdateNumber>(AgentLotteryDaily.MemberFunctionPointers.UpdateNumber, UpdateNumberDetour);
         UpdateNumberHook.Enable();
@@ -95,11 +173,11 @@ public unsafe class HookManager
         HandleSpawnNPCPacketHook?.Dispose();
     }
 
-    private void EnqueueRewardDetour(AgentFateReward* agent, AgentFateReward.Reward* reward)
+    private void EnqueueRewardDetour(nint agentFateReward, Reward* reward)
     {
         try
         {
-            EnqueueRewardHook!.Original(agent, reward);
+            EnqueueRewardHook!.Original(agentFateReward, reward);
             Plugin.UploadEntry(new Export.FateReward(reward));
         }
         catch (Exception ex)
