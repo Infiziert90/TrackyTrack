@@ -16,6 +16,14 @@ public class OccultTracker
                 { OccultCofferRarity.Gold, [] },
                 { OccultCofferRarity.BunnyGold, [] },
             }
+        },
+        { OccultTerritory.NorthHorn, new()
+            {
+                { OccultCofferRarity.Bronze, [] },
+                { OccultCofferRarity.Silver, [] },
+                { OccultCofferRarity.Gold, [] },
+                { OccultCofferRarity.BunnyGold, [] },
+            }
         }
     };
 
@@ -27,7 +35,13 @@ public class OccultTracker
                 { OccultTreasureRarity.Bronze, [] },
                 { OccultTreasureRarity.Silver, [] },
             }
-        }
+        },
+        { OccultTerritory.NorthHorn, new()
+            {
+                { OccultTreasureRarity.Bronze, [] },
+                { OccultTreasureRarity.Silver, [] },
+            }
+        },
     };
 }
 
@@ -47,6 +61,7 @@ public record OccultItem(uint Item, uint Count)
 public enum OccultTerritory : uint
 {
     SouthHorn = 1252,
+    NorthHorn = 1346,
 }
 
 public enum OccultTreasureRarity : uint
@@ -200,6 +215,7 @@ public static class OccultExtensions
         return territory switch
         {
             OccultTerritory.SouthHorn => "South Horn",
+            OccultTerritory.NorthHorn => "North Horn",
             _ => "Unknown"
         };
     }

@@ -265,9 +265,13 @@ public class TimerManager
         Plugin.UploadEntry(new Export.BunnyLoot((uint)rarity, (uint)territory, result.Items));
     }
 
+    private static readonly HashSet<OccultTerritory> OccultTerritories = [OccultTerritory.SouthHorn, OccultTerritory.NorthHorn];
+    public static bool PlayerInOccult()
+        => OccultTerritories.Contains((OccultTerritory)Plugin.ClientState.TerritoryType);
+
     public void StoreOccultResult((uint ItemId, int Quantity)[] changes)
     {
-        if (Plugin.ClientState.TerritoryType != 1252 || LastBaseId == 0)
+        if (!PlayerInOccult() || LastBaseId == 0)
             return;
 
         var lastBaseId = LastBaseId;
@@ -279,9 +283,20 @@ public class TimerManager
             return;
         }
 
+        var territory = (OccultTerritory) Plugin.ClientState.TerritoryType;
+
         // This range should include all treasure coffers
-        if (lastBaseId is > 1856 or < 1789)
-            return;
+        Plugin.Log.Information($"Territory check");
+        if (territory == OccultTerritory.SouthHorn)
+        {
+            if (lastBaseId is > 1856 or < 1789)
+                return;
+        }
+        else
+        {
+            if (lastBaseId is > 2073 or < 2006)
+                return;
+        }
 
         var adjustedCofferId = Sheets.TreasureSheet.GetRow(lastBaseId).SGB;
 
@@ -312,19 +327,26 @@ public class TimerManager
         }
 
         var rarity = (OccultTreasureRarity) adjustedCofferId.RowId;
-        var territory = (OccultTerritory) Plugin.ClientState.TerritoryType;
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         character.Occult.TreasureOpened += 1;
+        if (!character.Occult.TreasureHistory.ContainsKey(territory))
+        {
+            character.Occult.TreasureHistory.Add(territory, new()
+            {
+                { OccultTreasureRarity.Bronze, [] },
+                { OccultTreasureRarity.Silver, [] },
+            });
+        }
         character.Occult.TreasureHistory[territory][rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
-        Plugin.UploadEntry(new Export.OccultTreasure(lastBaseId, result.Items, ChestPosition));
+        Plugin.UploadEntry(new Export.OccultTreasure(lastBaseId, (uint)territory, result.Items, ChestPosition));
     }
 
     public void StoreOccultBunny((uint ItemId, int Quantity)[] changes)
     {
-        if (Plugin.ClientState.TerritoryType != 1252)
+        if (!PlayerInOccult())
             return;
 
         var gil = changes.FirstOrDefault(c => c.ItemId == 1);
@@ -376,6 +398,16 @@ public class TimerManager
         }
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
+        if (!character.Occult.History.ContainsKey(territory))
+        {
+            character.Occult.History.Add(territory, new()
+            {
+                { OccultCofferRarity.Bronze, [] },
+                { OccultCofferRarity.Silver, [] },
+                { OccultCofferRarity.Gold, [] },
+                { OccultCofferRarity.BunnyGold, [] },
+            });
+        }
         character.Occult.Opened += 1;
         character.Occult.History[territory][rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();

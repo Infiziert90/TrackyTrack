@@ -9,8 +9,8 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Newtonsoft.Json;
-using TrackyTrack.Manager;
 
 namespace TrackyTrack.Data;
 
@@ -253,6 +253,9 @@ public static class Export
         [JsonProperty("base_id")]
         public uint BaseId;
 
+        [JsonProperty("territory")]
+        public uint Territory;
+
         [JsonProperty("rewards")]
         public uint[] Rewards;
 
@@ -265,9 +268,11 @@ public static class Export
         [JsonProperty("pos_z")]
         public float ChestPosZ;
 
-        public OccultTreasure(uint baseId, List<OccultItem> rewards, Vector3 chestPos) : base("OccultTreasure")
+        public OccultTreasure(uint baseId, uint territory, List<OccultItem> rewards, Vector3 chestPos) : base("OccultTreasure")
         {
             BaseId = baseId;
+            Territory = territory;
+
             Rewards = rewards.SelectMany(r => r.Combine()).ToArray();
 
             ChestPosX = chestPos.X;
@@ -495,14 +500,14 @@ public static class Export
         [JsonProperty("item_processed_count")]
         public byte ItemProcessedCount;
 
-        public unsafe FateReward(Reward* reward) : base("FateReward")
+        public unsafe FateReward(AgentFateReward.Reward* reward) : base("FateReward")
         {
             ClientLanguage = (byte)Plugin.ClientState.ClientLanguage;
             Territory = Plugin.ClientState.TerritoryType;
             Map = Plugin.ClientState.MapId;
 
             Type = (byte)reward->Type;
-            IsSuccess = reward->IsSuccess;
+            IsSuccess = reward->IsSuccess ? (byte)1 : (byte)0;
             Name = reward->Name.AsReadOnlySeString().ToString();
             Icon = reward->Icon;
             Medal = reward->Medal;
@@ -521,35 +526,23 @@ public static class Export
             ItemProcessedBits = reward->ItemProcessedBits;
             ItemProcessedCount = reward->ItemProcessedCount;
 
-            Rewards =
-            [
-                reward->_items[0].ItemId,
-                reward->_items[0].Amount,
+            var l = new List<uint>();
+            foreach (var item in reward->Items)
+            {
+                l.Add(item.ItemId);
+                l.Add(item.Amount);
+            }
 
-                reward->_items[1].ItemId,
-                reward->_items[1].Amount,
+            Rewards = l.ToArray();
 
-                reward->_items[2].ItemId,
-                reward->_items[2].Amount,
+            l.Clear();
+            foreach (var item in reward->AdditionalItems)
+            {
+                l.Add(item.ItemId);
+                l.Add(item.Amount);
+            }
 
-                reward->_items[3].ItemId,
-                reward->_items[3].Amount,
-
-                reward->_items[4].ItemId,
-                reward->_items[4].Amount,
-            ];
-
-            AdditionalRewards =
-            [
-                reward->_additionalItems[0].ItemId,
-                reward->_additionalItems[0].Amount,
-
-                reward->_additionalItems[1].ItemId,
-                reward->_additionalItems[1].Amount,
-
-                reward->_additionalItems[2].ItemId,
-                reward->_additionalItems[2].Amount,
-            ];
+            AdditionalRewards = l.ToArray();
         }
     }
 
@@ -602,7 +595,7 @@ public static class Export
             var response = await Client.PostAsync($"{BaseUrl}{entry.Table}", content);
 
             if (response.StatusCode != HttpStatusCode.Created)
-                Plugin.Log.Debug($"Table {entry.Table} | Content: {response.Content.ReadAsStringAsync().Result}");
+                Plugin.Log.Warning($"Table {entry.Table} | Content: {response.Content.ReadAsStringAsync().Result}");
         }
         catch (Exception ex)
         {
