@@ -28,6 +28,7 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Reduction");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Retainer Ventures");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Reward Tracking");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "- Fashion Report");
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);
