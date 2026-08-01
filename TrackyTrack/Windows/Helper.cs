@@ -417,9 +417,8 @@ public enum Tabs
     [Description("Pyros")] Pyros = 101,
     [Description("Hydatos")] Hydatos = 102,
 
-    [Description("Treasure")] Treasure = 150,
-    [Description("Pot")] Pot = 151,
-    [Description("Carrot")] Carrot = 152,
+    [Description("South Horn")] SouthHorn = 150,
+    [Description("North Horn")] NorthHorn = 151,
 
     [Description("Gacha 3.0")] Gacha3 = 200,
     [Description("Gacha 4.0")] Gacha4 = 201,

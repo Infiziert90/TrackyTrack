@@ -6,12 +6,11 @@ namespace TrackyTrack.Windows.Main;
 
 public partial class MainWindow
 {
-    private OccultTreasureRarity TreasureRarity = OccultTreasureRarity.Bronze;
-    private OccultCofferRarity PotRarity = OccultCofferRarity.Bronze;
-    private OccultCofferRarity CarrotRarity = OccultCofferRarity.BunnyGold;
+    private CombinedRarity CombinedRarity = CombinedRarity.TreasureBronze;
+    private OccultTerritory OccultTerritory = OccultTerritory.SouthHorn;
 
     private Tabs SelectedOccultTab;
-    private static readonly Tabs[] PotTabs = [Tabs.Treasure, Tabs.Pot, Tabs.Carrot];
+    private static readonly Tabs[] PotTabs = [Tabs.SouthHorn, Tabs.NorthHorn];
 
     private void OccultTab()
     {
@@ -34,8 +33,13 @@ public partial class MainWindow
 
         var pos = ImGui.GetCursorPos();
 
+        var rarities = Enum.GetValues<CombinedRarity>();
+        var doubleItemSpacingWidth = ImGui.GetStyle().ItemSpacing.X * 2;
+
+        var rarityWidths = rarities.Select(rarity => ImGui.CalcTextSize(rarity.ToExtendedName()).X + doubleItemSpacingWidth).ToList();
+
         var nameDict = TabHelper.TabSize(PotTabs);
-        var childSize = new Vector2(nameDict.Select(pair => pair.Value.Width).Max() + 10.0f, 0);
+        var childSize = new Vector2(rarityWidths.Concat(nameDict.Select(pair => pair.Value.Width)).Max() + 10.0f, 0);
         using (var tabChild = ImRaii.Child("Tabs", childSize, true))
         {
             if (tabChild.Success)
@@ -51,51 +55,54 @@ public partial class MainWindow
                 {
                     var selected = SelectedOccultTab == id;
                     if (ImGui.Selectable(name, selected))
+                    {
                         SelectedOccultTab = id;
+                        OccultTerritory = id == Tabs.SouthHorn ? OccultTerritory.SouthHorn : OccultTerritory.NorthHorn;
+                    }
 
                     using var pushedId = ImRaii.PushId((int) id);
                     using var pushedIndent = ImRaii.PushIndent(10.0f);
-                    if (id == Tabs.Treasure)
-                    {
-                        if (ImGui.Selectable(OccultTreasureRarity.Bronze.ToName(), selected && TreasureRarity == OccultTreasureRarity.Bronze))
-                        {
-                            TreasureRarity = OccultTreasureRarity.Bronze;
-                            SelectedOccultTab = id;
-                        }
 
-                        if (ImGui.Selectable(OccultTreasureRarity.Silver.ToName(), selected && TreasureRarity == OccultTreasureRarity.Silver))
-                        {
-                            TreasureRarity = OccultTreasureRarity.Silver;
-                            SelectedOccultTab = id;
-                        }
+                    if (ImGui.Selectable(OccultTreasureRarity.Bronze.ToExtendedName(), selected && CombinedRarity == CombinedRarity.TreasureBronze))
+                    {
+                        CombinedRarity = CombinedRarity.TreasureBronze;
+                        SelectedOccultTab = id;
+                        OccultTerritory = id == Tabs.SouthHorn ? OccultTerritory.SouthHorn : OccultTerritory.NorthHorn;
                     }
-                    else if (id == Tabs.Pot)
+
+                    if (ImGui.Selectable(OccultTreasureRarity.Silver.ToExtendedName(), selected && CombinedRarity == CombinedRarity.TreasureSilver))
                     {
-                        if (ImGui.Selectable(OccultCofferRarity.Bronze.ToName(), selected && PotRarity == OccultCofferRarity.Bronze))
-                        {
-                            PotRarity = OccultCofferRarity.Bronze;
-                            SelectedOccultTab = id;
-                        }
-
-                        if (ImGui.Selectable(OccultCofferRarity.Silver.ToName(), selected && PotRarity == OccultCofferRarity.Silver))
-                        {
-                            PotRarity = OccultCofferRarity.Silver;
-                            SelectedOccultTab = id;
-                        }
-
-                        if (ImGui.Selectable(OccultCofferRarity.Gold.ToName(), selected && PotRarity == OccultCofferRarity.Gold))
-                        {
-                            PotRarity = OccultCofferRarity.Gold;
-                            SelectedOccultTab = id;
-                        }
+                        CombinedRarity = CombinedRarity.TreasureSilver;
+                        SelectedOccultTab = id;
+                        OccultTerritory = id == Tabs.SouthHorn ? OccultTerritory.SouthHorn : OccultTerritory.NorthHorn;
                     }
-                    else
+
+                    if (ImGui.Selectable(OccultCofferRarity.Bronze.ToExtendedName(), selected && CombinedRarity == CombinedRarity.PotBronze))
                     {
-                        if (ImGui.Selectable(OccultCofferRarity.BunnyGold.ToName(), selected && CarrotRarity == OccultCofferRarity.BunnyGold))
-                        {
-                            CarrotRarity = OccultCofferRarity.BunnyGold;
-                            SelectedOccultTab = id;
-                        }
+                        CombinedRarity = CombinedRarity.PotBronze;
+                        SelectedOccultTab = id;
+                        OccultTerritory = id == Tabs.SouthHorn ? OccultTerritory.SouthHorn : OccultTerritory.NorthHorn;
+                    }
+
+                    if (ImGui.Selectable(OccultCofferRarity.Silver.ToExtendedName(), selected && CombinedRarity == CombinedRarity.PotSilver))
+                    {
+                        CombinedRarity = CombinedRarity.PotSilver;
+                        SelectedOccultTab = id;
+                        OccultTerritory = id == Tabs.SouthHorn ? OccultTerritory.SouthHorn : OccultTerritory.NorthHorn;
+                    }
+
+                    if (ImGui.Selectable(OccultCofferRarity.Gold.ToExtendedName(), selected && CombinedRarity == CombinedRarity.PotGold))
+                    {
+                        CombinedRarity = CombinedRarity.PotGold;
+                        SelectedOccultTab = id;
+                        OccultTerritory = id == Tabs.SouthHorn ? OccultTerritory.SouthHorn : OccultTerritory.NorthHorn;
+                    }
+
+                    if (ImGui.Selectable(OccultCofferRarity.BunnyGold.ToExtendedName(), selected && CombinedRarity == CombinedRarity.BunnyGold))
+                    {
+                        CombinedRarity = CombinedRarity.BunnyGold;
+                        SelectedOccultTab = id;
+                        OccultTerritory = id == Tabs.SouthHorn ? OccultTerritory.SouthHorn : OccultTerritory.NorthHorn;
                     }
                 }
             }
@@ -111,14 +118,20 @@ public partial class MainWindow
                     case Tabs.Stats:
                         PotStats(characterCoffers);
                         break;
-                    case Tabs.Treasure:
-                        Treasure(characterCoffers);
-                        break;
-                    case Tabs.Pot:
-                        Pot(characterCoffers);
-                        break;
-                    case Tabs.Carrot:
-                        Carrot(characterCoffers);
+                    case Tabs.SouthHorn:
+                    case Tabs.NorthHorn:
+                        switch (CombinedRarity)
+                        {
+                            case CombinedRarity.TreasureBronze or CombinedRarity.TreasureSilver:
+                                Treasure(characterCoffers);
+                                break;
+                            case CombinedRarity.PotBronze or CombinedRarity.PotSilver or CombinedRarity.PotGold:
+                                Pot(characterCoffers);
+                                break;
+                            case CombinedRarity.BunnyGold:
+                                Carrot(characterCoffers);
+                                break;
+                        }
                         break;
                 }
             }
@@ -198,7 +211,7 @@ public partial class MainWindow
                 {
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
-                    ImGui.TextColored(ImGuiColors.HealerGreen, rarity.ToName());
+                    ImGui.TextColored(ImGuiColors.HealerGreen, rarity.ToExtendedName());
 
                     ImGui.TableNextColumn();
                     ImGui.TextUnformatted($"{rarityCount:N0}  Coffer{(rarityCount > 1 ? "s" : "")}");
@@ -209,24 +222,25 @@ public partial class MainWindow
 
     private void Treasure(CharacterConfiguration[] characters)
     {
-        TreasureHistory(OccultTerritory.SouthHorn, characters);
+        TreasureHistory(OccultTerritory, characters);
     }
 
     private void Pot(CharacterConfiguration[] characters)
     {
-        CofferHistory(OccultTerritory.SouthHorn, PotRarity, characters);
+        CofferHistory(OccultTerritory, CombinedRarity.ToPot(), characters);
     }
 
     private void Carrot(CharacterConfiguration[] characters)
     {
-        CofferHistory(OccultTerritory.SouthHorn, CarrotRarity, characters);
+        CofferHistory(OccultTerritory, CombinedRarity.ToBunny(), characters);
     }
 
     private void TreasureHistory(OccultTerritory territory, CharacterConfiguration[] characters)
     {
         // fill dict with real values
+        var rarity = CombinedRarity.ToTreasure();
         var dict = new Dictionary<uint, (uint Obtained, List<uint> Amounts)>();
-        foreach (var pair in characters.SelectMany(c => c.Occult.TreasureHistory).Where(pair => pair.Key == territory).Select(pair => pair.Value[TreasureRarity]))
+        foreach (var pair in characters.SelectMany(c => c.Occult.TreasureHistory).Where(pair => pair.Key == territory).Select(pair => pair.Value[rarity]))
         {
             foreach (var result in pair.Values.SelectMany(result => result.Items))
             {
@@ -242,11 +256,11 @@ public partial class MainWindow
 
         if (dict.Count == 0)
         {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {TreasureRarity.ToName()} Treasure in {territory.ToName()}");
+            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Haven't opened any {rarity.ToName()} Treasure in {territory.ToName()}");
             return;
         }
 
-        var opened = characters.Select(c => c.Occult.TreasureHistory[territory][TreasureRarity].Count).Sum();
+        var opened = characters.Select(c => c.Occult.TreasureHistory[territory][rarity].Count).Sum();
         var unsortedList = Utils.ToSortedEntry(dict, opened);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");

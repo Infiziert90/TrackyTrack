@@ -79,6 +79,18 @@ public enum OccultCofferRarity : uint
     BunnyGold = 2012936,
 }
 
+public enum CombinedRarity : uint
+{
+    TreasureBronze = 1596,
+    TreasureSilver = 1597,
+
+    PotGold = 2014741,
+    PotSilver = 2014742,
+    PotBronze = 2014743,
+
+    BunnyGold = 2012936,
+}
+
 public enum OccultWorth
 {
     Bronze = 1_000,
@@ -159,6 +171,16 @@ public static class OccultExtensions
         };
     }
 
+    public static string ToExtendedName(this OccultTreasureRarity rarity)
+    {
+        return rarity switch
+        {
+            OccultTreasureRarity.Bronze => "Treasure Bronze",
+            OccultTreasureRarity.Silver => "Treasure Silver",
+            _ => "Unknown"
+        };
+    }
+
     public static string ToName(this OccultCofferRarity rarity)
     {
         return rarity switch
@@ -166,6 +188,18 @@ public static class OccultExtensions
             OccultCofferRarity.Bronze => "Bronze",
             OccultCofferRarity.Silver => "Silver",
             OccultCofferRarity.Gold or OccultCofferRarity.BunnyGold => "Gold",
+            _ => "Unknown"
+        };
+    }
+
+    public static string ToExtendedName(this OccultCofferRarity rarity)
+    {
+        return rarity switch
+        {
+            OccultCofferRarity.Bronze => "Pot Bronze",
+            OccultCofferRarity.Silver => "Pot Silver",
+            OccultCofferRarity.Gold => "Pot Gold",
+            OccultCofferRarity.BunnyGold => "Bunny Gold",
             _ => "Unknown"
         };
     }
@@ -191,6 +225,43 @@ public static class OccultExtensions
             OccultWorth.Silver => OccultCofferRarity.Silver,
             OccultWorth.Bronze => OccultCofferRarity.Bronze,
             _ => 0
+        };
+    }
+
+    public static OccultTreasureRarity ToTreasure(this CombinedRarity rarity)
+    {
+        return rarity switch
+        {
+            CombinedRarity.TreasureBronze => OccultTreasureRarity.Bronze,
+            CombinedRarity.TreasureSilver => OccultTreasureRarity.Silver,
+            _ => OccultTreasureRarity.Bronze,
+        };
+    }
+
+    public static OccultCofferRarity ToPot(this CombinedRarity rarity)
+    {
+        return rarity switch
+        {
+            CombinedRarity.PotBronze => OccultCofferRarity.Bronze,
+            CombinedRarity.PotSilver => OccultCofferRarity.Silver,
+            CombinedRarity.PotGold => OccultCofferRarity.Gold,
+            _ => OccultCofferRarity.Bronze,
+        };
+    }
+
+    public static OccultCofferRarity ToBunny(this CombinedRarity rarity)
+    {
+        return OccultCofferRarity.BunnyGold;
+    }
+
+    public static string ToExtendedName(this CombinedRarity rarity)
+    {
+        return rarity switch
+        {
+            CombinedRarity.TreasureBronze or CombinedRarity.TreasureSilver => rarity.ToTreasure().ToExtendedName(),
+            CombinedRarity.PotBronze or CombinedRarity.PotSilver or CombinedRarity.PotGold => rarity.ToPot().ToExtendedName(),
+            CombinedRarity.BunnyGold => rarity.ToBunny().ToExtendedName(),
+            _ => "Unknown",
         };
     }
 }
