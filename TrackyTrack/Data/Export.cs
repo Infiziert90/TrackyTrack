@@ -342,11 +342,17 @@ public static class Export
         [JsonProperty("name")]
         public uint NameId;
 
+        [JsonProperty("model_chara")]
+        public uint ModelChara;
+
         [JsonProperty("territory")]
         public uint TerritoryId;
 
         [JsonProperty("map")]
         public uint MapId;
+
+        [JsonProperty("no_target")]
+        public bool NoTarget;
 
         [JsonProperty("level_id")]
         public uint LevelId;
@@ -369,6 +375,12 @@ public static class Export
         [JsonProperty("level")]
         public ushort Level;
 
+        [JsonProperty("foray_level")]
+        public byte ForayLevel;
+
+        [JsonProperty("foray_element")]
+        public byte ForayElement;
+
         [JsonProperty("display_flags")]
         public uint DisplayFlags;
 
@@ -385,9 +397,12 @@ public static class Export
         {
             BaseId = packet->Common.BaseId;
             NameId = packet->Common.NameId;
+            ModelChara = packet->Common.ModelChara;
 
             MapId = Plugin.ClientState.MapId;
             TerritoryId = Plugin.ClientState.TerritoryType;
+
+            NoTarget = packet->Common.TargetId.ObjectId == 0xE0000000;
 
             LevelId = packet->Common.LayoutId;
             X = packet->Common.Position.X;
@@ -397,6 +412,8 @@ public static class Export
 
             EnemyType = packet->Common.Battalion;
             Level = packet->Common.Level;
+            ForayLevel = packet->Common.ForayRank;
+            ForayElement = packet->Common.ForayElement;
             DisplayFlags = packet->Common.DisplayFlags;
             ObjectKind = (ushort)packet->Common.ObjectKind;
 
