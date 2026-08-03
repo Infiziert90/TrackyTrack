@@ -32,7 +32,6 @@ public class Plugin : IDalamudPlugin
     [PluginService] public static ITargetManager TargetManager { get; private set; } = null!;
     [PluginService] public static IFateTable FateTable { get; private set; } = null!;
     [PluginService] public static IPlayerState PlayerState { get; private set; } = null!;
-    [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
 
     public static FileDialogManager FileDialogManager { get; private set; } = null!;
 
