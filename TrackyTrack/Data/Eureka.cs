@@ -30,32 +30,48 @@ public class EurekaTracker
                 { CofferRarity.Silver, [] },
                 { CofferRarity.Gold, [] },
             }
-        }
+        },
     };
 }
 
 public record EurekaResult
 {
-    public readonly List<EurekaItem> Items = [];
-
-    public void AddItem(uint item, uint count) => Items.Add(new EurekaItem(ItemUtil.GetBaseId(item).ItemId, count));
-    [JsonIgnore] public bool IsValid => Items.Count != 0;
+    public List<EurekaItem> Items = [];
 }
 
 public record EurekaItem(uint Item, uint Count);
+
+public struct EurekaCoffer(uint territory, uint rarity)
+{
+    public Territory Territory = (Territory)territory;
+    public CofferRarity Rarity = (CofferRarity)rarity;
+
+    public List<ItemResult> Received = [];
+
+    [JsonIgnore]
+    public bool AwaitingResults;
+
+    public void AddItem(uint item, uint count)
+        => Received.Add(new ItemResult(ItemUtil.GetBaseId(item).ItemId, count));
+
+    public bool IsValid => Received.Count > 0;
+
+    public EurekaCoffer Clone()
+        => new() {Territory = Territory, Rarity = Rarity, Received = [..Received]};
+}
 
 public enum Territory : uint
 {
     Pagos = 763,
     Pyros = 795,
-    Hydatos = 827
+    Hydatos = 827,
 }
 
 public enum CofferRarity : uint
 {
     Gold = 2009530,
     Silver = 2009531,
-    Bronze = 2009532
+    Bronze = 2009532,
 }
 
 public enum Worth
@@ -93,8 +109,7 @@ public static class EurekaUtil
 
 public static class EurekaExtensions
 {
-    public static readonly uint[] RarityArray = Enum.GetValues<Territory>().Select(t => (uint) t).ToArray();
-    public static readonly int[] WorthArray =  Enum.GetValues<Worth>().Select(x => (int)x).ToArray();
+    public static readonly HashSet<uint> RarityArray = Enum.GetValues<CofferRarity>().Select(t => (uint) t).ToHashSet();
 
     public static string ToName(this Territory territory)
     {
@@ -103,7 +118,7 @@ public static class EurekaExtensions
             Territory.Pagos => "Pagos",
             Territory.Pyros => "Pyros",
             Territory.Hydatos => "Hydatos",
-            _ => "Unknown"
+            _ => "Unknown",
         };
     }
 
@@ -114,7 +129,7 @@ public static class EurekaExtensions
             CofferRarity.Bronze => "Bronze",
             CofferRarity.Silver => "Silver",
             CofferRarity.Gold => "Gold",
-            _ => "Unknown"
+            _ => "Unknown",
         };
     }
 
@@ -125,18 +140,7 @@ public static class EurekaExtensions
             CofferRarity.Gold => (uint)Worth.Gold,
             CofferRarity.Silver => (uint)Worth.Silver,
             CofferRarity.Bronze => (uint)Worth.Bronze,
-            _ => 0
-        };
-    }
-
-    public static CofferRarity FromWorth(long worth)
-    {
-        return (Worth)worth switch
-        {
-            Worth.Gold => CofferRarity.Gold,
-            Worth.Silver => CofferRarity.Silver,
-            Worth.Bronze => CofferRarity.Bronze,
-            _ => 0
+            _ => 0,
         };
     }
 }

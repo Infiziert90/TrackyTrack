@@ -10,26 +10,28 @@ public class TimerManager
     private readonly Plugin Plugin;
 
     public ReductionResult LastReductionResult = new();
-    private readonly Timer AwaitingReduction = new(1 * 200);
+    private readonly Timer AwaitingReduction = new(200);
 
     public DesynthResultV2 LastDesynthesisResult = new();
-    private readonly Timer AwaitingDesynthesis = new(1 * 200);
+    private readonly Timer AwaitingDesynthesis = new(200);
 
-    public readonly Timer TicketUsedTimer = new(1 * 500);
+    public readonly Timer TicketUsedTimer = new(500);
 
     public uint Repaired;
-    private readonly Timer RepairTimer = new(1 * 500);
+    private readonly Timer RepairTimer = new(500);
 
     public readonly Dictionary<uint, Export.DutyLoot> LootCache = [];
-    private readonly Timer LootTimer = new(1 * 500);
+    private readonly Timer LootTimer = new(500);
 
-    public uint LastBaseId;
-    public Vector3 ChestPosition;
-    private readonly Timer TreasureResetTimer = new(1 * 1500);
+    public EurekaCoffer EurekaCoffer;
+    private readonly Timer EurekaCofferTimer = new(600);
 
-    public uint LastTargetBaseId;
-    public Vector3 LastTargetPosition;
+    public OccultCoffer OccultCoffer;
+    private readonly Timer OccultTreasureTimer = new(300);
+
     public ushort LastBunnyFateId;
+    public OccultPot OccultPot;
+    private readonly Timer OccultCofferTimer = new(600);
 
     public TimerManager(Plugin plugin)
     {
@@ -49,8 +51,14 @@ public class TimerManager
         LootTimer.AutoReset = false;
         LootTimer.Elapsed += StoreLootResults;
 
-        TreasureResetTimer.AutoReset = false;
-        TreasureResetTimer.Elapsed += TreasureResetTimerOnElapsed;
+        EurekaCofferTimer.AutoReset = false;
+        EurekaCofferTimer.Elapsed += StoreEurekaResult;
+
+        OccultTreasureTimer.AutoReset = false;
+        OccultTreasureTimer.Elapsed += StoreOccultTreasure;
+
+        OccultCofferTimer.AutoReset = false;
+        OccultCofferTimer.Elapsed += StoreOccultBunny;
     }
 
     public void Dispose() { }
@@ -83,19 +91,28 @@ public class TimerManager
         LootTimer.Start();
     }
 
-    public void StartTreasure(uint lastBaseId, Vector3 chestPosition)
+    public void StartEureka(uint lastBaseId)
     {
-        LastBaseId = lastBaseId;
-        ChestPosition = chestPosition;
+        EurekaCoffer = new EurekaCoffer(Plugin.ClientState.TerritoryType, lastBaseId) { AwaitingResults = true };
 
-        TreasureResetTimer.Stop();
-        TreasureResetTimer.Start();
+        EurekaCofferTimer.Stop();
+        EurekaCofferTimer.Start();
     }
 
-    void TreasureResetTimerOnElapsed(object? sender, ElapsedEventArgs e)
+    public void StartOccultTreasure(uint baseId, Vector3 pos)
     {
-        LastBaseId = 0;
-        ChestPosition =  Vector3.Zero;
+        OccultCoffer = new OccultCoffer(Plugin.ClientState.TerritoryType, baseId, pos) { AwaitingResults = true };
+
+        OccultTreasureTimer.Stop();
+        OccultTreasureTimer.Start();
+    }
+
+    public void StartOccultPot(uint baseId, Vector3 pos)
+    {
+        OccultPot = new OccultPot(Plugin.ClientState.TerritoryType, baseId, pos, LastBunnyFateId) { AwaitingResults = true };
+
+        OccultCofferTimer.Stop();
+        OccultCofferTimer.Start();
     }
 
     public void RepairResult(int gilDifference)
@@ -227,192 +244,83 @@ public class TimerManager
         Plugin.UploadEntry(new Export.GachaLoot(coffer.ItemId, item.ItemId, (uint) item.Quantity));
     }
 
-    public void StoreEurekaResult((uint ItemId, int Quantity)[] changes)
+    private void StoreEurekaResult(object? _, ElapsedEventArgs __)
     {
-        if (!EurekaExtensions.RarityArray.Contains(Plugin.ClientState.TerritoryType))
+        var eurekaCoffer = EurekaCoffer.Clone();
+        EurekaCoffer = new EurekaCoffer();
+
+        if (!EnumHelper.PlayerInEureka())
             return;
 
-        var gil = changes.FirstOrDefault(c => c.ItemId == 1);
-        if (!EurekaExtensions.WorthArray.Contains(gil.Quantity))
-            return;
-
-        var result = new EurekaResult();
-        foreach (var (itemId, quantity) in changes.Where(c => c.ItemId != 1))
-        {
-            if (quantity < 1)
-            {
-                Plugin.Log.Warning($"Eureka Result: {itemId} with {quantity}");
-                return;
-            }
-
-            result.AddItem(itemId, (uint) quantity);
-        }
-
-        if (!result.IsValid)
+        if (!eurekaCoffer.IsValid)
         {
             Plugin.Log.Warning("No items received, invalid result");
             return;
         }
 
-        var rarity = EurekaExtensions.FromWorth(gil.Quantity);
-        var territory = (Territory) Plugin.ClientState.TerritoryType;
+        var result = new EurekaResult();
+        foreach (var itemResult in eurekaCoffer.Received)
+            result.Items.Add(new EurekaItem(itemResult.Item,itemResult.Count));
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         character.Eureka.Opened += 1;
-        character.Eureka.History[territory][rarity].Add(DateTime.Now, result);
+        character.Eureka.History[eurekaCoffer.Territory][eurekaCoffer.Rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
-        Plugin.UploadEntry(new Export.BunnyLoot((uint)rarity, (uint)territory, result.Items));
+        Plugin.UploadEntry(new Export.BunnyLoot((uint)eurekaCoffer.Rarity, (uint)eurekaCoffer.Territory, eurekaCoffer.Received));
     }
 
-    private static readonly HashSet<OccultTerritory> OccultTerritories = [OccultTerritory.SouthHorn, OccultTerritory.NorthHorn];
-    public static bool PlayerInOccult()
-        => OccultTerritories.Contains((OccultTerritory)Plugin.ClientState.TerritoryType);
-
-    public void StoreOccultResult((uint ItemId, int Quantity)[] changes)
+    public void StoreOccultTreasure(object? _, ElapsedEventArgs __)
     {
-        if (!PlayerInOccult() || LastBaseId == 0)
+        if (!EnumHelper.PlayerInOccult())
             return;
 
-        var lastBaseId = LastBaseId;
-        LastBaseId = 0;
+        var occultCoffer = OccultCoffer.Clone();
+        OccultCoffer = new OccultCoffer();
 
-        if (ChestPosition == Vector3.Zero)
-        {
-            Plugin.Log.Warning("Invalid chest position found for occult treasure.");
-            return;
-        }
-
-        var territory = (OccultTerritory) Plugin.ClientState.TerritoryType;
-
-        // This range should include all treasure coffers
-        Plugin.Log.Information($"Territory check");
-        if (territory == OccultTerritory.SouthHorn)
-        {
-            if (lastBaseId is > 1856 or < 1789)
-                return;
-        }
-        else
-        {
-            if (lastBaseId is > 2073 or < 2006)
-                return;
-        }
-
-        var adjustedCofferId = Sheets.TreasureSheet.GetRow(lastBaseId).SGB;
-
-        var result = new OccultResult();
-        foreach (var (itemId, quantity) in changes)
-        {
-            if (quantity < 1)
-            {
-                Plugin.Log.Warning($"Occult Result: {itemId} with {quantity}");
-                return;
-            }
-
-            var item = ItemUtil.GetBaseId(itemId);
-            if (item.Kind == ItemKind.EventItem)
-            {
-                Plugin.Log.Error($"Found event item as reward. {item.ItemId}");
-                Utils.AddNotification("Invalid item found as reward, please report to the developer.", NotificationType.Error);
-                return;
-            }
-
-            result.AddItem(item.ItemId, (uint) quantity);
-        }
-
-        if (!result.IsValid)
+        if (!occultCoffer.IsValid)
         {
             Plugin.Log.Warning("No items received, invalid result");
             return;
         }
 
-        var rarity = (OccultTreasureRarity) adjustedCofferId.RowId;
+        var result = new OccultResult();
+        foreach (var itemResult in occultCoffer.Received)
+            result.Items.Add(new OccultItem(itemResult.Item,itemResult.Count));
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
         character.Occult.TreasureOpened += 1;
-        if (!character.Occult.TreasureHistory.ContainsKey(territory))
-        {
-            character.Occult.TreasureHistory.Add(territory, new()
-            {
-                { OccultTreasureRarity.Bronze, [] },
-                { OccultTreasureRarity.Silver, [] },
-            });
-        }
-        character.Occult.TreasureHistory[territory][rarity].Add(DateTime.Now, result);
+        character.Occult.TreasureHistory[occultCoffer.Territory][occultCoffer.Rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
-        Plugin.UploadEntry(new Export.OccultTreasure(lastBaseId, (uint)territory, result.Items, ChestPosition));
+        Plugin.UploadEntry(new Export.OccultTreasure(occultCoffer));
     }
 
-    public void StoreOccultBunny((uint ItemId, int Quantity)[] changes)
+    public void StoreOccultBunny(object? _, ElapsedEventArgs __)
     {
-        if (!PlayerInOccult())
+        if (!EnumHelper.PlayerInOccult())
             return;
 
-        var gil = changes.FirstOrDefault(c => c.ItemId == 1);
-        if (!OccultExtensions.WorthArray.Contains(gil.Quantity))
-            return;
+        var occultCoffer = OccultPot.Clone();
+        OccultPot = new OccultPot();
+        LastBunnyFateId = 0;
 
-        var result = new OccultResult();
-        foreach (var (itemId, quantity) in changes.Where(c => c.ItemId != 1))
-        {
-            if (quantity < 1)
-            {
-                Plugin.Log.Warning($"Occult Bunny Result: {itemId} with {quantity}");
-                return;
-            }
-
-            var item = ItemUtil.GetBaseId(itemId);
-            if (item.Kind == ItemKind.EventItem)
-                return;
-
-            result.AddItem(item.ItemId, (uint) quantity);
-        }
-
-        if (!result.IsValid)
+        if (!occultCoffer.IsValid)
         {
             Plugin.Log.Warning("No items received, invalid result");
             return;
         }
 
-        var rarity = OccultExtensions.FromWorth(gil.Quantity);
-        var territory = (OccultTerritory) Plugin.ClientState.TerritoryType;
-
-        var pos = Vector3.Zero;
-        if (OccultExtensions.RarityArray.Contains(LastTargetBaseId))
-            pos = LastTargetPosition;
-
-        var lastFateId = LastBunnyFateId;
-
-        LastTargetBaseId = 0;
-        LastTargetPosition = Vector3.Zero;
-        if (rarity is OccultCofferRarity.BunnyGold)
-            lastFateId = 0;
-        else
-            LastBunnyFateId = 0; // this will also set it to 0 for a second chance pot, which is preferred
-
-        if (pos == Vector3.Zero)
-        {
-            Plugin.Log.Warning("Invalid chest position found for occult bunny.");
-            return;
-        }
+        var result = new OccultResult();
+        foreach (var itemResult in occultCoffer.Received)
+            result.Items.Add(new OccultItem(itemResult.Item,itemResult.Count));
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
-        if (!character.Occult.History.ContainsKey(territory))
-        {
-            character.Occult.History.Add(territory, new()
-            {
-                { OccultCofferRarity.Bronze, [] },
-                { OccultCofferRarity.Silver, [] },
-                { OccultCofferRarity.Gold, [] },
-                { OccultCofferRarity.BunnyGold, [] },
-            });
-        }
         character.Occult.Opened += 1;
-        character.Occult.History[territory][rarity].Add(DateTime.Now, result);
+        character.Occult.History[occultCoffer.Territory][occultCoffer.Rarity].Add(DateTime.Now, result);
         Plugin.ConfigurationBase.SaveCharacterConfig();
 
-        Plugin.UploadEntry(new Export.OccultBunny((uint)rarity, (uint)territory, result.Items, pos, lastFateId));
+        Plugin.UploadEntry(new Export.OccultBunny(occultCoffer));
     }
 
     private void StoreLootResults(object? _, ElapsedEventArgs __)

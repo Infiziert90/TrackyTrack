@@ -74,7 +74,7 @@ public static class Export
         public uint[] Items;
 
 
-        public BunnyLoot(uint rarity, uint territory, List<EurekaItem> items) : base("Bnuuy")
+        public BunnyLoot(uint rarity, uint territory, List<ItemResult> items) : base("Bnuuy")
         {
             Rarity = rarity;
             Territory = territory;
@@ -268,16 +268,16 @@ public static class Export
         [JsonProperty("pos_z")]
         public float ChestPosZ;
 
-        public OccultTreasure(uint baseId, uint territory, List<OccultItem> rewards, Vector3 chestPos) : base("OccultTreasure")
+        public OccultTreasure(OccultCoffer coffer) : base("OccultTreasure")
         {
-            BaseId = baseId;
-            Territory = territory;
+            BaseId = coffer.Base;
+            Territory = (uint)coffer.Territory;
 
-            Rewards = rewards.SelectMany(r => r.Combine()).ToArray();
+            Rewards = coffer.Received.SelectMany(r => r.Combined()).ToArray();
 
-            ChestPosX = chestPos.X;
-            ChestPosY = chestPos.Y;
-            ChestPosZ = chestPos.Z;
+            ChestPosX = coffer.Position.X;
+            ChestPosY = coffer.Position.Y;
+            ChestPosZ = coffer.Position.Z;
         }
     }
 
@@ -302,20 +302,20 @@ public static class Export
         public float ChestPosZ;
 
         [JsonProperty("fate_id")]
-        public ushort FateId;
+        public uint FateId;
 
-        public OccultBunny(uint rarity, uint territory, List<OccultItem> rewards, Vector3 chestPos, ushort fateId) : base("OccultBunny")
+        public OccultBunny(OccultPot pot) : base("OccultBunny")
         {
-            Rarity = rarity;
-            Territory = territory;
+            Rarity = (uint)pot.Rarity;
+            Territory = (uint)pot.Territory;
 
-            Rewards = rewards.SelectMany(r => r.Combine()).ToArray();
+            Rewards = pot.Received.SelectMany(r => r.Combined()).ToArray();
 
-            ChestPosX = chestPos.X;
-            ChestPosY = chestPos.Y;
-            ChestPosZ = chestPos.Z;
+            ChestPosX = pot.Position.X;
+            ChestPosY = pot.Position.Y;
+            ChestPosZ = pot.Position.Z;
 
-            FateId = fateId;
+            FateId = pot.FateId;
         }
     }
 

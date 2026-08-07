@@ -39,6 +39,7 @@ public unsafe class HookManager
     private Hook<AgentLotteryDaily.Delegates.UpdatePayout>? UpdatePayoutHook { get; init; }
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
     private Hook<AgentFateReward.Delegates.EnqueueReward>? EnqueueRewardHook { get; init; }
+    private Hook<PacketDispatcher.Delegates.OnReceivePacket>? OnReceiveHook { get; init; }
 
     public uint LastSeenItemId;
     private MiniCactpotData? LastDataSet;
@@ -80,6 +81,9 @@ public unsafe class HookManager
 
         HandleSpawnNPCPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleSpawnNpcPacket>(PacketDispatcher.MemberFunctionPointers.HandleSpawnNpcPacket, HandleSpawnNPCPacketDetour);
         HandleSpawnNPCPacketHook.Enable();
+
+        // OnReceiveHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.OnReceivePacket>((nint)PacketDispatcher.StaticVirtualTablePointer->OnReceivePacket, OnReceivePacketDetour);
+        // OnReceiveHook.Enable();
     }
 
     public void Dispose()
@@ -93,6 +97,27 @@ public unsafe class HookManager
         UpdateNumberHook?.Dispose();
         UpdatePayoutHook?.Dispose();
         HandleSpawnNPCPacketHook?.Dispose();
+        // OnReceiveHook?.Dispose();
+    }
+
+    private HashSet<ushort> Ignore = [552, 246, 274, 332, 526, 363, 490, 636, 113, 128, 893, 258, 151];
+    private void OnReceivePacketDetour(PacketDispatcher* thisPtr, uint targetId, nint packet)
+    {
+        try
+        {
+            var opCode = *(ushort*)(packet + 2);
+            OnReceiveHook!.Original(thisPtr, targetId, packet);
+
+            if (Ignore.Contains(opCode))
+                return;
+
+            Plugin.Log.Information($"Opcode: {opCode}");
+            Utils.PrintMemoryArea(packet, 0x200);
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error in OnReceivePacketDetour.");
+        }
     }
 
     private void EnqueueRewardDetour(AgentFateReward* agent, AgentFateReward.Reward* reward)
@@ -266,20 +291,18 @@ public unsafe class HookManager
 
             // This range should include all random coffer
             Plugin.Log.Information($"Interacting with {treasureObj->BaseId}");
-
-            var baseId = treasureObj->BaseId;
             if ((OccultTerritory)Plugin.ClientState.TerritoryType == OccultTerritory.SouthHorn)
             {
-                if (baseId is > 1856 or < 1789)
+                if (treasureObj->BaseId is > 1856 or < 1789)
                     return;
             }
             else
             {
-                if (baseId is > 2073 or < 2006)
+                if (treasureObj->BaseId is > 2073 or < 2006)
                     return;
             }
 
-            Plugin.TimerManager.StartTreasure(baseId, treasureObj->Position);
+            Plugin.TimerManager.StartOccultTreasure(treasureObj->BaseId, treasureObj->Position);
         }
         catch (Exception ex)
         {

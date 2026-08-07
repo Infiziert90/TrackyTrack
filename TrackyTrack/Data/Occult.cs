@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Dalamud.Utility;
 using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
@@ -47,15 +48,67 @@ public class OccultTracker
 
 public record OccultResult
 {
-    public readonly List<OccultItem> Items = [];
-
-    public void AddItem(uint item, uint count) => Items.Add(new OccultItem(item, count));
-    [JsonIgnore] public bool IsValid => Items.Count != 0;
+    public List<OccultItem> Items = [];
 }
 
-public record OccultItem(uint Item, uint Count)
+public record OccultItem(uint Item, uint Count) {}
+
+public struct OccultPot(uint territory, uint rarity, Vector3 pos, uint fateId)
 {
-    public uint[] Combine() => [Item, Count];
+    public OccultTerritory Territory = (OccultTerritory)territory;
+    public OccultCofferRarity Rarity = (OccultCofferRarity)rarity;
+    public Vector3 Position = pos;
+    public uint FateId = fateId;
+
+    public List<ItemResult> Received = [];
+
+    [JsonIgnore]
+    public bool AwaitingResults;
+
+    public void AddItem(uint item, uint count)
+        => Received.Add(new ItemResult(ItemUtil.GetBaseId(item).ItemId, count));
+
+    public bool IsValid => Received.Count > 0;
+
+    public OccultPot Clone()
+        => new() {Territory = Territory, Rarity = Rarity, Received = [..Received], Position = Position, FateId = FateId};
+}
+
+public struct OccultCoffer(uint territory, uint baseId, Vector3 pos)
+{
+    public OccultTerritory Territory = (OccultTerritory)territory;
+    public uint Base = baseId;
+    public OccultTreasureRarity Rarity = (OccultTreasureRarity)Sheets.TreasureSheet.GetRow(baseId).SGB.RowId;
+    public Vector3 Position = pos;
+
+    public List<ItemResult> Received = [];
+
+    [JsonIgnore]
+    public bool AwaitingResults;
+
+    public void AddItem(uint item, uint count)
+        => Received.Add(new ItemResult(ItemUtil.GetBaseId(item).ItemId, count));
+
+    public bool IsValid
+    {
+        get
+        {
+            if (Received.Count == 0)
+                return false;
+
+            switch (Rarity)
+            {
+                case OccultTreasureRarity.Bronze when Received.Count > 1:
+                case OccultTreasureRarity.Silver when Received.Count > 3:
+                    return false;
+                default:
+                    return true;
+            }
+        }
+    }
+
+    public OccultCoffer Clone()
+        => new() {Territory = Territory, Base = Base, Rarity = Rarity, Received = [..Received], Position = Position};
 }
 
 public enum OccultTerritory : uint
@@ -148,8 +201,7 @@ public static class OccultUtil
 
 public static class OccultExtensions
 {
-    public static readonly uint[] RarityArray = Enum.GetValues<OccultCofferRarity>().Select(x => (uint)x).ToArray();
-    public static readonly int[] WorthArray =  Enum.GetValues<OccultWorth>().Select(x => (int)x).ToArray();
+    public static readonly HashSet<uint> RarityArray = Enum.GetValues<OccultCofferRarity>().Select(x => (uint)x).ToHashSet();
 
     public static string ToName(this OccultTerritory territory)
     {
@@ -157,7 +209,7 @@ public static class OccultExtensions
         {
             OccultTerritory.SouthHorn => "South Horn",
             OccultTerritory.NorthHorn => "North Horn",
-            _ => "Unknown"
+            _ => "Unknown",
         };
     }
 
@@ -167,7 +219,7 @@ public static class OccultExtensions
         {
             OccultTreasureRarity.Bronze => "Bronze",
             OccultTreasureRarity.Silver => "Silver",
-            _ => "Unknown"
+            _ => "Unknown",
         };
     }
 
@@ -177,7 +229,7 @@ public static class OccultExtensions
         {
             OccultTreasureRarity.Bronze => "Treasure Bronze",
             OccultTreasureRarity.Silver => "Treasure Silver",
-            _ => "Unknown"
+            _ => "Unknown",
         };
     }
 
@@ -188,7 +240,7 @@ public static class OccultExtensions
             OccultCofferRarity.Bronze => "Bronze",
             OccultCofferRarity.Silver => "Silver",
             OccultCofferRarity.Gold or OccultCofferRarity.BunnyGold => "Gold",
-            _ => "Unknown"
+            _ => "Unknown",
         };
     }
 
@@ -200,7 +252,7 @@ public static class OccultExtensions
             OccultCofferRarity.Silver => "Pot Silver",
             OccultCofferRarity.Gold => "Pot Gold",
             OccultCofferRarity.BunnyGold => "Bunny Gold",
-            _ => "Unknown"
+            _ => "Unknown",
         };
     }
 
@@ -212,19 +264,7 @@ public static class OccultExtensions
             OccultCofferRarity.Gold => (uint)OccultWorth.Gold,
             OccultCofferRarity.Silver => (uint)OccultWorth.Silver,
             OccultCofferRarity.Bronze => (uint)OccultWorth.Bronze,
-            _ => 0
-        };
-    }
-
-    public static OccultCofferRarity FromWorth(long worth)
-    {
-        return (OccultWorth)worth switch
-        {
-            OccultWorth.BunnyGold => OccultCofferRarity.BunnyGold,
-            OccultWorth.Gold => OccultCofferRarity.Gold,
-            OccultWorth.Silver => OccultCofferRarity.Silver,
-            OccultWorth.Bronze => OccultCofferRarity.Bronze,
-            _ => 0
+            _ => 0,
         };
     }
 
@@ -249,7 +289,7 @@ public static class OccultExtensions
         };
     }
 
-    public static OccultCofferRarity ToBunny(this CombinedRarity rarity)
+    public static OccultCofferRarity ToBunny(this CombinedRarity _)
     {
         return OccultCofferRarity.BunnyGold;
     }
