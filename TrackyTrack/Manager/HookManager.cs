@@ -290,7 +290,7 @@ public unsafe class HookManager
                 return;
 
             // This range should include all random coffer
-            Plugin.Log.Information($"Interacting with {treasureObj->BaseId}");
+            Plugin.Log.Debug($"Interacting with {treasureObj->BaseId}");
             if ((OccultTerritory)Plugin.ClientState.TerritoryType == OccultTerritory.SouthHorn)
             {
                 if (treasureObj->BaseId is > 1856 or < 1789)
