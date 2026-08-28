@@ -43,6 +43,7 @@ public class FrameworkManager
         Plugin.Framework.Update += OccultTracker;
         Plugin.Framework.Update += BunnyTracker;
 
+        Plugin.ChatGui.LogMessage += OnRouletteBonus;
         Plugin.ChatGui.LogMessage += OnEurekaBunnyMessage;
         Plugin.ChatGui.LogMessage += OnOccultTreasureMessage;
         Plugin.ChatGui.LogMessage += OnOccultPotMessage;
@@ -58,12 +59,40 @@ public class FrameworkManager
         Plugin.Framework.Update -= CurrencyTracker;
         Plugin.Framework.Update -= OccultTracker;
         Plugin.Framework.Update -= BunnyTracker;
+        Plugin.ChatGui.LogMessage -= OnRouletteBonus;
         Plugin.ChatGui.LogMessage -= OnEurekaBunnyMessage;
         Plugin.ChatGui.LogMessage -= OnOccultTreasureMessage;
         Plugin.ChatGui.LogMessage -= OnOccultPotMessage;
         Plugin.ChatGui.LogMessage -= OnReductionLogMessage;
         Plugin.ChatGui.LogMessage -= OnDesynthesisLogMessage;
         Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "FashionCheck", OnFashionCheckPostSetup);
+    }
+
+    private void OnRouletteBonus(ILogMessage message)
+    {
+        if (!Plugin.TempManager.CurrentRoulette.AwaitingResults)
+            return;
+
+        if (message.LogMessageId is 2246)
+        {
+            var exp = message.Parameters[0].UIntValue;
+            var gil = message.Parameters[1].UIntValue;
+
+            Plugin.TempManager.CurrentRoulette.AddBonus(exp, gil);
+
+            var current = Plugin.TempManager.CurrentRoulette.Clone();
+            Plugin.TempManager.CurrentRoulette = new RouletteData();
+
+            if (!current.IsValid)
+                return;
+
+            var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
+            character.Roulette.Total += 1;
+            character.Roulette.History.Add(DateTime.Now, current);
+            Plugin.ConfigurationBase.SaveCharacterConfig();
+
+            Plugin.UploadEntry(new Export.RouletteReport(current));
+        }
     }
 
     private void OnEurekaBunnyMessage(ILogMessage message)
@@ -84,6 +113,9 @@ public class FrameworkManager
     {
         if (!Plugin.TimerManager.OccultCoffer.AwaitingResults)
             return;
+
+        if (Plugin.Configuration.Debugging)
+            Plugin.Log.Debug($"{message.LogMessageId} | {message.FormatLogMessageForDebugging()}");
 
         if (message.LogMessageId is 1233 or 1232)
         {

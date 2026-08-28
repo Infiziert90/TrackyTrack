@@ -51,6 +51,7 @@ public class Plugin : IDalamudPlugin
     public readonly FrameworkManager FrameworkManager;
     private readonly HookManager HookManager;
     private readonly InventoryChanged InventoryChanged;
+    public readonly TempManager TempManager;
 
     public readonly Importer Importer;
 
@@ -71,6 +72,7 @@ public class Plugin : IDalamudPlugin
         HookManager = new HookManager(this);
         FrameworkManager = new FrameworkManager(this);
         InventoryChanged = new InventoryChanged();
+        TempManager = new TempManager(this);
 
         InventoryChanged.OnItemsChanged += TimerManager.StoreCofferResult;
 

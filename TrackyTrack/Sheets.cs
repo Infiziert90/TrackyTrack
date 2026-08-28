@@ -8,6 +8,7 @@ public static class Sheets
 {
     public static readonly ExcelSheet<Item> ItemSheet;
     public static readonly ExcelSheet<Mount> MountSheet;
+    public static readonly ExcelSheet<ClassJob> ClassJobSheet;
     public static readonly ExcelSheet<Treasure> TreasureSheet;
     public static readonly ExcelSheet<ParamGrow> ParamGrowSheets;
     public static readonly ExcelSheet<TerritoryType> TerritoryTypeSheet;
@@ -28,6 +29,7 @@ public static class Sheets
     {
         ItemSheet = Plugin.Data.GetExcelSheet<Item>();
         MountSheet = Plugin.Data.GetExcelSheet<Mount>();
+        ClassJobSheet = Plugin.Data.GetExcelSheet<ClassJob>();
         TreasureSheet = Plugin.Data.GetExcelSheet<Treasure>();
         ParamGrowSheets = Plugin.Data.GetExcelSheet<ParamGrow>();
         TerritoryTypeSheet = Plugin.Data.GetExcelSheet<TerritoryType>();

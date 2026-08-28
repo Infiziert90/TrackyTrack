@@ -1,5 +1,6 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
@@ -40,6 +41,7 @@ public unsafe class HookManager
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
     private Hook<AgentFateReward.Delegates.EnqueueReward>? EnqueueRewardHook { get; init; }
     private Hook<PacketDispatcher.Delegates.OnReceivePacket>? OnReceiveHook { get; init; }
+    private Hook<ContentsFinderQueueInfo.Delegates.OnQueuePop>? OnDutyPopHook { get; init; }
 
     public uint LastSeenItemId;
     private MiniCactpotData? LastDataSet;
@@ -82,6 +84,9 @@ public unsafe class HookManager
         HandleSpawnNPCPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleSpawnNpcPacket>(PacketDispatcher.MemberFunctionPointers.HandleSpawnNpcPacket, HandleSpawnNPCPacketDetour);
         HandleSpawnNPCPacketHook.Enable();
 
+        OnDutyPopHook = Plugin.Hook.HookFromAddress<ContentsFinderQueueInfo.Delegates.OnQueuePop>(ContentsFinderQueueInfo.MemberFunctionPointers.OnQueuePop, OnQueuePopDetour);
+        OnDutyPopHook.Enable();
+
         // OnReceiveHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.OnReceivePacket>((nint)PacketDispatcher.StaticVirtualTablePointer->OnReceivePacket, OnReceivePacketDetour);
         // OnReceiveHook.Enable();
     }
@@ -97,6 +102,7 @@ public unsafe class HookManager
         UpdateNumberHook?.Dispose();
         UpdatePayoutHook?.Dispose();
         HandleSpawnNPCPacketHook?.Dispose();
+        OnDutyPopHook?.Dispose();
         // OnReceiveHook?.Dispose();
     }
 
@@ -117,6 +123,21 @@ public unsafe class HookManager
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Error in OnReceivePacketDetour.");
+        }
+    }
+
+
+    private void OnQueuePopDetour(ContentsFinderQueueInfo* thisPtr, ContentsFinderQueueState newState, uint contentId, nint a4, bool isInProgressParty, ContentsFinder.LootRule lootRule, ulong inProgressPartyStartTimestamp, nint a8, bool isUnrestrictedParty, bool isMinimalIl, bool isSilenceEcho, bool isExplorerMode, bool isLevelSync, bool isLimitedLeveling)
+    {
+        try
+        {
+            OnDutyPopHook!.Original(thisPtr, newState, contentId, a4, isInProgressParty, lootRule, inProgressPartyStartTimestamp, a8, isUnrestrictedParty, isMinimalIl, isSilenceEcho, isExplorerMode, isLevelSync, isLimitedLeveling);
+
+            Plugin.TempManager.StartRoulette(thisPtr->QueuedContentRouletteId, thisPtr->QueuedClassJobId, isInProgressParty, isLimitedLeveling);
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Unable to process queue pop.");
         }
     }
 

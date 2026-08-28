@@ -593,6 +593,48 @@ public static class Export
         }
     }
 
+    public class RouletteReport : Upload
+    {
+        [JsonProperty("roulette")]
+        public uint Roulette;
+
+        [JsonProperty("cfc")]
+        public uint CFC;
+
+        [JsonProperty("class")]
+        public uint Class;
+
+        [JsonProperty("level")]
+        public uint Level;
+
+        [JsonProperty("exp")]
+        public uint Exp;
+
+        [JsonProperty("gil")]
+        public uint Gil;
+
+        [JsonProperty("limited_leveling")]
+        public bool LimitedLeveling;
+
+        [JsonProperty("in_progress")]
+        public bool InProgress;
+
+        public RouletteReport(RouletteData data) : base("Roulettes")
+        {
+            Roulette = data.Roulette;
+            CFC = data.CFC;
+
+            Class = data.Class;
+            Level = data.Level;
+
+            Exp = data.Exp;
+            Gil = data.Gil;
+
+            LimitedLeveling = data.LimitedLeveling;
+            InProgress = data.InProgress;
+        }
+    }
+
     public sealed class ExportMap : ClassMap<GachaLoot>
     {
         public ExportMap()
