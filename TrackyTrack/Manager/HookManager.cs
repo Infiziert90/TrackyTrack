@@ -1,13 +1,15 @@
-﻿using Dalamud.Hooking;
+using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -16,26 +18,17 @@ public unsafe class HookManager
 {
     private readonly Plugin Plugin;
 
-    private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
-    private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, uint param7, uint param8, ulong targetId, byte param9);
-    private Hook<ActorControlSelfDelegate> ActorControlSelfHook;
-
-    private const string OpenInspectSig = "40 53 56 41 54 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 01";
-    private delegate void OpenInspectThingy(nint inspectAgent, int starRating, InventoryItem* reward);
-    private Hook<OpenInspectThingy> OpenInspectHook;
-
     private const string LootAddedSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 89 4C 24";
     private delegate byte LootAddedDelegate(Loot* a1, uint chestObjectId, uint chestItemIndex, uint itemId, ushort itemCount, nint materia, nint glamourStainIds, uint glamourItemId, RollState rollState, RollResult rollResult, float time, float maxTime, byte rollValue, byte a14, LootMode lootMode, int a16, uint a17);
     private Hook<LootAddedDelegate> LootAddedHook;
-
-    private const string RetainerTaskResultSig = "E8 ?? ?? ?? ?? 48 89 9B ?? ?? ?? ?? 48 8B CF 48 8B 17 FF 52 48 89 83 ?? ?? ?? ?? 33 D2 48 8D 4D A0";
-    private delegate void RetainerTaskResultDelegate(AgentRetainerTask* agent, nint someLuaPointer, nint packet);
-    private Hook<RetainerTaskResultDelegate> RetainerTaskHook;
 
     private const string TreasureInteractSig = "E9 ?? ?? ?? ?? 48 63 05";
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
     private Hook<TreasureInteractDelegate> TreasureInteractHook;
 
+    private Hook<PacketDispatcher.Delegates.HandleActorControlPacket>? HandleActorControlPacketHook { get; init; }
+    private Hook<AgentItemInspection.Delegates.OpenResult>? OpenResultHook { get; init; }
+    private Hook<AgentRetainerTask.Delegates.OpenRetainerTaskResult>? OpenRetainerTaskResultHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdateNumber>? UpdateNumberHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdatePayout>? UpdatePayoutHook { get; init; }
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
@@ -52,21 +45,18 @@ public unsafe class HookManager
     {
         Plugin = plugin;
 
-        var actorControlSelfPtr = Plugin.SigScanner.ScanText(ActorControlSig);
-        ActorControlSelfHook = Plugin.Hook.HookFromAddress<ActorControlSelfDelegate>(actorControlSelfPtr, ActorControlSelf);
-        ActorControlSelfHook.Enable();
+        HandleActorControlPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleActorControlPacket>(PacketDispatcher.MemberFunctionPointers.HandleActorControlPacket, HandleActorControlPacketDetour);
+        HandleActorControlPacketHook.Enable();
 
-        var openInspectPtr = Plugin.SigScanner.ScanText(OpenInspectSig);
-        OpenInspectHook = Plugin.Hook.HookFromAddress<OpenInspectThingy>(openInspectPtr, OpenInspect);
-        OpenInspectHook.Enable();
+        OpenResultHook = Plugin.Hook.HookFromAddress<AgentItemInspection.Delegates.OpenResult>(AgentItemInspection.MemberFunctionPointers.OpenResult, OpenResultDetour);
+        OpenResultHook.Enable();
 
         var lootAddedPtr = Plugin.SigScanner.ScanText(LootAddedSig);
         LootAddedHook = Plugin.Hook.HookFromAddress<LootAddedDelegate>(lootAddedPtr, LootAddedDetour);
         LootAddedHook.Enable();
 
-        var retainerTaskPtr = Plugin.SigScanner.ScanText(RetainerTaskResultSig);
-        RetainerTaskHook = Plugin.Hook.HookFromAddress<RetainerTaskResultDelegate>(retainerTaskPtr, RetainerTaskDetour);
-        RetainerTaskHook.Enable();
+        OpenRetainerTaskResultHook = Plugin.Hook.HookFromAddress<AgentRetainerTask.Delegates.OpenRetainerTaskResult>(AgentRetainerTask.MemberFunctionPointers.OpenRetainerTaskResult, OpenRetainerTaskResultDetour);
+        OpenRetainerTaskResultHook.Enable();
 
         var treasureInteractPtr = Plugin.SigScanner.ScanText(TreasureInteractSig);
         TreasureInteractHook = Plugin.Hook.HookFromAddress<TreasureInteractDelegate>(treasureInteractPtr, TreasureInteractDetour);
@@ -93,10 +83,10 @@ public unsafe class HookManager
 
     public void Dispose()
     {
-        ActorControlSelfHook.Dispose();
-        OpenInspectHook.Dispose();
+        HandleActorControlPacketHook?.Dispose();
+        OpenResultHook?.Dispose();
         LootAddedHook.Dispose();
-        RetainerTaskHook.Dispose();
+        OpenRetainerTaskResultHook?.Dispose();
         TreasureInteractHook.Dispose();
         EnqueueRewardHook?.Dispose();
         UpdateNumberHook?.Dispose();
@@ -154,9 +144,9 @@ public unsafe class HookManager
         }
     }
 
-    private void OpenInspect(nint inspectAgent, int starRating, InventoryItem* reward)
+    private void OpenResultDetour(AgentItemInspection* thisPtr, int starRating, InventoryItem* reward)
     {
-        OpenInspectHook.Original(inspectAgent, starRating, reward);
+        OpenResultHook!.Original(thisPtr, starRating, reward);
 
         try
         {
@@ -180,21 +170,27 @@ public unsafe class HookManager
         }
     }
 
-    private void ActorControlSelf(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, uint param7, uint param8, ulong targetId, byte param9)
+    private void HandleActorControlPacketDetour(uint entityId, uint category, uint arg1, uint arg2, uint arg3, uint arg4, uint arg5, uint arg6, uint arg7, uint arg8, GameObjectId targetId, bool isRecorded)
     {
-        ActorControlSelfHook.Original(category, eventId, param1, param2, param3, param4, param5, param6, param7, param8, targetId, param9);
+        HandleActorControlPacketHook!.Original(entityId, category, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, targetId, isRecorded);
+
+        if (isRecorded)
+            return;
+
+        if (entityId != Control.Instance()->LocalPlayerEntityId)
+            return;
 
         // Handler for teleport, repair and other message logs
-        if (eventId != 517)
+        if (category != 517)
             return;
 
         try
         {
-            switch (param1)
+            switch (arg1)
             {
                 // Teleport log handler
                 case 4590:
-                    Plugin.TeleportCostHandler(param2);
+                    Plugin.TeleportCostHandler(arg2);
                     break;
                 // Aetheryte ticket log handler
                 case 4591:
@@ -202,14 +198,14 @@ public unsafe class HookManager
                     break;
                 // Repair log handler
                 case 1388:
-                    Plugin.RepairHandler(param2);
+                    Plugin.RepairHandler(arg2);
                     break;
                 // Lockbox handler
                 case 1948:
                 case 3980:
                     // Sort out the overflow from fragments
-                    if (!Lockboxes.Fragments.Contains(param2))
-                        Plugin.LockboxHandler(param2, param4, param5);
+                    if (!Lockboxes.Fragments.Contains(arg2))
+                        Plugin.LockboxHandler(arg2, arg4, arg5);
                     break;
             }
         }
@@ -266,9 +262,9 @@ public unsafe class HookManager
         return r;
     }
 
-    private void RetainerTaskDetour(AgentRetainerTask* agent, nint someLuaPointer, nint packet)
+    private void OpenRetainerTaskResultDetour(AgentRetainerTask* agent, AtkModuleInterface.AtkEventInterface* eventInterface, AgentRetainerTask.Data* resultData)
     {
-        RetainerTaskHook.Original(agent, someLuaPointer, packet);
+        OpenRetainerTaskResultHook!.Original(agent, eventInterface, resultData);
 
         var retainer = RetainerManager.Instance();
         var venture = AgentRetainerTask.Instance();
