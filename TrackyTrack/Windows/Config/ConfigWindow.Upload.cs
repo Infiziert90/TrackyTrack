@@ -29,6 +29,7 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Retainer Ventures");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Reward Tracking");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Fashion Report");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "- Duty Roulette Bonus");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Leve quests offered by Levemetes");
         }
 
