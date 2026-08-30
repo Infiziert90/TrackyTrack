@@ -486,13 +486,16 @@ public unsafe class HookManager
                 leveIds.Add(leveId);
             }
 
-            var data = new GuildleveAssignmentData()
+            var data = new GuildleveAssignmentData
             {
                 RowId = eventId.Id,
                 CategoryRowId = guildleveAssignmentCategory,
                 CategoryIndex = category,
                 LeveIds = leveIds,
             };
+
+            if (data.LeveIds.Count == 0)
+                return;
 
             Plugin.UploadEntry(new Export.GuildleveAssignments(data));
         }
