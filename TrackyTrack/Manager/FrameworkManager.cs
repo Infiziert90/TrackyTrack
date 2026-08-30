@@ -1,12 +1,9 @@
 ﻿using System.Globalization;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Chat;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.Text;
 using TrackyTrack.Data;
@@ -49,8 +46,6 @@ public class FrameworkManager
         Plugin.ChatGui.LogMessage += OnOccultPotMessage;
         Plugin.ChatGui.LogMessage += OnReductionLogMessage;
         Plugin.ChatGui.LogMessage += OnDesynthesisLogMessage;
-
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "FashionCheck", OnFashionCheckPostSetup);
     }
 
     public void Dispose()
@@ -65,7 +60,6 @@ public class FrameworkManager
         Plugin.ChatGui.LogMessage -= OnOccultPotMessage;
         Plugin.ChatGui.LogMessage -= OnReductionLogMessage;
         Plugin.ChatGui.LogMessage -= OnDesynthesisLogMessage;
-        Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "FashionCheck", OnFashionCheckPostSetup);
     }
 
     private void OnRouletteBonus(ILogMessage message)
@@ -244,44 +238,6 @@ public class FrameworkManager
                 Plugin.TimerManager.LastDesynthesisResult.AddItem(reward, count);
             }
         }
-    }
-
-    private unsafe void OnFashionCheckPostSetup(AddonEvent type, AddonArgs args)
-    {
-        var agentFashion = AgentFashion.Instance();
-        if (agentFashion != null && agentFashion->OpenType != AgentFashionOpenType.Result)
-            return;
-
-        var result = new FashionReportResult
-        {
-            WeekNum = agentFashion->FashionCheckData.WeeklyTheme - 9u,
-            Score = agentFashion->FashionCheckData.Score
-        };
-
-        var hints = agentFashion->FashionCheckData.ItemThemes;
-        var stamps = agentFashion->FashionCheckData.ItemEvaluations;
-        var itemData = agentFashion->Items;
-
-        if (hints.Length != stamps.Length)
-            return;
-
-        for (int i = 0; i < hints.Length; i++)
-        {
-            result.Categories.Add(new FashionReportCategory(hints[i], stamps[i]));
-        }
-
-        foreach (var item in itemData)
-        {
-            result.ItemIds.Add(item.ItemId);
-
-            var equipSlot = Sheets.GetItem(item.ItemId).EquipSlotCategory.RowId;
-            if (equipSlot is (>= 1 and <= 8) or 13)
-            {
-                result.StainIds.AddRange(item.Stain0Id, item.Stain1Id);
-            }
-        }
-
-        Plugin.UploadEntry(new Export.FashionReport(result));
     }
 
     private unsafe void ScanCurrentCharacter()

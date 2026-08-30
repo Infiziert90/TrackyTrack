@@ -27,6 +27,10 @@ public unsafe class HookManager
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
     private Hook<TreasureInteractDelegate> TreasureInteractHook;
 
+    private const string FashionToggleResultSig = "48 89 54 24 ?? 48 89 4C 24 ?? 53 55 41 56 48 83 EC 50";
+    private delegate char FashionToggleResultWindowDelegate(AgentFashion* agentFashion, AgentFashion.FashionCheckDataStruct* data, nint unk);
+    private readonly Hook<FashionToggleResultWindowDelegate> FashionToggleResultWindowHook;
+
     private Hook<PacketDispatcher.Delegates.HandleActorControlPacket>? HandleActorControlPacketHook { get; init; }
     private Hook<AgentItemInspection.Delegates.OpenResult>? OpenResultHook { get; init; }
     private Hook<AgentRetainerTask.Delegates.OpenRetainerTaskResult>? OpenRetainerTaskResultHook { get; init; }
@@ -64,6 +68,10 @@ public unsafe class HookManager
         TreasureInteractHook = Plugin.Hook.HookFromAddress<TreasureInteractDelegate>(treasureInteractPtr, TreasureInteractDetour);
         TreasureInteractHook.Enable();
 
+        var fashionToggleResultPtr = Plugin.SigScanner.ScanText(FashionToggleResultSig);
+        FashionToggleResultWindowHook = Plugin.Hook.HookFromAddress<FashionToggleResultWindowDelegate>(fashionToggleResultPtr, FashionToggleResultDetour);
+        FashionToggleResultWindowHook.Enable();
+
         EnqueueRewardHook = Plugin.Hook.HookFromAddress<AgentFateReward.Delegates.EnqueueReward>(AgentFateReward.MemberFunctionPointers.EnqueueReward, EnqueueRewardDetour);
         EnqueueRewardHook.Enable();
 
@@ -93,6 +101,7 @@ public unsafe class HookManager
         LootAddedHook.Dispose();
         OpenRetainerTaskResultHook?.Dispose();
         TreasureInteractHook.Dispose();
+        FashionToggleResultWindowHook.Dispose();
         EnqueueRewardHook?.Dispose();
         UpdateNumberHook?.Dispose();
         UpdatePayoutHook?.Dispose();
@@ -331,6 +340,47 @@ public unsafe class HookManager
         {
             Plugin.Log.Error(ex, "Unable to track treasure interaction.");
         }
+    }
+
+    private char FashionToggleResultDetour(AgentFashion* agentFashion, AgentFashion.FashionCheckDataStruct* data, nint unk)
+    {
+        var res = FashionToggleResultWindowHook.Original(agentFashion, data, unk);
+
+        if (agentFashion != null && agentFashion->OpenType != AgentFashionOpenType.Result)
+            return res;
+
+        var result = new FashionReportResult
+        {
+            WeekNum = agentFashion->FashionCheckData.WeeklyTheme - 9u,
+            Score = agentFashion->FashionCheckData.Score
+        };
+
+        var hints = agentFashion->FashionCheckData.ItemThemes;
+        var stamps = agentFashion->FashionCheckData.ItemEvaluations;
+        var itemData = agentFashion->Items;
+
+        if (hints.Length != stamps.Length)
+            return res;
+
+        for (int i = 0; i < hints.Length; i++)
+        {
+            result.Categories.Add(new FashionReportCategory(hints[i], stamps[i]));
+        }
+
+        foreach (var item in itemData)
+        {
+            result.ItemIds.Add(ItemUtil.GetBaseId(item.ItemId).ItemId);
+
+            var equipSlot = Sheets.GetItem(item.ItemId).EquipSlotCategory.RowId;
+            if (equipSlot is (>= 1 and <= 8) or 13)
+            {
+                result.StainIds.AddRange(item.Stain0Id, item.Stain1Id);
+            }
+        }
+
+        Plugin.UploadEntry(new Export.FashionReport(result));
+
+        return res;
     }
 
     private void UpdateNumberDetour(AgentLotteryDaily* agent, int index, byte value)
