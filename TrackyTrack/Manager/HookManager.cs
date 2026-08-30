@@ -2,6 +2,7 @@ using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
@@ -35,6 +36,7 @@ public unsafe class HookManager
     private Hook<AgentFateReward.Delegates.EnqueueReward>? EnqueueRewardHook { get; init; }
     private Hook<PacketDispatcher.Delegates.OnReceivePacket>? OnReceiveHook { get; init; }
     private Hook<ContentsFinderQueueInfo.Delegates.OnQueuePop>? OnDutyPopHook { get; init; }
+    private Hook<PacketDispatcher.Delegates.HandleEventYieldPacket>? HandleEventYieldPacketHook { get; init; }
 
     public uint LastSeenItemId;
     private MiniCactpotData? LastDataSet;
@@ -77,6 +79,9 @@ public unsafe class HookManager
         OnDutyPopHook = Plugin.Hook.HookFromAddress<ContentsFinderQueueInfo.Delegates.OnQueuePop>(ContentsFinderQueueInfo.MemberFunctionPointers.OnQueuePop, OnQueuePopDetour);
         OnDutyPopHook.Enable();
 
+        HandleEventYieldPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleEventYieldPacket>(PacketDispatcher.MemberFunctionPointers.HandleEventYieldPacket, HandleEventYieldPacketDetour);
+        HandleEventYieldPacketHook.Enable();
+
         // OnReceiveHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.OnReceivePacket>((nint)PacketDispatcher.StaticVirtualTablePointer->OnReceivePacket, OnReceivePacketDetour);
         // OnReceiveHook.Enable();
     }
@@ -93,6 +98,7 @@ public unsafe class HookManager
         UpdatePayoutHook?.Dispose();
         HandleSpawnNPCPacketHook?.Dispose();
         OnDutyPopHook?.Dispose();
+        HandleEventYieldPacketHook?.Dispose();
         // OnReceiveHook?.Dispose();
     }
 
@@ -403,6 +409,46 @@ public unsafe class HookManager
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Error while processing HandleSpawnNPC.");
+        }
+    }
+
+    private void HandleEventYieldPacketDetour(EventId eventId, short scene, byte yieldId, int* intParams, byte intParamCount)
+    {
+        HandleEventYieldPacketHook!.Original(eventId, scene, yieldId, intParams, intParamCount);
+
+        if (eventId.ContentId != EventHandlerContent.GuildLeveAssignment)
+            return;
+
+        if (scene != 0 || yieldId != 0 || intParamCount == 0)
+            return;
+
+        try
+        {
+            var metaValue = (uint)intParams[0];
+            var guildleveAssignmentCategory = (byte)(metaValue >> 24);
+            var category = (byte)(metaValue >> 16);
+            var count = (ushort)metaValue >> 7;
+
+            var leveIds = new List<ushort>(count);
+            for (var i = 0; i < count; i++)
+            {
+                var leveId = (ushort)(intParams[(i >> 1) + 2] >> (16 * ((i - 1) & 1)));
+                leveIds.Add(leveId);
+            }
+
+            var data = new GuildleveAssignmentData()
+            {
+                RowId = eventId.Id,
+                CategoryRowId = guildleveAssignmentCategory,
+                CategoryIndex = category,
+                LeveIds = leveIds,
+            };
+
+            Plugin.UploadEntry(new Export.GuildleveAssignments(data));
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error while processing HandleEventYieldPacket.");
         }
     }
 }

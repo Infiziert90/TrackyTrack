@@ -1,4 +1,4 @@
-﻿// ReSharper disable ExplicitCallerInfoArgument
+// ReSharper disable ExplicitCallerInfoArgument
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -636,6 +636,29 @@ public static class Export
 
             LimitedLeveling = data.LimitedLeveling;
             InProgress = data.InProgress;
+        }
+    }
+
+    public class GuildleveAssignments : Upload
+    {
+        [JsonProperty("rowId")]
+        public uint RowId;
+
+        [JsonProperty("categoryRowId")]
+        public byte CategoryRowId;
+
+        [JsonProperty("categoryIndex")]
+        public byte CategoryIndex;
+
+        [JsonProperty("leveIds")]
+        public ushort[] LeveIds;
+
+        public GuildleveAssignments(GuildleveAssignmentData data) : base("GuildleveAssignments")
+        {
+            RowId = data.RowId;
+            CategoryRowId = data.CategoryRowId;
+            CategoryIndex = data.CategoryIndex;
+            LeveIds = data.LeveIds.ToArray();
         }
     }
 
