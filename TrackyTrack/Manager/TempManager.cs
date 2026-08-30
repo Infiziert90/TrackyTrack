@@ -16,7 +16,8 @@ public class TempManager(Plugin plugin)
 
             Roulette = contentId,
             Class = job,
-            Level = (uint)Plugin.PlayerState.GetClassJobLevel(Sheets.ClassJobSheet.GetRow(job)),
+            Level = Plugin.PlayerState.GetClassJobLevel(Sheets.ClassJobSheet.GetRow(job)),
+            ClassExp = Plugin.PlayerState.GetClassJobExperience(Sheets.ClassJobSheet.GetRow(job)),
 
             InProgress = inProgress,
             LimitedLeveling = limitedLeveling,

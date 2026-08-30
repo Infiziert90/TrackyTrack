@@ -605,7 +605,10 @@ public static class Export
         public uint Class;
 
         [JsonProperty("level")]
-        public uint Level;
+        public int Level;
+
+        [JsonProperty("class_exp")]
+        public int ClassExp;
 
         [JsonProperty("exp")]
         public uint Exp;
@@ -626,6 +629,7 @@ public static class Export
 
             Class = data.Class;
             Level = data.Level;
+            ClassExp = data.ClassExp;
 
             Exp = data.Exp;
             Gil = data.Gil;

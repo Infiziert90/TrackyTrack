@@ -15,7 +15,8 @@ public class RouletteData
     public uint CFC;
 
     public uint Class;
-    public uint Level;
+    public int Level;
+    public int ClassExp;
 
     public uint Exp;
     public uint Gil;
