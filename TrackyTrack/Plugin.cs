@@ -50,6 +50,7 @@ public class Plugin : IDalamudPlugin
     public readonly FrameworkManager FrameworkManager;
     private readonly HookManager HookManager;
     private readonly InventoryChanged InventoryChanged;
+    public readonly TempManager TempManager;
 
     public readonly Importer Importer;
 
@@ -70,11 +71,9 @@ public class Plugin : IDalamudPlugin
         HookManager = new HookManager(this);
         FrameworkManager = new FrameworkManager(this);
         InventoryChanged = new InventoryChanged();
+        TempManager = new TempManager(this);
 
         InventoryChanged.OnItemsChanged += TimerManager.StoreCofferResult;
-        InventoryChanged.OnItemsChanged += TimerManager.StoreEurekaResult;
-        InventoryChanged.OnDelayedItemsChanged += TimerManager.StoreOccultResult;
-        InventoryChanged.OnDelayedItemsChanged += TimerManager.StoreOccultBunny;
 
         InventoryChanged.OnItemRemoved += FragmentRemoved;
 
@@ -111,9 +110,6 @@ public class Plugin : IDalamudPlugin
         ClientState.TerritoryChanged -= ResetData;
 
         InventoryChanged.OnItemsChanged -= TimerManager.StoreCofferResult;
-        InventoryChanged.OnItemsChanged -= TimerManager.StoreEurekaResult;
-        InventoryChanged.OnDelayedItemsChanged -= TimerManager.StoreOccultResult;
-        InventoryChanged.OnDelayedItemsChanged -= TimerManager.StoreOccultBunny;
 
         InventoryChanged.OnItemRemoved -= FragmentRemoved;
 
@@ -308,13 +304,6 @@ public class Plugin : IDalamudPlugin
     {
         HookManager.UploadHashes.Clear();
         TimerManager.LastBunnyFateId = 0;
-        TimerManager.LastTargetBaseId = 0;
-        TimerManager.LastTargetPosition = Vector3.Zero;
-
-        TimerManager.LastBaseId = 0;
-        TimerManager.ChestPosition = Vector3.Zero;
-
-        Plugin.Log.Information($"Resetting data");
     }
 
     #region Draws

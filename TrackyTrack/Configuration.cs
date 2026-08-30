@@ -25,6 +25,8 @@ public class Configuration : IPluginConfiguration
     public DateTime UploadNotificationReceived = DateTime.MaxValue;
     public bool UploadPermission = true;
 
+    public bool Debugging;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

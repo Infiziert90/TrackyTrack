@@ -61,6 +61,13 @@ public partial class ConfigWindow
             ImGuiComponents.HelpMarker("Only for Gacha 3.0 and Gacha 4.0.");
         }
 
+        ImGuiHelpers.ScaledDummy(5.0f);
+        ImGui.TextColored(ImGuiColors.DalamudViolet, "Debug:");
+        using (ImRaii.PushIndent(10.0f))
+        {
+            changed |= ImGui.Checkbox("Debugging", ref Plugin.Configuration.Debugging);
+        }
+
         if (changed)
         {
             Plugin.FrameworkManager.IsSafe = false;

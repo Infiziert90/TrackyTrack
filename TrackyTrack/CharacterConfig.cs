@@ -51,6 +51,7 @@ public class CharacterConfiguration
     public OccultTracker Occult = new();
     public Lockboxes Lockbox = new();
     public MiniCactpot MiniCactpot = new();
+    public Roulette Roulette = new();
 
     public CharacterConfiguration() { }
 

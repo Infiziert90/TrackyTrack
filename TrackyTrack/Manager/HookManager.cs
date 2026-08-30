@@ -1,12 +1,16 @@
-﻿using Dalamud.Hooking;
+using Dalamud.Hooking;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using TrackyTrack.Data;
 
 namespace TrackyTrack.Manager;
@@ -15,21 +19,9 @@ public unsafe class HookManager
 {
     private readonly Plugin Plugin;
 
-    private const string ActorControlSig = "E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64";
-    private delegate void ActorControlSelfDelegate(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, uint param7, uint param8, ulong targetId, byte param9);
-    private Hook<ActorControlSelfDelegate> ActorControlSelfHook;
-
-    private const string OpenInspectSig = "40 53 56 41 54 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 01";
-    private delegate void OpenInspectThingy(nint inspectAgent, int starRating, InventoryItem* reward);
-    private Hook<OpenInspectThingy> OpenInspectHook;
-
     private const string LootAddedSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 89 4C 24";
     private delegate byte LootAddedDelegate(Loot* a1, uint chestObjectId, uint chestItemIndex, uint itemId, ushort itemCount, nint materia, nint glamourStainIds, uint glamourItemId, RollState rollState, RollResult rollResult, float time, float maxTime, byte rollValue, byte a14, LootMode lootMode, int a16, uint a17);
     private Hook<LootAddedDelegate> LootAddedHook;
-
-    private const string RetainerTaskResultSig = "E8 ?? ?? ?? ?? 48 89 9B ?? ?? ?? ?? 48 8B CF 48 8B 17 FF 52 48 89 83 ?? ?? ?? ?? 33 D2 48 8D 4D A0";
-    private delegate void RetainerTaskResultDelegate(AgentRetainerTask* agent, nint someLuaPointer, nint packet);
-    private Hook<RetainerTaskResultDelegate> RetainerTaskHook;
 
     private const string TreasureInteractSig = "E9 ?? ?? ?? ?? 48 63 05";
     private delegate void TreasureInteractDelegate(Loot* loot, Treasure* treasureObj);
@@ -39,10 +31,16 @@ public unsafe class HookManager
     private delegate char FashionToggleResultWindowDelegate(AgentFashion* agentFashion, AgentFashion.FashionCheckDataStruct* data, nint unk);
     private readonly Hook<FashionToggleResultWindowDelegate> FashionToggleResultWindowHook;
 
+    private Hook<PacketDispatcher.Delegates.HandleActorControlPacket>? HandleActorControlPacketHook { get; init; }
+    private Hook<AgentItemInspection.Delegates.OpenResult>? OpenResultHook { get; init; }
+    private Hook<AgentRetainerTask.Delegates.OpenRetainerTaskResult>? OpenRetainerTaskResultHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdateNumber>? UpdateNumberHook { get; init; }
     private Hook<AgentLotteryDaily.Delegates.UpdatePayout>? UpdatePayoutHook { get; init; }
     private Hook<PacketDispatcher.Delegates.HandleSpawnNpcPacket>? HandleSpawnNPCPacketHook { get; init; }
     private Hook<AgentFateReward.Delegates.EnqueueReward>? EnqueueRewardHook { get; init; }
+    private Hook<PacketDispatcher.Delegates.OnReceivePacket>? OnReceiveHook { get; init; }
+    private Hook<ContentsFinderQueueInfo.Delegates.OnQueuePop>? OnDutyPopHook { get; init; }
+    private Hook<PacketDispatcher.Delegates.HandleEventYieldPacket>? HandleEventYieldPacketHook { get; init; }
 
     public uint LastSeenItemId;
     private MiniCactpotData? LastDataSet;
@@ -53,21 +51,18 @@ public unsafe class HookManager
     {
         Plugin = plugin;
 
-        var actorControlSelfPtr = Plugin.SigScanner.ScanText(ActorControlSig);
-        ActorControlSelfHook = Plugin.Hook.HookFromAddress<ActorControlSelfDelegate>(actorControlSelfPtr, ActorControlSelf);
-        ActorControlSelfHook.Enable();
+        HandleActorControlPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleActorControlPacket>(PacketDispatcher.MemberFunctionPointers.HandleActorControlPacket, HandleActorControlPacketDetour);
+        HandleActorControlPacketHook.Enable();
 
-        var openInspectPtr = Plugin.SigScanner.ScanText(OpenInspectSig);
-        OpenInspectHook = Plugin.Hook.HookFromAddress<OpenInspectThingy>(openInspectPtr, OpenInspect);
-        OpenInspectHook.Enable();
+        OpenResultHook = Plugin.Hook.HookFromAddress<AgentItemInspection.Delegates.OpenResult>(AgentItemInspection.MemberFunctionPointers.OpenResult, OpenResultDetour);
+        OpenResultHook.Enable();
 
         var lootAddedPtr = Plugin.SigScanner.ScanText(LootAddedSig);
         LootAddedHook = Plugin.Hook.HookFromAddress<LootAddedDelegate>(lootAddedPtr, LootAddedDetour);
         LootAddedHook.Enable();
 
-        var retainerTaskPtr = Plugin.SigScanner.ScanText(RetainerTaskResultSig);
-        RetainerTaskHook = Plugin.Hook.HookFromAddress<RetainerTaskResultDelegate>(retainerTaskPtr, RetainerTaskDetour);
-        RetainerTaskHook.Enable();
+        OpenRetainerTaskResultHook = Plugin.Hook.HookFromAddress<AgentRetainerTask.Delegates.OpenRetainerTaskResult>(AgentRetainerTask.MemberFunctionPointers.OpenRetainerTaskResult, OpenRetainerTaskResultDetour);
+        OpenRetainerTaskResultHook.Enable();
 
         var treasureInteractPtr = Plugin.SigScanner.ScanText(TreasureInteractSig);
         TreasureInteractHook = Plugin.Hook.HookFromAddress<TreasureInteractDelegate>(treasureInteractPtr, TreasureInteractDetour);
@@ -88,20 +83,67 @@ public unsafe class HookManager
 
         HandleSpawnNPCPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleSpawnNpcPacket>(PacketDispatcher.MemberFunctionPointers.HandleSpawnNpcPacket, HandleSpawnNPCPacketDetour);
         HandleSpawnNPCPacketHook.Enable();
+
+        OnDutyPopHook = Plugin.Hook.HookFromAddress<ContentsFinderQueueInfo.Delegates.OnQueuePop>(ContentsFinderQueueInfo.MemberFunctionPointers.OnQueuePop, OnQueuePopDetour);
+        OnDutyPopHook.Enable();
+
+        HandleEventYieldPacketHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.HandleEventYieldPacket>(PacketDispatcher.MemberFunctionPointers.HandleEventYieldPacket, HandleEventYieldPacketDetour);
+        HandleEventYieldPacketHook.Enable();
+
+        // OnReceiveHook = Plugin.Hook.HookFromAddress<PacketDispatcher.Delegates.OnReceivePacket>((nint)PacketDispatcher.StaticVirtualTablePointer->OnReceivePacket, OnReceivePacketDetour);
+        // OnReceiveHook.Enable();
     }
 
     public void Dispose()
     {
-        ActorControlSelfHook.Dispose();
-        OpenInspectHook.Dispose();
+        HandleActorControlPacketHook?.Dispose();
+        OpenResultHook?.Dispose();
         LootAddedHook.Dispose();
-        RetainerTaskHook.Dispose();
+        OpenRetainerTaskResultHook?.Dispose();
         TreasureInteractHook.Dispose();
         FashionToggleResultWindowHook.Dispose();
         EnqueueRewardHook?.Dispose();
         UpdateNumberHook?.Dispose();
         UpdatePayoutHook?.Dispose();
         HandleSpawnNPCPacketHook?.Dispose();
+        OnDutyPopHook?.Dispose();
+        HandleEventYieldPacketHook?.Dispose();
+        // OnReceiveHook?.Dispose();
+    }
+
+    private HashSet<ushort> Ignore = [552, 246, 274, 332, 526, 363, 490, 636, 113, 128, 893, 258, 151];
+    private void OnReceivePacketDetour(PacketDispatcher* thisPtr, uint targetId, nint packet)
+    {
+        try
+        {
+            var opCode = *(ushort*)(packet + 2);
+            OnReceiveHook!.Original(thisPtr, targetId, packet);
+
+            if (Ignore.Contains(opCode))
+                return;
+
+            Plugin.Log.Information($"Opcode: {opCode}");
+            Utils.PrintMemoryArea(packet, 0x200);
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error in OnReceivePacketDetour.");
+        }
+    }
+
+
+    private void OnQueuePopDetour(ContentsFinderQueueInfo* thisPtr, ContentsFinderQueueState newState, uint contentId, nint a4, bool isInProgressParty, ContentsFinder.LootRule lootRule, ulong inProgressPartyStartTimestamp, nint a8, bool isUnrestrictedParty, bool isMinimalIl, bool isSilenceEcho, bool isExplorerMode, bool isLevelSync, bool isLimitedLeveling)
+    {
+        try
+        {
+            OnDutyPopHook!.Original(thisPtr, newState, contentId, a4, isInProgressParty, lootRule, inProgressPartyStartTimestamp, a8, isUnrestrictedParty, isMinimalIl, isSilenceEcho, isExplorerMode, isLevelSync, isLimitedLeveling);
+
+            Plugin.TempManager.StartRoulette(thisPtr->QueuedContentRouletteId, thisPtr->QueuedClassJobId, isInProgressParty, isLimitedLeveling);
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Unable to process queue pop.");
+        }
     }
 
     private void EnqueueRewardDetour(AgentFateReward* agent, AgentFateReward.Reward* reward)
@@ -117,9 +159,9 @@ public unsafe class HookManager
         }
     }
 
-    private void OpenInspect(nint inspectAgent, int starRating, InventoryItem* reward)
+    private void OpenResultDetour(AgentItemInspection* thisPtr, int starRating, InventoryItem* reward)
     {
-        OpenInspectHook.Original(inspectAgent, starRating, reward);
+        OpenResultHook!.Original(thisPtr, starRating, reward);
 
         try
         {
@@ -143,21 +185,27 @@ public unsafe class HookManager
         }
     }
 
-    private void ActorControlSelf(uint category, uint eventId, uint param1, uint param2, uint param3, uint param4, uint param5, uint param6, uint param7, uint param8, ulong targetId, byte param9)
+    private void HandleActorControlPacketDetour(uint entityId, uint category, uint arg1, uint arg2, uint arg3, uint arg4, uint arg5, uint arg6, uint arg7, uint arg8, GameObjectId targetId, bool isRecorded)
     {
-        ActorControlSelfHook.Original(category, eventId, param1, param2, param3, param4, param5, param6, param7, param8, targetId, param9);
+        HandleActorControlPacketHook!.Original(entityId, category, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, targetId, isRecorded);
+
+        if (isRecorded)
+            return;
+
+        if (entityId != Control.Instance()->LocalPlayerEntityId)
+            return;
 
         // Handler for teleport, repair and other message logs
-        if (eventId != 517)
+        if (category != 517)
             return;
 
         try
         {
-            switch (param1)
+            switch (arg1)
             {
                 // Teleport log handler
                 case 4590:
-                    Plugin.TeleportCostHandler(param2);
+                    Plugin.TeleportCostHandler(arg2);
                     break;
                 // Aetheryte ticket log handler
                 case 4591:
@@ -165,14 +213,14 @@ public unsafe class HookManager
                     break;
                 // Repair log handler
                 case 1388:
-                    Plugin.RepairHandler(param2);
+                    Plugin.RepairHandler(arg2);
                     break;
                 // Lockbox handler
                 case 1948:
                 case 3980:
                     // Sort out the overflow from fragments
-                    if (!Lockboxes.Fragments.Contains(param2))
-                        Plugin.LockboxHandler(param2, param4, param5);
+                    if (!Lockboxes.Fragments.Contains(arg2))
+                        Plugin.LockboxHandler(arg2, arg4, arg5);
                     break;
             }
         }
@@ -229,9 +277,9 @@ public unsafe class HookManager
         return r;
     }
 
-    private void RetainerTaskDetour(AgentRetainerTask* agent, nint someLuaPointer, nint packet)
+    private void OpenRetainerTaskResultDetour(AgentRetainerTask* agent, AtkModuleInterface.AtkEventInterface* eventInterface, AgentRetainerTask.Data* resultData)
     {
-        RetainerTaskHook.Original(agent, someLuaPointer, packet);
+        OpenRetainerTaskResultHook!.Original(agent, eventInterface, resultData);
 
         var retainer = RetainerManager.Instance();
         var venture = AgentRetainerTask.Instance();
@@ -274,21 +322,19 @@ public unsafe class HookManager
                 return;
 
             // This range should include all random coffer
-            Plugin.Log.Information($"Interacting with {treasureObj->BaseId}");
-
-            var baseId = treasureObj->BaseId;
+            Plugin.Log.Debug($"Interacting with {treasureObj->BaseId}");
             if ((OccultTerritory)Plugin.ClientState.TerritoryType == OccultTerritory.SouthHorn)
             {
-                if (baseId is > 1856 or < 1789)
+                if (treasureObj->BaseId is > 1856 or < 1789)
                     return;
             }
             else
             {
-                if (baseId is > 2073 or < 2006)
+                if (treasureObj->BaseId is > 2073 or < 2006)
                     return;
             }
 
-            Plugin.TimerManager.StartTreasure(baseId, treasureObj->Position);
+            Plugin.TimerManager.StartOccultTreasure(treasureObj->BaseId, treasureObj->Position);
         }
         catch (Exception ex)
         {
@@ -413,6 +459,46 @@ public unsafe class HookManager
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Error while processing HandleSpawnNPC.");
+        }
+    }
+
+    private void HandleEventYieldPacketDetour(EventId eventId, short scene, byte yieldId, int* intParams, byte intParamCount)
+    {
+        HandleEventYieldPacketHook!.Original(eventId, scene, yieldId, intParams, intParamCount);
+
+        if (eventId.ContentId != EventHandlerContent.GuildLeveAssignment)
+            return;
+
+        if (scene != 0 || yieldId != 0 || intParamCount == 0)
+            return;
+
+        try
+        {
+            var metaValue = (uint)intParams[0];
+            var guildleveAssignmentCategory = (byte)(metaValue >> 24);
+            var category = (byte)(metaValue >> 16);
+            var count = (ushort)metaValue >> 7;
+
+            var leveIds = new List<ushort>(count);
+            for (var i = 0; i < count; i++)
+            {
+                var leveId = (ushort)(intParams[(i >> 1) + 2] >> (16 * ((i - 1) & 1)));
+                leveIds.Add(leveId);
+            }
+
+            var data = new GuildleveAssignmentData()
+            {
+                RowId = eventId.Id,
+                CategoryRowId = guildleveAssignmentCategory,
+                CategoryIndex = category,
+                LeveIds = leveIds,
+            };
+
+            Plugin.UploadEntry(new Export.GuildleveAssignments(data));
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error while processing HandleEventYieldPacket.");
         }
     }
 }

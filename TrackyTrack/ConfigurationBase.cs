@@ -50,8 +50,36 @@ public class ConfigurationBase : IDisposable
     public void Load()
     {
         foreach (var file in Plugin.PluginInterface.ConfigDirectory.EnumerateFiles())
+        {
             if (ulong.TryParse(Path.GetFileNameWithoutExtension(file.Name), out var id))
+            {
                 Plugin.CharacterStorage[id] = LoadConfig(id);
+
+                if (!Plugin.CharacterStorage[id].Occult.History.ContainsKey(OccultTerritory.NorthHorn))
+                {
+                    Plugin.CharacterStorage[id].Occult.History.Add(OccultTerritory.NorthHorn, new()
+                    {
+                        { OccultCofferRarity.Bronze, [] },
+                        { OccultCofferRarity.Silver, [] },
+                        { OccultCofferRarity.Gold, [] },
+                        { OccultCofferRarity.BunnyGold, [] },
+                    });
+
+                    Save(id, Plugin.CharacterStorage[id]);
+                }
+
+                if (!Plugin.CharacterStorage[id].Occult.TreasureHistory.ContainsKey(OccultTerritory.NorthHorn))
+                {
+                    Plugin.CharacterStorage[id].Occult.TreasureHistory.Add(OccultTerritory.NorthHorn, new()
+                    {
+                        { OccultTreasureRarity.Bronze, [] },
+                        { OccultTreasureRarity.Silver, [] },
+                    });
+
+                    Save(id, Plugin.CharacterStorage[id]);
+                }
+            }
+        }
     }
 
     private string LoadFile(FileSystemInfo fileInfo)

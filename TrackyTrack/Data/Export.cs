@@ -1,4 +1,4 @@
-﻿// ReSharper disable ExplicitCallerInfoArgument
+// ReSharper disable ExplicitCallerInfoArgument
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -74,7 +74,7 @@ public static class Export
         public uint[] Items;
 
 
-        public BunnyLoot(uint rarity, uint territory, List<EurekaItem> items) : base("Bnuuy")
+        public BunnyLoot(uint rarity, uint territory, List<ItemResult> items) : base("Bnuuy")
         {
             Rarity = rarity;
             Territory = territory;
@@ -268,16 +268,16 @@ public static class Export
         [JsonProperty("pos_z")]
         public float ChestPosZ;
 
-        public OccultTreasure(uint baseId, uint territory, List<OccultItem> rewards, Vector3 chestPos) : base("OccultTreasure")
+        public OccultTreasure(OccultCoffer coffer) : base("OccultTreasure")
         {
-            BaseId = baseId;
-            Territory = territory;
+            BaseId = coffer.Base;
+            Territory = (uint)coffer.Territory;
 
-            Rewards = rewards.SelectMany(r => r.Combine()).ToArray();
+            Rewards = coffer.Received.SelectMany(r => r.Combined()).ToArray();
 
-            ChestPosX = chestPos.X;
-            ChestPosY = chestPos.Y;
-            ChestPosZ = chestPos.Z;
+            ChestPosX = coffer.Position.X;
+            ChestPosY = coffer.Position.Y;
+            ChestPosZ = coffer.Position.Z;
         }
     }
 
@@ -302,20 +302,20 @@ public static class Export
         public float ChestPosZ;
 
         [JsonProperty("fate_id")]
-        public ushort FateId;
+        public uint FateId;
 
-        public OccultBunny(uint rarity, uint territory, List<OccultItem> rewards, Vector3 chestPos, ushort fateId) : base("OccultBunny")
+        public OccultBunny(OccultPot pot) : base("OccultBunny")
         {
-            Rarity = rarity;
-            Territory = territory;
+            Rarity = (uint)pot.Rarity;
+            Territory = (uint)pot.Territory;
 
-            Rewards = rewards.SelectMany(r => r.Combine()).ToArray();
+            Rewards = pot.Received.SelectMany(r => r.Combined()).ToArray();
 
-            ChestPosX = chestPos.X;
-            ChestPosY = chestPos.Y;
-            ChestPosZ = chestPos.Z;
+            ChestPosX = pot.Position.X;
+            ChestPosY = pot.Position.Y;
+            ChestPosZ = pot.Position.Z;
 
-            FateId = fateId;
+            FateId = pot.FateId;
         }
     }
 
@@ -590,6 +590,75 @@ public static class Export
             Hints = data.Categories.SelectMany(cat => cat.Coupled()).ToArray();
             Items = data.ItemIds.ToArray();
             Dyes = data.StainIds.ToArray();
+        }
+    }
+
+    public class RouletteReport : Upload
+    {
+        [JsonProperty("roulette")]
+        public uint Roulette;
+
+        [JsonProperty("cfc")]
+        public uint CFC;
+
+        [JsonProperty("class")]
+        public uint Class;
+
+        [JsonProperty("level")]
+        public int Level;
+
+        [JsonProperty("class_exp")]
+        public int ClassExp;
+
+        [JsonProperty("exp")]
+        public uint Exp;
+
+        [JsonProperty("gil")]
+        public uint Gil;
+
+        [JsonProperty("limited_leveling")]
+        public bool LimitedLeveling;
+
+        [JsonProperty("in_progress")]
+        public bool InProgress;
+
+        public RouletteReport(RouletteData data) : base("Roulettes")
+        {
+            Roulette = data.Roulette;
+            CFC = data.CFC;
+
+            Class = data.Class;
+            Level = data.Level;
+            ClassExp = data.ClassExp;
+
+            Exp = data.Exp;
+            Gil = data.Gil;
+
+            LimitedLeveling = data.LimitedLeveling;
+            InProgress = data.InProgress;
+        }
+    }
+
+    public class GuildleveAssignments : Upload
+    {
+        [JsonProperty("rowId")]
+        public uint RowId;
+
+        [JsonProperty("categoryRowId")]
+        public byte CategoryRowId;
+
+        [JsonProperty("categoryIndex")]
+        public byte CategoryIndex;
+
+        [JsonProperty("leveIds")]
+        public ushort[] LeveIds;
+
+        public GuildleveAssignments(GuildleveAssignmentData data) : base("GuildleveAssignments")
+        {
+            RowId = data.RowId;
+            CategoryRowId = data.CategoryRowId;
+            CategoryIndex = data.CategoryIndex;
+            LeveIds = data.LeveIds.ToArray();
         }
     }
 

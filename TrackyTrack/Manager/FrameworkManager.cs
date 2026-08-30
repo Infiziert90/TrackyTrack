@@ -38,7 +38,12 @@ public class FrameworkManager
         Plugin.Framework.Update += TicketTracker;
         Plugin.Framework.Update += CurrencyTracker;
         Plugin.Framework.Update += OccultTracker;
+        Plugin.Framework.Update += BunnyTracker;
 
+        Plugin.ChatGui.LogMessage += OnRouletteBonus;
+        Plugin.ChatGui.LogMessage += OnEurekaBunnyMessage;
+        Plugin.ChatGui.LogMessage += OnOccultTreasureMessage;
+        Plugin.ChatGui.LogMessage += OnOccultPotMessage;
         Plugin.ChatGui.LogMessage += OnReductionLogMessage;
         Plugin.ChatGui.LogMessage += OnDesynthesisLogMessage;
     }
@@ -48,8 +53,106 @@ public class FrameworkManager
         Plugin.Framework.Update -= TicketTracker;
         Plugin.Framework.Update -= CurrencyTracker;
         Plugin.Framework.Update -= OccultTracker;
+        Plugin.Framework.Update -= BunnyTracker;
+        Plugin.ChatGui.LogMessage -= OnRouletteBonus;
+        Plugin.ChatGui.LogMessage -= OnEurekaBunnyMessage;
+        Plugin.ChatGui.LogMessage -= OnOccultTreasureMessage;
+        Plugin.ChatGui.LogMessage -= OnOccultPotMessage;
         Plugin.ChatGui.LogMessage -= OnReductionLogMessage;
         Plugin.ChatGui.LogMessage -= OnDesynthesisLogMessage;
+    }
+
+    private void OnRouletteBonus(ILogMessage message)
+    {
+        if (!Plugin.TempManager.CurrentRoulette.AwaitingResults)
+            return;
+
+        if (message.LogMessageId is 2246)
+        {
+            var exp = message.Parameters[0].UIntValue;
+            var gil = message.Parameters[1].UIntValue;
+
+            Plugin.TempManager.CurrentRoulette.AddBonus(exp, gil);
+
+            var current = Plugin.TempManager.CurrentRoulette.Clone();
+            Plugin.TempManager.CurrentRoulette = new RouletteData();
+
+            if (!current.IsValid)
+                return;
+
+            var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
+            character.Roulette.Total += 1;
+            character.Roulette.History.Add(DateTime.Now, current);
+            Plugin.ConfigurationBase.SaveCharacterConfig();
+
+            Plugin.UploadEntry(new Export.RouletteReport(current));
+        }
+    }
+
+    private void OnEurekaBunnyMessage(ILogMessage message)
+    {
+        if (!Plugin.TimerManager.EurekaCoffer.AwaitingResults)
+            return;
+
+        if (message.LogMessageId is 1233 or 1232)
+        {
+            var reward = message.Parameters[0].UIntValue;
+            var count = message.LogMessageId == 1233 ? message.Parameters[1].UIntValue : 1;
+
+            Plugin.TimerManager.EurekaCoffer.AddItem(reward, count);
+        }
+    }
+
+    private void OnOccultTreasureMessage(ILogMessage message)
+    {
+        if (!Plugin.TimerManager.OccultCoffer.AwaitingResults)
+            return;
+
+        if (Plugin.Configuration.Debugging)
+            Plugin.Log.Debug($"{message.LogMessageId} | {message.FormatLogMessageForDebugging()}");
+
+        if (message.LogMessageId is 1233 or 1232)
+        {
+            var reward = message.Parameters[0].UIntValue;
+            var count = message.LogMessageId == 1233 ? message.Parameters[1].UIntValue : 1;
+
+            Plugin.TimerManager.OccultCoffer.AddItem(reward, count);
+        }
+
+        if (message.LogMessageId is 4592)
+        {
+            var reward = message.Parameters[1].UIntValue;
+            var count = message.Parameters[0].UIntValue;
+
+            Plugin.TimerManager.OccultCoffer.AddItem(reward, count);
+        }
+
+        // if (message.LogMessageId is 11395)
+        // {
+        //     Plugin.Log.Debug($"message: {message.LogMessageId} | {message.FormatLogMessageForDebugging()}");
+        // }
+    }
+
+    private void OnOccultPotMessage(ILogMessage message)
+    {
+        if (!Plugin.TimerManager.OccultPot.AwaitingResults)
+            return;
+
+        if (message.LogMessageId is 1233 or 1232)
+        {
+            var reward = message.Parameters[0].UIntValue;
+            var count = message.LogMessageId == 1233 ? message.Parameters[1].UIntValue : 1;
+
+            Plugin.TimerManager.OccultPot.AddItem(reward, count);
+        }
+
+        if (message.LogMessageId is 4592)
+        {
+            var reward = message.Parameters[1].UIntValue;
+            var count = message.Parameters[0].UIntValue;
+
+            Plugin.TimerManager.OccultPot.AddItem(reward, count);
+        }
     }
 
     private void OnReductionLogMessage(ILogMessage message)
@@ -214,9 +317,42 @@ public class FrameworkManager
         }
     }
 
+    private void BunnyTracker(IFramework _)
+    {
+        if (!EnumHelper.PlayerInEureka())
+            return;
+
+        var local = Plugin.ObjectTable.LocalPlayer;
+        if (local is null)
+            return;
+
+        // Opening a chest is counted as cast animation, so early return if no cast
+        if (!local.IsCasting)
+            return;
+
+        // Check if target is an EventObject, all bunny coffers are
+        if (Plugin.TargetManager.Target is not { ObjectKind: ObjectKind.EventObj } target)
+            return;
+
+        // Check that current target is a bunny coffer
+        if (!EurekaExtensions.RarityArray.Contains(target.BaseId))
+            return;
+
+        // We already have a timer running, just wait
+        if (Plugin.TimerManager.EurekaCoffer.AwaitingResults)
+            return;
+
+        // 300ms before cast finish is when cast counts as successful
+        if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
+            Plugin.TimerManager.StartEureka(target.BaseId);
+    }
+
     private readonly ushort[] OccultBunnyFates = [1976, 1977, 2072, 2073];
     private void OccultTracker(IFramework _)
     {
+        if (!EnumHelper.PlayerInOccult())
+            return;
+
         var local = Plugin.ObjectTable.LocalPlayer;
         if (local is null)
             return;
@@ -237,12 +373,13 @@ public class FrameworkManager
         if (!OccultExtensions.RarityArray.Contains(target.BaseId))
             return;
 
+        // We already have a timer running, just wait
+        if (Plugin.TimerManager.OccultPot.AwaitingResults)
+            return;
+
         // 300ms before cast finish is when cast counts as successful
         if (local.CurrentCastTime + 0.300 > local.TotalCastTime)
-        {
-            Plugin.TimerManager.LastTargetBaseId = target.BaseId;
-            Plugin.TimerManager.LastTargetPosition = target.Position;
-        }
+            Plugin.TimerManager.StartOccultPot(target.BaseId, target.Position);
     }
 
     private bool CompareGstrPlayerNames(ILogMessageEntity? source)
