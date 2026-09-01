@@ -44,7 +44,7 @@ public class RouletteData
     public RouletteData Clone()
         => new()
         {
-            Roulette = Roulette, CFC = CFC, Class = Class, Level = Level, Exp = Exp, Gil = Gil,
+            Roulette = Roulette, CFC = CFC, Class = Class, Level = Level, Exp = Exp, Gil = Gil, ClassExp = ClassExp,
             GotBonus = GotBonus, LimitedLeveling = LimitedLeveling, InProgress = InProgress,
         };
 }
