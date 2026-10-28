@@ -171,7 +171,7 @@ public class TimerManager
         Plugin.UploadEntry(new Export.DesynthesisResultV2(lastDesynthesis));
     }
 
-    private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667];
+    private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667, 52450];
     public void StoreCofferResult((uint ItemId, int Quantity)[] changes)
     {
         var added = changes.Where(pair => pair.Quantity > 0).ToArray();
@@ -230,6 +230,12 @@ public class TimerManager
             character.GachaSanctuary.Opened += 1;
             if (!character.GachaSanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
                 character.GachaSanctuary.Obtained[item.ItemId] += (uint) item.Quantity;
+        }
+        else if (coffer.ItemId == 52450)
+        {
+            character.GachaKeybound.Opened += 1;
+            if (!character.GachaKeybound.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaKeybound.Obtained[item.ItemId] += (uint) item.Quantity;
         }
         else
         {

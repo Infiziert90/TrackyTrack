@@ -53,3 +53,9 @@ public class Sanctuary
     [JsonIgnore]
     public static readonly uint[] MultiRewardItems = [38540, 39502, 40393, 41501];
 }
+
+public class Keybound
+{
+    public int Opened = 0;
+    public Dictionary<uint, uint> Obtained = [];
+}

@@ -12,7 +12,7 @@ public partial class MainWindow
     private readonly Dictionary<uint, bool> Unlocked = [];
 
     private Tabs SelectedGachaTab = Tabs.Gacha3;
-    private static readonly Tabs[] GachaTabs = [Tabs.Gacha3, Tabs.Gacha4, Tabs.Sanctuary];
+    private static readonly Tabs[] GachaTabs = [Tabs.Gacha3, Tabs.Gacha4, Tabs.Sanctuary, Tabs.Keybound];
 
     private void GachaTab()
     {
@@ -52,6 +52,9 @@ public partial class MainWindow
                         break;
                     case Tabs.Sanctuary:
                         Sanctuary();
+                        break;
+                    case Tabs.Keybound:
+                        Keybound();
                         break;
                 }
             }
@@ -189,6 +192,44 @@ public partial class MainWindow
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
         DrawMissingTable(Data.Sanctuary.Content.Where(i => dict[i] == 0), false);
+    }
+
+    private void Keybound()
+    {
+        if (!Plugin.Configuration.EnableGachaCoffers)
+        {
+            Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
+            return;
+        }
+
+        var characters = Plugin.CharacterStorage.Values.ToArray();
+        if (characters.Length == 0)
+        {
+            Helper.NoVentureCofferData();
+            return;
+        }
+
+        var characterGacha = characters.Where(c => c.GachaKeybound.Opened > 0).ToList();
+
+        // fill dict in order
+        var dict = new Dictionary<uint, uint>();
+        foreach (var pair in characterGacha.SelectMany(c => c.GachaKeybound.Obtained))
+        {
+            dict.TryAdd(pair.Key, 0);
+            dict[pair.Key] += pair.Value;
+        }
+
+        var opened = characterGacha.Select(c => c.GachaKeybound.Opened).Sum();
+        var unsortedList = Utils.ToSortedEntry(dict, opened);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        // ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Sanctuary.Content.Count} items");
+        DrawTable(unsortedList, false);
+
+        ImGuiHelpers.ScaledDummy(10.0f);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
+        // DrawMissingTable(Data.Sanctuary.Content.Where(i => dict[i] == 0), false);
     }
 
     private void DrawTable(IEnumerable<Utils.SortedEntry> content, bool showUnlocked)

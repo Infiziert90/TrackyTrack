@@ -423,6 +423,7 @@ public enum Tabs
     [Description("Gacha 3.0")] Gacha3 = 200,
     [Description("Gacha 4.0")] Gacha4 = 201,
     [Description("Sanctuary")] Sanctuary = 202,
+    [Description("Keybound")] Keybound = 203,
 
     [Description("Received")] Received = 300,
     [Description("History")] History = 301,
