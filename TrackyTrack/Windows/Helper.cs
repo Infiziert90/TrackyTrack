@@ -82,7 +82,6 @@ public static class Helper
 
     public static void TrackingDisabled(string text)
     {
-        ImGuiHelpers.ScaledDummy(10.0f);
         WrappedError(text);
     }
 
@@ -424,6 +423,8 @@ public enum Tabs
     [Description("Gacha 4.0")] Gacha4 = 201,
     [Description("Sanctuary")] Sanctuary = 202,
     [Description("Keybound")] Keybound = 203,
+    [Description("Fête Present")] FetePresent = 204,
+    [Description("Wrapped Gift")] WrappedGift = 205,
 
     [Description("Received")] Received = 300,
     [Description("History")] History = 301,

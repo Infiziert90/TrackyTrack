@@ -52,8 +52,6 @@ public class Plugin : IDalamudPlugin
     private readonly InventoryChanged InventoryChanged;
     public readonly TempManager TempManager;
 
-    public readonly Importer Importer;
-
     public SessionState SessionCopyState = SessionState.NotLoaded;
     public readonly ConcurrentDictionary<ulong, CharacterConfiguration> SessionCharacterCopy = new();
 
@@ -63,9 +61,6 @@ public class Plugin : IDalamudPlugin
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         FileDialogManager = new FileDialogManager();
-
-        Importer = new Importer();
-        Importer.Load();
 
         TimerManager = new TimerManager(this);
         HookManager = new HookManager(this);

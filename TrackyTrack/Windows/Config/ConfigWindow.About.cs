@@ -1,15 +1,10 @@
-﻿using System.Threading.Tasks;
-using Dalamud.Interface.Components;
-using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Interface.Utility;
+﻿using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 
 namespace TrackyTrack.Windows.Config;
 
 public partial class ConfigWindow
 {
-    private string InputPath = string.Empty;
-
     private void About()
     {
         using var tabItem = ImRaii.TabItem("About");
@@ -34,27 +29,6 @@ public partial class ConfigWindow
                 ImGui.TextUnformatted("Version:");
                 ImGui.SameLine();
                 ImGui.TextColored(ImGuiColors.ParsedOrange, Plugin.PluginInterface.Manifest.AssemblyVersion.ToString());
-
-                #if DEBUG
-                ImGui.TextColored(ImGuiColors.DalamudViolet, "Input File:");
-                ImGui.InputText("##InputPath", ref InputPath, 255);
-                ImGui.SameLine(0, 3.0f * ImGuiHelpers.GlobalScale);
-                if (ImGuiComponents.IconButton(FontAwesomeIcon.FolderClosed))
-                    ImGui.OpenPopup("InputPathDialog");
-
-                using var popup = ImRaii.Popup("InputPathDialog");
-                if (popup.Success)
-                    Plugin.FileDialogManager.OpenFileDialog("Pick a file", ".csv", (b, s) => { if (b) InputPath = s.First(); }, 1);
-
-                if (ImGui.Button("Import Data"))
-                {
-                    Task.Run(() =>
-                    {
-                        Plugin.Importer.Import(InputPath);
-                        Utils.AddNotification("Import Done", NotificationType.Success);
-                    });
-                }
-                #endif
             }
         }
 

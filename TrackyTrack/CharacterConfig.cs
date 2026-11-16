@@ -47,6 +47,8 @@ public class CharacterConfiguration
     public GachaFourZero GachaFourZero = new();
     public Sanctuary GachaSanctuary = new();
     public Keybound GachaKeybound = new();
+    public Fete GachaFete = new();
+    public WrappedGift GachaWrapped = new();
     public Retainer VentureStorage = new();
     public EurekaTracker Eureka = new();
     public OccultTracker Occult = new();

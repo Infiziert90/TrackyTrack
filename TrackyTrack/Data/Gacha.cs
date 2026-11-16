@@ -41,20 +41,25 @@ public class Sanctuary
     public Dictionary<uint, uint> Obtained = [];
 
     [JsonIgnore]
-    public static readonly HashSet<uint> Content =
-    [
-        27976, 24804, 33937, 40627, 40393, 13115, 41138, 41585, 33939, 33922, 20529, 41104, 33926, 41142, 33935, 13117,
-        20528, 41586, 39502, 33940, 33927, 38610, 31091, 20524, 20542, 38540, 41649, 20531, 40673, 39427, 13116, 40675,
-        16572, 13713, 41501, 40671, 41650, 40672, 15447, 33925, 33938, 13710, 13711, 13709, 33924, 39419, 27975, 38628,
-        13712, 13716, 13708, 13114, 38589, 20525, 40676, 13283, 13714, 33936, 33923, 13715, 39425, 39428, 20530, 41139,
-        13279
-    ];
-
-    [JsonIgnore]
-    public static readonly uint[] MultiRewardItems = [38540, 39502, 40393, 41501];
+    public static readonly HashSet<uint> Content = [41650, 41649, 20530, 20525, 20529, 13283, 20542, 20528, 20531, 16572, 15447, 20524, 13279];
 }
 
 public class Keybound
+{
+    public int Opened = 0;
+    public Dictionary<uint, uint> Obtained = [];
+
+    [JsonIgnore]
+    public static readonly HashSet<uint> Content = [52447, 41592, 41593, 41594, 41595, 41596, 40408, 40409, 40410, 40411];
+}
+
+public class WrappedGift
+{
+    public int Opened = 0;
+    public Dictionary<uint, uint> Obtained = [];
+}
+
+public class Fete
 {
     public int Opened = 0;
     public Dictionary<uint, uint> Obtained = [];

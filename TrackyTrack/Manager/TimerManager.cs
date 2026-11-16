@@ -171,7 +171,7 @@ public class TimerManager
         Plugin.UploadEntry(new Export.DesynthesisResultV2(lastDesynthesis));
     }
 
-    private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667, 52450];
+    private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667, 52450, 33441, 51268];
     public void StoreCofferResult((uint ItemId, int Quantity)[] changes)
     {
         var added = changes.Where(pair => pair.Quantity > 0).ToArray();
@@ -200,7 +200,7 @@ public class TimerManager
             return;
         }
 
-        if (!Plugin.Configuration.EnableGachaCoffers && coffer.ItemId is 36635 or 36636 or 41667)
+        if (!Plugin.Configuration.EnableGachaCoffers && coffer.ItemId is 36635 or 36636 or 41667 or 52450 or 33441 or 51268)
         {
             Plugin.Log.Warning("Opened gacha coffer but has tracking disabled.");
             return;
@@ -236,6 +236,18 @@ public class TimerManager
             character.GachaKeybound.Opened += 1;
             if (!character.GachaKeybound.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
                 character.GachaKeybound.Obtained[item.ItemId] += (uint) item.Quantity;
+        }
+        else if (coffer.ItemId == 33441)
+        {
+            character.GachaFete.Opened += 1;
+            if (!character.GachaFete.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaFete.Obtained[item.ItemId] += (uint) item.Quantity;
+        }
+        else if (coffer.ItemId == 51268)
+        {
+            character.GachaWrapped.Opened += 1;
+            if (!character.GachaWrapped.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
+                character.GachaWrapped.Obtained[item.ItemId] += (uint) item.Quantity;
         }
         else
         {

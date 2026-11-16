@@ -12,7 +12,7 @@ public partial class MainWindow
     private readonly Dictionary<uint, bool> Unlocked = [];
 
     private Tabs SelectedGachaTab = Tabs.Gacha3;
-    private static readonly Tabs[] GachaTabs = [Tabs.Gacha3, Tabs.Gacha4, Tabs.Sanctuary, Tabs.Keybound];
+    private static readonly Tabs[] GachaTabs = [Tabs.Gacha3, Tabs.Gacha4, Tabs.Sanctuary, Tabs.Keybound, Tabs.FetePresent, Tabs.WrappedGift];
 
     private void GachaTab()
     {
@@ -56,6 +56,12 @@ public partial class MainWindow
                     case Tabs.Keybound:
                         Keybound();
                         break;
+                    case Tabs.FetePresent:
+                        Fete();
+                        break;
+                    case Tabs.WrappedGift:
+                        WrappedGift();
+                        break;
                 }
             }
         }
@@ -69,28 +75,20 @@ public partial class MainWindow
             return;
         }
 
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (characters.Length == 0)
-        {
-            Helper.NoVentureCofferData();
-            return;
-        }
-
-        var characterGacha = characters.Where(c => c.GachaThreeZero.Opened > 0).ToList();
+        var characterGacha = Plugin.CharacterStorage.Values.Where(c => c.GachaThreeZero.Opened > 0).ToList();
         if (characterGacha.Count == 0)
         {
-            Helper.NoGachaData("Grand Company 3.0");
+            Helper.WrappedError($"No data stored for {Sheets.ItemSheet.GetRow(36635).Name.ToString()}.");
             return;
         }
 
-        // fill dict in order
-        var dict = new Dictionary<uint, uint>();
-        foreach (var item in Data.GachaThreeZero.Content)
-            dict.Add(item, 0);
-
         // fill dict with real values
+        var dict = new Dictionary<uint, uint>();
         foreach (var pair in characterGacha.SelectMany(c => c.GachaThreeZero.Obtained))
+        {
+            dict.TryAdd(pair.Key, 0);
             dict[pair.Key] += pair.Value;
+        }
 
         var opened = characterGacha.Select(c => c.GachaThreeZero.Opened).Sum();
         var unsortedList = Utils.ToSortedEntry(dict, opened);
@@ -105,7 +103,7 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
-        DrawMissingTable(Data.GachaThreeZero.Content.Where(i => dict[i] == 0), showUnlock);
+        DrawMissingTable(Data.GachaThreeZero.Content.Where(i => !dict.ContainsKey(i) || dict[i] == 0), showUnlock);
     }
 
     private void GachaFourZero()
@@ -116,28 +114,20 @@ public partial class MainWindow
             return;
         }
 
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (characters.Length == 0)
+        var characterGacha = Plugin.CharacterStorage.Values.Where(c => c.GachaFourZero.Opened > 0).ToArray();
+        if (characterGacha.Length == 0)
         {
-            Helper.NoVentureCofferData();
+            Helper.WrappedError($"No data stored for {Sheets.ItemSheet.GetRow(36636).Name.ToString()}.");
             return;
         }
-
-        var characterGacha = characters.Where(c => c.GachaFourZero.Opened > 0).ToList();
-        if (characterGacha.Count == 0)
-        {
-            Helper.NoGachaData("Grand Company 4.0");
-            return;
-        }
-
-        // fill dict in order
-        var dict = new Dictionary<uint, uint>();
-        foreach (var item in Data.GachaFourZero.Content)
-            dict.Add(item, 0);
 
         // fill dict with real values
+        var dict = new Dictionary<uint, uint>();
         foreach (var pair in characterGacha.SelectMany(c => c.GachaFourZero.Obtained))
+        {
+            dict.TryAdd(pair.Key, 0);
             dict[pair.Key] += pair.Value;
+        }
 
         var opened = characterGacha.Select(c => c.GachaFourZero.Opened).Sum();
         var unsortedList = Utils.ToSortedEntry(dict, opened);
@@ -152,7 +142,7 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
-        DrawMissingTable(Data.GachaFourZero.Content.Where(i => dict[i] == 0), showUnlock);
+        DrawMissingTable(Data.GachaFourZero.Content.Where(i => !dict.ContainsKey(i) || dict[i] == 0), showUnlock);
     }
 
     private void Sanctuary()
@@ -163,23 +153,20 @@ public partial class MainWindow
             return;
         }
 
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (characters.Length == 0)
+        var characterGacha = Plugin.CharacterStorage.Values.Where(c => c.GachaSanctuary.Opened > 0).ToArray();
+        if (characterGacha.Length == 0)
         {
-            Helper.NoVentureCofferData();
+            Helper.WrappedError($"No data stored for {Sheets.ItemSheet.GetRow(41667).Name.ToString()}.");
             return;
         }
 
-        var characterGacha = characters.Where(c => c.GachaSanctuary.Opened > 0).ToList();
-
-        // fill dict in order
-        var dict = new Dictionary<uint, uint>();
-        foreach (var item in Data.Sanctuary.Content)
-            dict.Add(item, 0);
-
         // fill dict with real values
+        var dict = new Dictionary<uint, uint>();
         foreach (var pair in characterGacha.SelectMany(c => c.GachaSanctuary.Obtained))
+        {
+            dict.TryAdd(pair.Key, 0);
             dict[pair.Key] += pair.Value;
+        }
 
         var opened = characterGacha.Select(c => c.GachaSanctuary.Opened).Sum();
         var unsortedList = Utils.ToSortedEntry(dict, opened);
@@ -191,7 +178,7 @@ public partial class MainWindow
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
-        DrawMissingTable(Data.Sanctuary.Content.Where(i => dict[i] == 0), false);
+        DrawMissingTable(Data.Sanctuary.Content.Where(i => !dict.ContainsKey(i) || dict[i] == 0), false);
     }
 
     private void Keybound()
@@ -202,14 +189,12 @@ public partial class MainWindow
             return;
         }
 
-        var characters = Plugin.CharacterStorage.Values.ToArray();
-        if (characters.Length == 0)
+        var characterGacha = Plugin.CharacterStorage.Values.Where(c => c.GachaKeybound.Opened > 0).ToArray();
+        if (characterGacha.Length == 0)
         {
-            Helper.NoVentureCofferData();
+            Helper.WrappedError($"No data stored for {Sheets.ItemSheet.GetRow(52450).Name.ToString()}.");
             return;
         }
-
-        var characterGacha = characters.Where(c => c.GachaKeybound.Opened > 0).ToList();
 
         // fill dict in order
         var dict = new Dictionary<uint, uint>();
@@ -223,13 +208,85 @@ public partial class MainWindow
         var unsortedList = Utils.ToSortedEntry(dict, opened);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
-        // ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Sanctuary.Content.Count} items");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {Data.Keybound.Content.Count(i => dict.ContainsKey(i) && dict[i] > 0)} out of {Data.Keybound.Content.Count} important items");
         DrawTable(unsortedList, false);
 
         ImGuiHelpers.ScaledDummy(10.0f);
 
         ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
-        // DrawMissingTable(Data.Sanctuary.Content.Where(i => dict[i] == 0), false);
+        DrawMissingTable(Data.Keybound.Content.Where(i => !dict.ContainsKey(i) || dict[i] == 0), false);
+    }
+
+    private void Fete()
+    {
+        if (!Plugin.Configuration.EnableGachaCoffers)
+        {
+            Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
+            return;
+        }
+
+        var characterGacha = Plugin.CharacterStorage.Values.Where(c => c.GachaFete.Opened > 0).ToArray();
+        if (characterGacha.Length == 0)
+        {
+            Helper.WrappedError($"No data stored for {Sheets.ItemSheet.GetRow(33441).Name.ToString()}.");
+            return;
+        }
+
+        // fill dict in order
+        var dict = new Dictionary<uint, uint>();
+        foreach (var pair in characterGacha.SelectMany(c => c.GachaFete.Obtained))
+        {
+            dict.TryAdd(pair.Key, 0);
+            dict[pair.Key] += pair.Value;
+        }
+
+        var opened = characterGacha.Select(c => c.GachaFete.Opened).Sum();
+        var unsortedList = Utils.ToSortedEntry(dict, opened);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        // ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Fete.Content.Count} important items");
+        DrawTable(unsortedList, false);
+
+        // ImGuiHelpers.ScaledDummy(10.0f);
+
+        // ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
+        // DrawMissingTable(Data.Fete.Content.Where(i => !dict.ContainsKey(i) || dict[i] == 0), false);
+    }
+
+    private void WrappedGift()
+    {
+        if (!Plugin.Configuration.EnableGachaCoffers)
+        {
+            Helper.TrackingDisabled("Gacha Coffer tracking has been disabled in the config.");
+            return;
+        }
+
+        var characterGacha = Plugin.CharacterStorage.Values.Where(c => c.GachaWrapped.Opened > 0).ToArray();
+        if (characterGacha.Length == 0)
+        {
+            Helper.WrappedError($"No data stored for {Sheets.ItemSheet.GetRow(51268).Name.ToString()}.");
+            return;
+        }
+
+        // fill dict in order
+        var dict = new Dictionary<uint, uint>();
+        foreach (var pair in characterGacha.SelectMany(c => c.GachaWrapped.Obtained))
+        {
+            dict.TryAdd(pair.Key, 0);
+            dict[pair.Key] += pair.Value;
+        }
+
+        var opened = characterGacha.Select(c => c.GachaWrapped.Opened).Sum();
+        var unsortedList = Utils.ToSortedEntry(dict, opened);
+
+        ImGui.TextColored(ImGuiColors.ParsedOrange, $"Opened: {opened:N0}");
+        // ImGui.TextColored(ImGuiColors.ParsedOrange, $"Found: {dict.Count(pair => pair.Value > 0)} out of {Data.Keybound.Content.Count} important items");
+        DrawTable(unsortedList, false);
+
+        // ImGuiHelpers.ScaledDummy(10.0f);
+
+        // ImGui.TextColored(ImGuiColors.ParsedOrange, "Not Received:");
+        // DrawMissingTable(Data.Keybound.Content.Where(i => !dict.ContainsKey(i) || dict[i] == 0), false);
     }
 
     private void DrawTable(IEnumerable<Utils.SortedEntry> content, bool showUnlocked)

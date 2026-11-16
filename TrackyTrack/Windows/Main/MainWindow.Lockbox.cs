@@ -104,6 +104,9 @@ public partial class MainWindow
             }
         }
         using var table = ImRaii.Table("##TotalStatsTable", 2);
+        if (!table.Success)
+            return;
+
         ImGui.TableSetupColumn("##stat", ImGuiTableColumnFlags.WidthStretch, 2.0f);
         ImGui.TableSetupColumn("##opened");
 
@@ -157,7 +160,7 @@ public partial class MainWindow
             .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
             .AddColumn("Item##item", entry => Helper.HoverableText(entry.Name))
             .AddColumn("Num##amount", entry => ImGui.TextUnformatted($"x{entry.Obtained}"), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.2f)
-            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort, 0.25f)
+            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthStretch, initWidth: 0.25f)
             .Draw(unsortedList);
     }
 

@@ -14,10 +14,6 @@ public partial class MainWindow
     private int SelectedCharacter;
     private int SelectedHistory;
 
-    private uint SourceSearchResult;
-    private uint RewardSearchResult;
-    private int DataSourceSelection;
-    private int SearchForSelection;
     private int ILvLSearchResult = 1;
 
     private int SelectedJob;
@@ -31,26 +27,11 @@ public partial class MainWindow
     private readonly ConcurrentDictionary<uint, uint> SourceHistory = new();
     private readonly ConcurrentDictionary<uint, uint> RewardHistory = new();
 
-    private Dictionary<uint, History>? LocalSourcesCache;
-    private Dictionary<uint, History>? LocalRewardsCache;
-
     private void InitializeDesynth()
     {
         // Fill once
         CatalogueCache = BuildCatalogue();
     }
-
-    private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions SourceOptions = new()
-    {
-        FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {a.Name}" },
-        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => !i.Name.IsEmpty).Where(i => i.Desynth > 0)
-    };
-
-    private static readonly ExcelSheetSelector<Item>.ExcelSheetPopupOptions ItemOptions = new()
-    {
-        FormatRow = a => a.RowId switch { _ => $"[#{a.RowId}] {a.Name}" },
-        FilteredSheet = Sheets.ItemSheet.Skip(1).Where(i => !i.Name.IsEmpty)
-    };
 
     private void DesynthesisTab()
     {
@@ -80,8 +61,6 @@ public partial class MainWindow
         Discover();
 
         Search();
-
-        CrowdSourcedInfo();
     }
 
     private void DesynthesisStats()
@@ -224,15 +203,11 @@ public partial class MainWindow
         using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.HealerGreen))
         {
             if (ImGui.Selectable(sourceName))
-            {
                 ImGui.SetClipboardText(sourceName);
-                SourceSearchResult = source.RowId;
-                RewardSearchResult = 0;
-            }
         }
 
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip($"{sourceName}\nClick to copy and set as reward for search");
+            ImGui.SetTooltip($"{sourceName}\nClick to copy");
 
         new SimpleTable<ItemResult>("##HistoryTable", Helper.NoSort, withIndent: 10.0f)
             .HideHeaderRow()
@@ -242,14 +217,10 @@ public partial class MainWindow
                 var item = entry.ToItemRow();
                 var name = item.Name.ToString();
                 if (ImGui.Selectable(name))
-                {
                     ImGui.SetClipboardText(name);
-                    SourceSearchResult = 0;
-                    RewardSearchResult = item.RowId;
-                }
 
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip($"{name}\nClick to copy and set as reward for search");
+                    ImGui.SetTooltip($"{name}\nClick to copy");
             })
             .AddColumn("##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.2f)
             .Draw(resultPair.Value.Received.Where(i => i.Item > 0));
@@ -295,14 +266,10 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             var name = item.Name.ToString();
             if (ImGui.Selectable(name))
-            {
                 ImGui.SetClipboardText(name);
-                RewardSearchResult = item.RowId;
-                SourceSearchResult = 0;
-            }
 
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip($"{name}\nClick to copy and set as reward for search");
+                ImGui.SetTooltip($"{name}\nClick to copy");
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{count}");
@@ -351,14 +318,10 @@ public partial class MainWindow
             ImGui.TableNextColumn();
             var name = item.Name.ToString();
             if (ImGui.Selectable(name))
-            {
                 ImGui.SetClipboardText(name);
-                SourceSearchResult = item.RowId;
-                RewardSearchResult = 0;
-            }
 
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip($"{name}\nClick to copy and set as source for search");
+                ImGui.SetTooltip($"{name}\nClick to copy");
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted($"x{count:N0}");
@@ -380,133 +343,6 @@ public partial class MainWindow
             if (ImGui.Button("Improved Website Version"))
                 Dalamud.Utility.Util.OpenLink("https://xivstats.com/desynth");
         }
-
-        ImGuiHelpers.ScaledDummy(10.0f);
-
-        var longText = "Data Source";
-        var width = ImGui.CalcTextSize(longText).X + (20.0f * ImGuiHelpers.GlobalScale);
-
-        var definedSize = ImGui.CalcTextSize("Crowd Sourced").X + (50.0f * ImGuiHelpers.GlobalScale);
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(ImGuiColors.DalamudViolet, longText);
-        ImGui.SameLine(width);
-        Helper.ToggleButton("Crowd Sourced", "Local", ref DataSourceSelection, definedSize);
-
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(ImGuiColors.DalamudViolet, "Search For");
-        ImGui.SameLine(width);
-        Helper.ToggleButton("Source", "Reward", ref SearchForSelection, definedSize);
-
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(ImGuiColors.DalamudViolet, "Search");
-        ImGui.SameLine(width);
-        using (ImRaii.PushFont(UiBuilder.IconFont))
-        {
-            ImGui.Button(FontAwesomeIcon.Search.ToIconString(), new Vector2(definedSize * 2, 0));
-        }
-
-        if (SearchForSelection == 0)
-        {
-            if (ExcelSheetSelector<Item>.ExcelSheetPopup("SourceResultPopup", out var sourceRow, SourceOptions))
-            {
-                SourceSearchResult = sourceRow;
-                RewardSearchResult = 0;
-            }
-        }
-        else
-        {
-            if (ExcelSheetSelector<Item>.ExcelSheetPopup("ItemResultPopup", out var itemRow, ItemOptions))
-            {
-                SourceSearchResult = 0;
-                RewardSearchResult = itemRow;
-            }
-        }
-
-        ImGuiHelpers.ScaledDummy(10.0f);
-
-        if (RewardSearchResult > 0)
-            RewardSearch();
-        else if (SourceSearchResult > 0)
-            SourceSearch();
-    }
-
-    private void SourceSearch()
-    {
-        var dict = Plugin.Importer.SourcedData.Sources;
-        if (DataSourceSelection == 1)
-        {
-            if (LocalSourcesCache == null)
-                FillLocalCache(Plugin.CharacterStorage.Values.SelectMany(h => h.Storage.History.Values));
-
-            dict = LocalSourcesCache!;
-        }
-
-        var sourceItem = Sheets.GetItem(SourceSearchResult);
-        Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), sourceItem.Name.ToString(), ImGuiColors.ParsedOrange);
-        if (!dict.TryGetValue(SourceSearchResult, out var history))
-        {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, "Nothing found for this source item ...");
-            return;
-        }
-
-        var desynthesized = history.Records;
-        ImGui.TextColored(ImGuiColors.HealerGreen, $"Desynthesized {desynthesized:N0} time{(desynthesized > 1 ? "s" : "")}");
-        MinMaxTable("HistoryStats", history.Results, true);
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        var sortedList = history.Results.Where(result => result.Item > 20).Select(result =>
-        {
-            if (!Sheets.ItemSheet.TryGetRow(result.Item, out var itemRow))
-                itemRow = Sheets.GetItem(1);
-
-            return Utils.SortedEntry.FromItem(itemRow, result.Received, 0, 0, Utils.ToChance(result.Received, desynthesized));
-        }).OrderByDescending(x => x.Percentage);
-
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Percentages:");
-        PercentageTable("PercentageRewardTable", sortedList);
-    }
-
-    private void RewardSearch()
-    {
-        var dict = Plugin.Importer.SourcedData.Rewards;
-        if (DataSourceSelection == 1)
-        {
-            if (LocalRewardsCache == null)
-                FillLocalCache(Plugin.CharacterStorage.Values.SelectMany(h => h.Storage.History.Values));
-
-            dict = LocalRewardsCache!;
-        }
-
-        var sourceItem = Sheets.GetItem(RewardSearchResult);
-        Helper.IconHeader(sourceItem.Icon, new Vector2(32, 32), sourceItem.Name.ToString(), ImGuiColors.ParsedOrange);
-        if (!dict.TryGetValue(RewardSearchResult, out var history))
-        {
-            ImGui.TextColored(ImGuiColors.ParsedOrange, $"Nothing found for this reward item ...");
-            return;
-        }
-
-        var desynthesized = history.Records;
-        ImGui.TextColored(ImGuiColors.HealerGreen, $"Seen as reward {desynthesized:N0} time{(desynthesized > 1 ? "s" : "")}");
-        MinMaxTable("HistoryStats", history.Results);
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        var sortedList = history.Results.Select(result =>
-        {
-            if (!Sheets.ItemSheet.TryGetRow(result.Item, out var itemRow))
-                itemRow = Sheets.GetItem(1);
-
-            var source = Plugin.Importer.SourcedData.Sources[result.Item];
-            if (DataSourceSelection == 1 && LocalSourcesCache != null)
-                source = LocalSourcesCache[result.Item];
-
-            var sourceRecord = source.Results.FirstOrDefault(r => r.Item == RewardSearchResult);
-            return Utils.SortedEntry.FromItem(itemRow, result.Received, 0, 0, Utils.ToChance(sourceRecord.Received, source.Records));
-        }).OrderByDescending(x => x.Percentage);
-
-        ImGui.TextColored(ImGuiColors.HealerGreen, "Chance for each source:");
-        PercentageTable("PercentageRewardTable", sortedList);
     }
 
     private void Discover()
@@ -555,28 +391,6 @@ public partial class MainWindow
             .Draw(CatalogueCache);
     }
 
-    private void CrowdSourcedInfo()
-    {
-        using var tabItem = ImRaii.TabItem("Info");
-        if (!tabItem.Success)
-            return;
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        ImGui.TextColored(ImGuiColors.HealerGreen, $"Total Records: {Plugin.Importer.SourcedData.TotalRecords:N0}");
-        ImGui.TextColored(ImGuiColors.HealerGreen, $"Last Time Updated: {Plugin.Importer.SourcedData.LastUpdate:dd MMM yyyy hh:mm tt}");
-
-        ImGuiHelpers.ScaledDummy(5.0f);
-        ImGui.Separator();
-        ImGuiHelpers.ScaledDummy(5.0f);
-
-        Helper.WrappedText(ImGuiColors.DalamudViolet, "All crowd sourced data is provided by the community.");
-        Helper.WrappedText(ImGuiColors.DalamudViolet, "To contribute data, allow this plugin to upload data.");
-        ImGuiHelpers.ScaledDummy(5.0f);
-        Helper.WrappedText(ImGuiColors.DalamudViolet, "Please report any inconsistency.");
-        Helper.WrappedText(ImGuiColors.DalamudViolet, "Contact info can be found in the about tab.");
-    }
-
     private void FillHistory(IEnumerable<CharacterConfiguration> characters)
     {
         if (TaskRunning)
@@ -591,10 +405,6 @@ public partial class MainWindow
             LastHistoryCount = total;
             SourceHistory.Clear();
             RewardHistory.Clear();
-
-            // We reset the local caches here too, but rebuild them later
-            LocalSourcesCache = null;
-            LocalRewardsCache = null;
 
             Task.Run(() =>
             {
@@ -633,26 +443,6 @@ public partial class MainWindow
         }
     }
 
-    private static void MinMaxTable(string identifier, IEnumerable<Result> results, bool showReceived = false)
-    {
-        new SimpleTable<Result>(identifier, SortByKeyCustom, size: new Vector2((showReceived ? 400 : 300) * ImGuiHelpers.GlobalScale, 0))
-            .AddColumn("Item##ItemName", entry => Helper.SelectableClipboardText(Sheets.ItemSheet.TryGetRow(entry.Item, out var item) ? item.Name.ToString() : "Invalid Data", 10.0f), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.6f)
-            .AddColumn("Min##StatMin", entry => Helper.RightAlignedText(entry.Min.ToString()), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.1f)
-            .AddColumn("##StatSymbol", _ => Helper.CenterText("-"), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.05f)
-            .AddColumn("Max##StatMax", entry => ImGui.TextUnformatted(entry.Max.ToString()), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.1f)
-            .AddColumn("Received##StatReceived", entry => ImGui.TextUnformatted($"x{entry.Received:N0}"), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.3f, useColumn: showReceived)
-            .Draw(results);
-    }
-
-    private static void PercentageTable(string identifier, IOrderedEnumerable<Utils.SortedEntry> sortedList)
-    {
-        new SimpleTable<Utils.SortedEntry>(identifier, Helper.NoSort)
-            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.Icon))
-            .AddColumn("Item##item", entry => ImGui.TextUnformatted(entry.Name))
-            .AddColumn("Pct##percentage", entry => ImGui.TextUnformatted($"{entry.Percentage:F2}%"), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.25f)
-            .Draw(sortedList);
-    }
-
     private Item[] BuildCatalogue()
     {
         return Sheets.DesynthCache
@@ -664,87 +454,5 @@ public partial class MainWindow
               .Where(i => !ExcludeNonMB || !i.IsUntradable)
               .OrderBy(i => i.LevelItem.RowId)
               .ToArray();
-    }
-
-    private const int GilItemOrder = 1_000_000;
-    private const int CrystalOrder = 2_000_000;
-    private static IOrderedEnumerable<Result> SortByKeyCustom(IEnumerable<Result> unsortedArray, object _)
-    {
-        return unsortedArray.OrderBy(result =>
-        {
-            var idx = result.Item;
-            if (idx < 20)
-                idx += CrystalOrder;
-            else if (Desynth.GilItems.ContainsKey(idx))
-                idx += GilItemOrder;
-
-            return idx;
-        });
-    }
-
-    private void FillLocalCache(IEnumerable<DesynthResultV2> results)
-    {
-        LocalSourcesCache = new Dictionary<uint, History>();
-        LocalRewardsCache = new Dictionary<uint, History>();
-
-        var records = new Dictionary<uint, uint>();
-        var final = new Dictionary<uint, Dictionary<uint, Importer.Stats>>();
-        foreach (var result in results)
-        {
-            if (result.Source > Sheets.HighestValidId || result.Source < Sheets.LowewstValidId)
-                continue;
-
-            if (!records.TryAdd(result.Source, 1))
-                records[result.Source]++;
-
-            if (result.Received.Count > 3)
-                continue;
-
-            foreach (var (item, amount, _) in result.Received)
-            {
-                switch (item)
-                {
-                    case < 100:
-                    case > 100_000:
-                        continue;
-                }
-
-                if (!final.ContainsKey(result.Source))
-                    final[result.Source] = [];
-
-                var t = final[result.Source];
-                if (!t.TryGetValue(item, out var minMax))
-                {
-                    t[item] = new Importer.Stats(amount, amount);
-                    continue;
-                }
-
-                minMax.Records++;
-                minMax.Min = Math.Min(amount, minMax.Min);
-                minMax.Max = Math.Max(amount, minMax.Max);
-                t[item] = minMax;
-            }
-        }
-
-        foreach (var (source, rewards) in final)
-        {
-            var r = new List<Result>();
-            foreach (var (reward, minMax) in rewards)
-            {
-                r.Add(new Result(reward, minMax.Min, minMax.Max, minMax.Records));
-
-                if (!LocalRewardsCache.TryGetValue(reward, out var h))
-                {
-                    LocalRewardsCache[reward] = new History { Records = minMax.Records, Results = [new Result(source, minMax.Min, minMax.Max, minMax.Records)] };
-                    continue;
-                }
-
-                h.Records += minMax.Records;
-                h.Results = h.Results.Append(new Result(source, minMax.Min, minMax.Max, minMax.Records)).ToArray();
-                LocalRewardsCache[reward] = h;
-            }
-
-            LocalSourcesCache.Add(source, new History { Records = records[source], Results = r.ToArray() });
-        }
     }
 }

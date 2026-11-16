@@ -1,10 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using Lumina.Excel.Sheets;
+using Newtonsoft.Json;
 
 namespace TrackyTrack.Data;
 
 public record VentureItem(uint Item, short Count, bool HQ)
 {
     [JsonIgnore] public bool Valid => Item > 0;
+
+    public Item ToItemRow() => Sheets.GetItem(Item);
 }
 
 public record VentureResult(uint VentureType, List<VentureItem> Items, bool MaxLevel)

@@ -22,6 +22,9 @@ public partial class ConfigWindow
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Venture Coffer");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Grand Company Gacha");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Sanctuary Gacha");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "- Keybound Coffer");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "- Fête Present");
+            ImGui.TextColored(ImGuiColors.DalamudViolet, "- Wrapped Gift");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Lockboxes");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Bunny Coffers");
             ImGui.TextColored(ImGuiColors.DalamudViolet, "- Desynthesis");

@@ -282,33 +282,21 @@ public partial class MainWindow
         ImGui.Separator();
         ImGuiHelpers.ScaledDummy(5.0f);
 
-        var ventureResult = reversedHistory[RetainerSelectedHistory].Value;
-        using var table = ImRaii.Table("##HistoryTable", 3);
-        if (!table.Success)
-            return;
+        new SimpleTable<VentureItem>("##HistoryTable", Helper.NoSort)
+            .HideHeaderRow()
+            .AddIconColumn("##icon", entry => Helper.DrawIcon(entry.ToItemRow().Icon))
+            .AddColumn("##item", entry =>
+            {
+                var item = entry.ToItemRow();
+                var name = item.Name.ToString();
+                if (ImGui.Selectable(name))
+                    ImGui.SetClipboardText(name);
 
-        ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthStretch, 0.2f);
-        ImGui.TableSetupColumn("##item");
-        ImGui.TableSetupColumn("##amount", ImGuiTableColumnFlags.WidthStretch, 0.2f);
-
-        foreach (var ventureItem in ventureResult.Items)
-        {
-            if (!ventureItem.Valid)
-                continue;
-
-            var item = Sheets.GetItem(ventureItem.Item);
-
-            ImGui.TableNextColumn();
-            Helper.DrawIcon(Utils.CheckItemAction(item));
-            ImGui.TableNextColumn();
-
-            var name = item.Name.ToString();
-            ImGui.TextUnformatted(name);
-
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted($"x{ventureItem.Count}");
-            ImGui.TableNextRow();
-        }
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip($"{name}\nClick to copy");
+            })
+            .AddColumn("##amount", entry => ImGui.TextUnformatted($"x{entry.Count}"), ImGuiTableColumnFlags.WidthStretch, initWidth: 0.2f)
+            .Draw(reversedHistory[RetainerSelectedHistory].Value.Items.Where(i => i.Valid));
     }
 
     private void VentureCoffers(CharacterConfiguration[] characters)
