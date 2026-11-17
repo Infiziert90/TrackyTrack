@@ -49,6 +49,7 @@ public class CharacterConfiguration
     public Keybound GachaKeybound = new();
     public Fete GachaFete = new();
     public WrappedGift GachaWrapped = new();
+    public WrappedPresent GachaPresent = new();
     public Retainer VentureStorage = new();
     public EurekaTracker Eureka = new();
     public OccultTracker Occult = new();

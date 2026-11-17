@@ -59,6 +59,12 @@ public class WrappedGift
     public Dictionary<uint, uint> Obtained = [];
 }
 
+public class WrappedPresent
+{
+    public int Opened = 0;
+    public Dictionary<uint, uint> Obtained = [];
+}
+
 public class Fete
 {
     public int Opened = 0;

@@ -171,7 +171,7 @@ public class TimerManager
         Plugin.UploadEntry(new Export.DesynthesisResultV2(lastDesynthesis));
     }
 
-    private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667, 52450, 33441, 51268];
+    private static readonly uint[] TrackedCoffers = [32161, 36635, 36636, 41667, 52450, 33441, 51268, 22357];
     public void StoreCofferResult((uint ItemId, int Quantity)[] changes)
     {
         var added = changes.Where(pair => pair.Quantity > 0).ToArray();
@@ -200,61 +200,63 @@ public class TimerManager
             return;
         }
 
-        if (!Plugin.Configuration.EnableGachaCoffers && coffer.ItemId is 36635 or 36636 or 41667 or 52450 or 33441 or 51268)
+        if (!Plugin.Configuration.EnableGachaCoffers && coffer.ItemId is 36635 or 36636 or 41667 or 52450 or 33441 or 51268 or 22357)
         {
             Plugin.Log.Warning("Opened gacha coffer but has tracking disabled.");
             return;
         }
 
         var character = Plugin.CharacterStorage.GetOrCreate(Plugin.PlayerState.ContentId);
-        if (coffer.ItemId == 32161 && VentureCoffer.Content.Contains(item.ItemId))
+        if (coffer.ItemId == 32161)
         {
             character.Coffer.Opened += 1;
-            if (!character.Coffer.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.Coffer.Obtained[item.ItemId] += (uint) item.Quantity;
+            if (!character.Coffer.Obtained.TryAdd(item.ItemId, 1))
+                character.Coffer.Obtained[item.ItemId] += 1;
         }
-        else if (coffer.ItemId == 36635 && GachaThreeZero.Content.Contains(item.ItemId))
+        else if (coffer.ItemId == 36635)
         {
             character.GachaThreeZero.Opened += 1;
-            if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaThreeZero.Obtained[item.ItemId] += (uint) item.Quantity;
+            if (!character.GachaThreeZero.Obtained.TryAdd(item.ItemId, 1))
+                character.GachaThreeZero.Obtained[item.ItemId] += 1;
         }
-        else if (coffer.ItemId == 36636 && GachaFourZero.Content.Contains(item.ItemId))
+        else if (coffer.ItemId == 36636)
         {
             character.GachaFourZero.Opened += 1;
-            if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaFourZero.Obtained[item.ItemId] += (uint) item.Quantity;
+            if (!character.GachaFourZero.Obtained.TryAdd(item.ItemId, 1))
+                character.GachaFourZero.Obtained[item.ItemId] += 1;
         }
-        else if (coffer.ItemId == 41667 && Sanctuary.Content.Contains(item.ItemId))
+        else if (coffer.ItemId == 41667)
         {
             character.GachaSanctuary.Opened += 1;
-            if (!character.GachaSanctuary.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaSanctuary.Obtained[item.ItemId] += (uint) item.Quantity;
+            if (!character.GachaSanctuary.Obtained.TryAdd(item.ItemId, 1))
+                character.GachaSanctuary.Obtained[item.ItemId] += 1;
         }
         else if (coffer.ItemId == 52450)
         {
             character.GachaKeybound.Opened += 1;
-            if (!character.GachaKeybound.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaKeybound.Obtained[item.ItemId] += (uint) item.Quantity;
+            if (!character.GachaKeybound.Obtained.TryAdd(item.ItemId, 1))
+                character.GachaKeybound.Obtained[item.ItemId] += 1;
         }
         else if (coffer.ItemId == 33441)
         {
             character.GachaFete.Opened += 1;
-            if (!character.GachaFete.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaFete.Obtained[item.ItemId] += (uint) item.Quantity;
+            if (!character.GachaFete.Obtained.TryAdd(item.ItemId, 1))
+                character.GachaFete.Obtained[item.ItemId] += 1;
         }
         else if (coffer.ItemId == 51268)
         {
             character.GachaWrapped.Opened += 1;
-            if (!character.GachaWrapped.Obtained.TryAdd(item.ItemId, (uint) item.Quantity))
-                character.GachaWrapped.Obtained[item.ItemId] += (uint) item.Quantity;
+            if (!character.GachaWrapped.Obtained.TryAdd(item.ItemId, 1))
+                character.GachaWrapped.Obtained[item.ItemId] += 1;
+        }
+        else if (coffer.ItemId == 22357)
+        {
+            character.GachaPresent.Opened += 1;
+            if (!character.GachaPresent.Obtained.TryAdd(item.ItemId, 1))
+                character.GachaPresent.Obtained[item.ItemId] += 1;
         }
         else
         {
-            Plugin.ChatGui.Print(Utils.SuccessMessage("You've found an unknown coffer drop."));
-            Plugin.ChatGui.Print(Utils.SuccessMessage("Please consider sending the following information to the dev:"));
-            Plugin.ChatGui.Print($"Coffer: {coffer.ItemId} Item: {item.ItemId}");
-
             return;
         }
 
